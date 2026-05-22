@@ -1,0 +1,57 @@
+services:
+  icarus:
+    build:
+      context: .
+      dockerfile: icarus.dockerfile
+    container_name: icarus-verilog
+    working_dir: /verilog_code
+    volumes:
+      - ./verilog_code:/verilog_code
+      - ./scripts:/scripts
+    stdin_open: true
+    tty: true
+
+  yosys:
+    build:
+      context: .
+      dockerfile: yosys.dockerfile
+    container_name: yosys
+    working_dir: /verilog_code
+    volumes:
+      - ./verilog_code:/verilog_code
+      - ./scripts:/scripts
+    stdin_open: true
+    tty: true
+
+  react-vite:
+    build:
+      context: ./verilog-visual
+      dockerfile: Dockerfile
+    container_name: react-vite
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./verilog-visual:/app
+      - react_node_modules:/app/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: fastapi-back
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./back:/app
+      - /app/.venv
+      - ./verilog_code:/verilog_code
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts:/scripts
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+
+volumes:
+  react_node_modules:

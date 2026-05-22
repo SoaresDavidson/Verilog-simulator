@@ -1,0 +1,4 @@
+.git
+verilog-visual/node_modules
+verilog-visual/dist
+*.zip
