@@ -4,7 +4,7 @@ from schemas.verilog import (
     MapearProcessadorResponse,
     SimularExecucaoRequest,
     SimularExecucaoResponse,
-    ExecutarZipResponse
+    UploadZipResponse
 )
 from services.verilog import VerilogService
 
@@ -16,7 +16,7 @@ def mapear_processador(
     service: VerilogService = Depends(VerilogService)
 ):
     try:
-        result = service.mapear_processador(payload.folder_path)
+        result = service.mapear_processador(payload.project_id)
         return MapearProcessadorResponse(
             success=result["success"],
             stdout=result["stdout"],
@@ -38,7 +38,7 @@ def simular_execucao(
     service: VerilogService = Depends(VerilogService)
 ):
     try:
-        result = service.simular_execucao(payload.folder_path)
+        result = service.simular_execucao(payload.project_id)
         return SimularExecucaoResponse(
             success=result["success"],
             stdout=result["stdout"],
@@ -54,35 +54,51 @@ def simular_execucao(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/executar-projeto-zip", response_model=ExecutarZipResponse)
-async def executar_projeto_zip(
-    file: UploadFile = File(..., description="ZIP archive containing the verilog project files and a 'scripts' subfolder"),
+@router.post("/upload-projeto-zip", response_model=UploadZipResponse)
+async def upload_projeto_zip(
+    file: UploadFile = File(..., description="ZIP archive containing Verilog files and 'scripts' subfolder"),
     service: VerilogService = Depends(VerilogService)
 ):
     if not file.filename.endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only ZIP archive files (.zip) are supported.")
     try:
         zip_bytes = await file.read()
-        result = service.process_zip_project(zip_bytes)
-        
-        yosys_res = MapearProcessadorResponse(
-            success=result["yosys"]["success"],
-            stdout=result["yosys"]["stdout"],
-            stderr=result["yosys"]["stderr"],
-            netlist_content=result["yosys"]["netlist_content"]
+        project_id = service.upload_zip_project(zip_bytes)
+        return UploadZipResponse(
+            project_id=project_id,
+            message="ZIP project uploaded and extracted successfully. Use the project_id to run mapping and simulation."
         )
-        
-        sim_res = SimularExecucaoResponse(
-            success=result["simulation"]["success"],
-            stdout=result["simulation"]["stdout"],
-            stderr=result["simulation"]["stderr"],
-            simulation_log=result["simulation"]["simulation_log"]
-        )
-        
-        return ExecutarZipResponse(
-            yosys=yosys_res,
-            simulation=sim_res,
-            run_folder=result.get("run_folder")
-        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process and execute project ZIP: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process and upload project ZIP: {str(e)}")
+
+@router.delete("/projeto/{project_id:path}")
+def deletar_projeto(
+    project_id: str,
+    service: VerilogService = Depends(VerilogService)
+):
+    try:
+        success = service.delete_project(project_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Project run directory not found or invalid project ID.")
+        return {"success": True, "message": "Project run directory successfully deleted."}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete project directory: {str(e)}")
+
+@router.post("/limpar")
+def limpar_todas_execucoes(
+    service: VerilogService = Depends(VerilogService)
+):
+    try:
+        result = service.clean_all_runs()
+        return {
+            "success": True,
+            "message": f"Successfully deleted {result['deleted_count']} run folder(s).",
+            "details": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform cleanup: {str(e)}")
+

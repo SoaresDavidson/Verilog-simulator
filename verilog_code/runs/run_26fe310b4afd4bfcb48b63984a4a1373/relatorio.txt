@@ -1,0 +1,292 @@
+
+20. Printing statistics.
+
+=== main_memory ===
+
+   Number of wires:                 73
+   Number of wire bits:           1270
+   Number of public wires:          14
+   Number of public wire bits:     190
+   Number of memories:               1
+   Number of memory bits:        32768
+   Number of processes:              2
+   Number of cells:                 18
+     $add                            7
+     $memrd                          4
+     $memwr                          7
+
+=== instruction_memory ===
+
+   Number of wires:                  5
+   Number of wire bits:            129
+   Number of public wires:           3
+   Number of public wire bits:      65
+   Number of memories:               1
+   Number of memory bits:        32768
+   Number of processes:              0
+   Number of cells:                  2
+     $memrd                          1
+     $shr                            1
+
+=== hazard_detection_unit ===
+
+   Number of wires:                 80
+   Number of wire bits:            100
+   Number of public wires:          20
+   Number of public wire bits:      40
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                 33
+     $eq                             8
+     $logic_and                     12
+     $logic_or                       6
+     $lt                             2
+     $ne                             3
+     $not                            1
+     $xor                            1
+
+=== forward_unit ===
+
+   Number of wires:                 56
+   Number of wire bits:             96
+   Number of public wires:          12
+   Number of public wire bits:      40
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                 32
+     $eq                             8
+     $logic_and                     16
+     $ne                             8
+
+=== control ===
+
+   Number of wires:                 41
+   Number of wire bits:             59
+   Number of public wires:          21
+   Number of public wire bits:      33
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  0
+
+=== ULA_controler ===
+
+   Number of wires:                 11
+   Number of wire bits:             26
+   Number of public wires:           6
+   Number of public wire bits:      18
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  3
+     $eq                             3
+
+=== ULA ===
+
+   Number of wires:                 22
+   Number of wire bits:            490
+   Number of public wires:           5
+   Number of public wire bits:     101
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                 14
+     $add                            2
+     $and                            1
+     $eq                             1
+     $lt                             2
+     $mux                            2
+     $or                             1
+     $shl                            1
+     $shr                            1
+     $sshr                           1
+     $sub                            1
+     $xor                            1
+
+=== register_bank ===
+
+   Number of wires:                 94
+   Number of wire bits:           2610
+   Number of public wires:          42
+   Number of public wire bits:    1170
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              3
+   Number of cells:                  2
+     $logic_and                      1
+     $ne                             1
+
+=== RV32i ===
+
+   Number of wires:                155
+   Number of wire bits:           2007
+   Number of public wires:          97
+   Number of public wire bits:    1233
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              5
+   Number of cells:                 58
+     $add                            2
+     $eq                             2
+     $logic_and                      6
+     $logic_or                       3
+     $mux                           19
+     $not                           10
+     BranchDecider                   1
+     BranchTargetBuffer              1
+     EX_MEM                          1
+     ID_EX                           1
+     IF_ID                           1
+     MEM_WB                          1
+     MulPipelined32Bits              1
+     PC                              1
+     ULA                             1
+     ULA_controler                   1
+     control                         1
+     forward_unit                    1
+     hazard_detection_unit           1
+     instruction_memory              1
+     main_memory                     1
+     register_bank                   1
+
+=== PC ===
+
+   Number of wires:                 26
+   Number of wire bits:            243
+   Number of public wires:          12
+   Number of public wire bits:     136
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                 13
+     $add                            2
+     $eq                             7
+     $logic_and                      3
+     $ne                             1
+
+=== MEM_WB ===
+
+   Number of wires:                 25
+   Number of wire bits:            289
+   Number of public wires:          20
+   Number of public wire bits:     218
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  0
+
+=== IF_ID ===
+
+   Number of wires:                 28
+   Number of wire bits:            342
+   Number of public wires:          24
+   Number of public wire bits:     276
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  1
+     $logic_and                      1
+
+=== ID_EX ===
+
+   Number of wires:                 71
+   Number of wire bits:            659
+   Number of public wires:          54
+   Number of public wire bits:     495
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  0
+
+=== EX_MEM ===
+
+   Number of wires:                 35
+   Number of wire bits:            307
+   Number of public wires:          27
+   Number of public wire bits:     231
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  0
+
+=== BranchDecider ===
+
+   Number of wires:                 16
+   Number of wire bits:             86
+   Number of public wires:           6
+   Number of public wire bits:      76
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              1
+   Number of cells:                  7
+     $eq                             2
+     $ge                             2
+     $lt                             2
+     $ne                             1
+
+=== BranchTargetBuffer ===
+
+   Number of wires:                694
+   Number of wire bits:          40852
+   Number of public wires:         270
+   Number of public wire bits:   17402
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              5
+   Number of cells:                 12
+     $eq                             4
+     $logic_and                      2
+     $logic_not                      1
+     $logic_or                       3
+     $ne                             2
+
+=== design hierarchy ===
+
+   RV32i                             1
+     BranchDecider                   1
+     BranchTargetBuffer              1
+     EX_MEM                          1
+     ID_EX                           1
+     IF_ID                           1
+     MEM_WB                          1
+     PC                              1
+     ULA                             1
+     ULA_controler                   1
+     control                         1
+     forward_unit                    1
+     hazard_detection_unit           1
+     instruction_memory              1
+     main_memory                     1
+     register_bank                   1
+
+   Number of wires:               1432
+   Number of wire bits:          49565
+   Number of public wires:         633
+   Number of public wire bits:   21724
+   Number of memories:               2
+   Number of memory bits:        65536
+   Number of processes:             26
+   Number of cells:                180
+     $add                           13
+     $and                            1
+     $eq                            35
+     $ge                             2
+     $logic_and                     41
+     $logic_not                      1
+     $logic_or                      12
+     $lt                             6
+     $memrd                          5
+     $memwr                          7
+     $mux                           21
+     $ne                            16
+     $not                           11
+     $or                             1
+     $shl                            1
+     $shr                            2
+     $sshr                           1
+     $sub                            1
+     $xor                            2
+     MulPipelined32Bits              1
+

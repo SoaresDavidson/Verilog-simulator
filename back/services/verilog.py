@@ -5,6 +5,7 @@ import zipfile
 import io
 import uuid
 import shutil
+import json
 from config import settings
 
 class VerilogService:
@@ -19,47 +20,34 @@ class VerilogService:
             self.docker_client = None
             self.docker_error = f"Could not connect to Docker daemon: {str(e)}"
 
-
-
     def _resolve_paths(self, folder_path: str) -> tuple[str, str]:
         """
         Resolves the local path for reading files, and the corresponding /verilog_code path
         inside the yosys and icarus-verilog containers.
         Returns: (local_dir_path, container_dir_path)
         """
+        # Safety Check: The folder_path (which represents our project_id) must be a safe relative path
+        # starting with "runs/run_" to prevent path traversal and restrict access to dedicated run folders.
+        normalized_path = os.path.normpath(folder_path).replace("\\", "/")
+        if ".." in normalized_path.split("/") or normalized_path.startswith("/") or normalized_path.startswith("./"):
+            raise ValueError("Invalid project ID: directory traversal detected.")
+            
+        if not normalized_path.startswith("runs/run_"):
+            raise ValueError("Unauthorized access: project ID must reside inside 'runs/run_'.")
+
         # 1. Resolve path locally in the backend container
-        local_path = os.path.abspath(folder_path)
+        local_path = os.path.abspath(os.path.join("/verilog_code", normalized_path))
         if not os.path.exists(local_path):
-            alt_path = os.path.abspath(os.path.join("/verilog_code", folder_path))
-            if os.path.exists(alt_path):
-                local_path = alt_path
-            else:
-                alt_path2 = os.path.abspath(os.path.join(os.getcwd(), folder_path))
-                if os.path.exists(alt_path2):
-                    local_path = alt_path2
-                else:
-                    raise FileNotFoundError(
-                        f"Folder '{folder_path}' not found locally at: {folder_path}, "
-                        f"/verilog_code/{folder_path}, or ./{folder_path}"
-                    )
+            raise FileNotFoundError(f"Project path '{normalized_path}' not found at '{local_path}'.")
 
         if not os.path.isdir(local_path):
             raise NotADirectoryError(f"Path '{local_path}' is not a directory.")
 
         # 2. Get relative path from /verilog_code to map it to the container's /verilog_code
         base_dir = "/verilog_code"
-        # Ensure we are operating inside the shared verilog_code directory
-        if local_path == base_dir:
-            return local_path, "/verilog_code"
-        elif local_path.startswith(base_dir + os.sep) or local_path.startswith(base_dir + "/"):
-            rel_path = os.path.relpath(local_path, base_dir)
-            container_path = os.path.join("/verilog_code", rel_path).replace("\\", "/")
-            return local_path, container_path
-        else:
-            raise ValueError(
-                f"Path '{folder_path}' is not inside the shared 'verilog_code' directory. "
-                f"Please ensure it is under {base_dir}"
-            )
+        rel_path = os.path.relpath(local_path, base_dir)
+        container_path = os.path.join("/verilog_code", rel_path).replace("\\", "/")
+        return local_path, container_path
 
     def _run_command_in_container(self, container_name: str, cmd: list[str], workdir: str) -> dict:
         """
@@ -92,37 +80,66 @@ class VerilogService:
         except Exception as e:
             raise RuntimeError(f"Failed to execute command in container '{container_name}': {str(e)}")
 
-    def mapear_processador(self, folder_path: str) -> dict:
+    def mapear_processador(self, project_id: str) -> dict:
         """
-        Executes the global Yosys mapping script `/workspace/scripts/mapear_hardware.ys`
-        inside the 'yosys' container, using the student's folder as the working directory.
+        Executes Yosys synthesis/mapping dynamically inside the 'yosys' container,
+        using the student's project folder as the working directory.
         """
-        local_dir, container_dir = self._resolve_paths(folder_path)
+        local_dir, container_dir = self._resolve_paths(project_id)
         
-        # Verify global script exists on the backend host mount
-        global_script = "/scripts/mapear_hardware.ys"
-        if not os.path.exists(global_script):
-            raise FileNotFoundError("Global Yosys script not found at '/scripts/mapear_hardware.ys'")
+        # Find all .v and .sv files in the local student folder recursively
+        v_files = []
+        for root, dirs, files in os.walk(local_dir):
+            for file in files:
+                if file.endswith((".v", ".sv")):
+                    rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
+                    v_files.append(rel_path)
 
-        # Run Yosys inside the yosys container using the global script
-        cmd = ["yosys", "-s", "/scripts/mapear_hardware.ys"]
+        if not v_files:
+            raise FileNotFoundError(f"No Verilog (.v or .sv) files found in '{local_dir}' for mapping.")
+
+        # Construct dynamic commands for Yosys execution
+        yosys_cmds = []
+        for f in v_files:
+            yosys_cmds.append(f"read_verilog -sv {f}")
+        
+        yosys_cmds.append("hierarchy -auto-top")
+        yosys_cmds.append("tee -o relatorio.txt stat")
+        yosys_cmds.append("write_json estrutura.json")
+        
+        # Run Yosys inside the yosys container using the compiled command list
+        cmd = ["yosys", "-p", "; ".join(yosys_cmds)]
         run_res = self._run_command_in_container(
             container_name="yosys",
             cmd=cmd,
             workdir=container_dir
         )
 
-        # Search for generated output files (e.g. estrutura.json, relatorio.txt, netlist.v) in the project directory
+        # Read the generated structure JSON or fall back to netlist files
         netlist_content = None
-        for name in ["estrutura.json", "relatorio.txt", "netlist.v", "netlist.json", "mapped.v"]:
-            path_check = os.path.join(local_dir, name)
-            if os.path.exists(path_check):
-                try:
-                    with open(path_check, "r", encoding="utf-8") as f:
-                        netlist_content = f.read()
-                    break
-                except Exception:
-                    pass
+        structure_file = os.path.join(local_dir, "estrutura.json")
+        if os.path.exists(structure_file):
+            try:
+                with open(structure_file, "r", encoding="utf-8") as f:
+                    netlist_content = json.load(f)
+            except Exception:
+                pass
+        
+        # Fallback to other possible netlist files if structure.json is not found
+        if netlist_content is None:
+            for name in ["netlist.json", "netlist.v", "mapped.v", "relatorio.txt"]:
+                path_check = os.path.join(local_dir, name)
+                if os.path.exists(path_check):
+                    try:
+                        with open(path_check, "r", encoding="utf-8") as f:
+                            raw = f.read()
+                            try:
+                                netlist_content = json.loads(raw)
+                            except ValueError:
+                                netlist_content = {"raw_text": raw}
+                        break
+                    except Exception:
+                        pass
 
         return {
             "success": run_res["success"],
@@ -131,12 +148,12 @@ class VerilogService:
             "netlist_content": netlist_content
         }
 
-    def simular_execucao(self, folder_path: str) -> dict:
+    def simular_execucao(self, project_id: str) -> dict:
         """
-        Executes the global simulation script `/workspace/scripts/simular.sh`
-        inside the 'icarus-verilog' container, using the student's folder as the working directory.
+        Executes the global simulation script `/scripts/simular.sh`
+        inside the 'icarus-verilog' container, using the student's project folder as the working directory.
         """
-        local_dir, container_dir = self._resolve_paths(folder_path)
+        local_dir, container_dir = self._resolve_paths(project_id)
 
         # Verify global script exists on the backend host mount
         global_script = "/scripts/simular.sh"
@@ -162,17 +179,40 @@ class VerilogService:
             workdir=container_dir
         )
 
-        # Search for generated simulation log/result file in the project directory
+        # Read the simulation log (either standard JSON or NDJSON/JSON Lines)
         simulation_log = None
-        for name in ["execucao_pipeline.json", "resultado.txt", "result.txt", "simulado.txt", "simulate.log", "simulation.log", "simulacao.log"]:
-            path_check = os.path.join(local_dir, name)
-            if os.path.exists(path_check):
+        log_file = os.path.join(local_dir, "execucao_pipeline.json")
+        if os.path.exists(log_file):
+            try:
+                with open(log_file, "r", encoding="utf-8") as f:
+                    raw_content = f.read()
                 try:
-                    with open(path_check, "r", encoding="utf-8") as f:
-                        simulation_log = f.read()
-                    break
-                except Exception:
-                    pass
+                    # Attempt to parse as single complete JSON block first
+                    simulation_log = json.loads(raw_content)
+                except json.JSONDecodeError:
+                    # Fallback to line-by-line parsing (NDJSON)
+                    simulation_log = []
+                    for line in raw_content.splitlines():
+                        if line.strip():
+                            simulation_log.append(json.loads(line))
+            except Exception:
+                pass
+
+        # Fallback to other log formats
+        if simulation_log is None:
+            for name in ["resultado.txt", "result.txt", "simulado.txt", "simulate.log"]:
+                path_check = os.path.join(local_dir, name)
+                if os.path.exists(path_check):
+                    try:
+                        with open(path_check, "r", encoding="utf-8") as f:
+                            raw = f.read()
+                            try:
+                                simulation_log = json.loads(raw)
+                            except ValueError:
+                                simulation_log = [{"raw_text": raw}]
+                        break
+                    except Exception:
+                        pass
 
         return {
             "success": run_res["success"],
@@ -181,12 +221,11 @@ class VerilogService:
             "simulation_log": simulation_log
         }
 
-
-
-    def process_zip_project(self, zip_bytes: bytes) -> dict:
+    def upload_zip_project(self, zip_bytes: bytes) -> str:
         """
         Unzips a project archive into a run folder inside the shared verilog_code directory,
-        executes both the mapping (Yosys) and simulation scripts, and keeps the generated files.
+        validates security limits, and returns a safe project ID (relative path) pointing to the
+        extracted sources.
         """
         # Create a unique run directory name inside /verilog_code/runs
         temp_folder_name = f"run_{uuid.uuid4().hex}"
@@ -194,15 +233,15 @@ class VerilogService:
         os.makedirs(temp_folder_path, exist_ok=True)
         
         try:
-            # Extract the zip file in memory safely
+            # Extract the zip file safely
             with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_ref:
                 # 1. Zip Bomb Prevention: Limit decompressed size to 50MB
                 total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
-                MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024 # 50 MB
+                MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
                 if total_uncompressed_size > MAX_UNCOMPRESSED_SIZE:
                     raise ValueError("Security limit exceeded: ZIP archive decompressed size is too large.")
 
-                # 2. Zip Slip Prevention (Directory Traversal): Verify all paths resolve inside target_path
+                # 2. Zip Slip Prevention: Verify all paths resolve inside the target directory
                 temp_folder_abs = os.path.abspath(temp_folder_path)
                 for member in zip_ref.namelist():
                     member_abs = os.path.abspath(os.path.join(temp_folder_abs, member))
@@ -221,17 +260,55 @@ class VerilogService:
                 if len(subdirs) == 1:
                     target_path = os.path.join(target_path, subdirs[0])
 
-                        
-            # Run synthesis and mapping
-            mapping_result = self.mapear_processador(target_path)
-            
-            # Run simulation
-            simulation_result = self.simular_execucao(target_path)
-            print(target_path)
-            return {
-                "yosys": mapping_result,
-                "simulation": simulation_result,
-                "run_folder": temp_folder_name
-            }
+            # Return the safe project ID (relative path from /verilog_code)
+            project_id = os.path.relpath(target_path, "/verilog_code").replace("\\", "/")
+            return project_id
         except Exception as e:
+            # In case of validation or extraction error, clean up the created run folder
+            if os.path.exists(temp_folder_path):
+                shutil.rmtree(temp_folder_path, ignore_errors=True)
             raise e
+
+    def delete_project(self, project_id: str) -> bool:
+        """
+        Safely deletes the entire run directory associated with the project ID to clean up session files.
+        """
+        # Safely resolve the paths to ensure the project resides in our runs directory
+        normalized_path = os.path.normpath(project_id).replace("\\", "/")
+        parts = normalized_path.split("/")
+        
+        # Verify it starts with runs/run_
+        if len(parts) >= 2 and parts[0] == "runs" and parts[1].startswith("run_"):
+            root_folder_name = parts[1]
+            root_folder_path = os.path.join("/verilog_code", "runs", root_folder_name)
+            if os.path.exists(root_folder_path):
+                shutil.rmtree(root_folder_path, ignore_errors=True)
+                return True
+        return False
+
+    def clean_all_runs(self) -> dict:
+        """
+        Deletes all directories and files inside the shared /verilog_code/runs directory
+        to clean up leftover session data.
+        """
+        runs_dir = "/verilog_code/runs"
+        if not os.path.exists(runs_dir):
+            return {"deleted_count": 0, "status": "Directory does not exist", "deleted_folders": [], "errors": []}
+
+        deleted_folders = []
+        errors = []
+        for name in os.listdir(runs_dir):
+            path = os.path.join(runs_dir, name)
+            # Only remove subfolders starting with "run_" for safety
+            if os.path.isdir(path) and name.startswith("run_"):
+                try:
+                    shutil.rmtree(path)
+                    deleted_folders.append(name)
+                except Exception as e:
+                    errors.append(f"Failed to delete {name}: {str(e)}")
+
+        return {
+            "deleted_count": len(deleted_folders),
+            "deleted_folders": deleted_folders,
+            "errors": errors
+        }

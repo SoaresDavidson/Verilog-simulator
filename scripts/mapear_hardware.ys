@@ -5,7 +5,7 @@ read_verilog -sv *.v
 hierarchy -auto-top
 
 # Lista todos os módulos com suas portas
-tee -o relatorio.txt stat
+# tee -o relatorio.txt stat
 
 # Dump JSON com toda a estrutura
 write_json estrutura.json
