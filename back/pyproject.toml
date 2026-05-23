@@ -10,4 +10,5 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "docker>=7.0.0",
     "python-multipart>=0.0.18",
+    "vcdvcd",
 ]
