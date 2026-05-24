@@ -291,7 +291,7 @@ class VerilogService:
             "errors": errors
         }
 
-    def _parse_vcd(self, vcd_path: str, output_path: str | None = "ciclos.json") -> list[dict] | None:
+    def _parse_vcd(self, vcd_path: str, output_path: str | None = None, debug: bool = False) -> dict | None:
         from vcdvcd import VCDVCD
         import json
         vcd = VCDVCD(vcd_path, store_scopes=True)
@@ -339,7 +339,8 @@ class VerilogService:
                     return super().default(obj)
 
         json_str = json.dumps(data, indent=2, cls=DecimalEncoder)
-        if output_path:
+        if debug:
+            output_path = output_path or "ciclos.json"
             with open(output_path, "w") as f:
                 f.write(json_str)
         return json.loads(json_str)
