@@ -19,11 +19,10 @@ class SimularExecucaoResponse(BaseModel):
     stdout: str = Field(..., description="Console standard output from the simulation run")
     stderr: str = Field(..., description="Console standard error/warnings from the simulation run")
     simulation_log: Any = Field(
-        None, 
+        None,
         description="The parsed VCD simulation log object containing:\n\n"
                     "- **metadata**: Details about the simulation run, including `timescale` (with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`.\n"
-                    "- **variables**: A map of all unique signals found in the VCD with their size, variable type (wire/reg), and references.\n"
-                    "- **modules**: The design's hierarchical scopes tree, containing for each module `variables` (signals with size, type, references in this scope) and `subscopes` (child modules).\n"
+                    "- **modules**: The design's hierarchical scopes tree. Each module contains `variables` (signals with size, type, and references in that scope) and `child_scopes` (nested child modules/scopes).\n"
                     "- **timeline**: A temporal log mapping each timestamp string to a dictionary of signal name/value changes at that instant."
     )
 
