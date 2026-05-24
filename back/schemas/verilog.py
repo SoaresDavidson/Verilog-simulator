@@ -18,7 +18,14 @@ class SimularExecucaoResponse(BaseModel):
     success: bool = Field(..., description="Whether the simulation script succeeded")
     stdout: str = Field(..., description="Console standard output from the simulation run")
     stderr: str = Field(..., description="Console standard error/warnings from the simulation run")
-    simulation_log: Any = Field(None, description="The list of cycle state objects parsed from the simulation log")
+    simulation_log: Any = Field(
+        None, 
+        description="The parsed VCD simulation log object containing:\n\n"
+                    "- **metadata**: Details about the simulation run, including `timescale` (with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`.\n"
+                    "- **variables**: A map of all unique signals found in the VCD with their size, variable type (wire/reg), and references.\n"
+                    "- **modules**: The design's hierarchical scopes tree, containing for each module `variables` (signals with size, type, references in this scope) and `subscopes` (child modules).\n"
+                    "- **timeline**: A temporal log mapping each timestamp string to a dictionary of signal name/value changes at that instant."
+    )
 
 class UploadZipResponse(BaseModel):
     project_id: str = Field(..., description="The unique project ID/folder path created for this session's project")
