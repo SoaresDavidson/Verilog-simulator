@@ -68,36 +68,98 @@ Dispara o mapeamento de hardware no container `yosys`.
 **Request Payload:**
 ```json
 {
-  "folder_path": "nome_da_pasta_ou_caminho_relativo"
+  "project_id": "runs/run_<uuid>"
 }
 ```
-* O `folder_path` deve estar contido dentro do diretório `/verilog_code` para que os containers de compiladores consigam acessá-lo.
-* **Funcionamento:** Executa `yosys -s scripts/mapear_hardware.ys` dentro do container `yosys` e lê o arquivo netlist gerado (`netlist.v`, etc.).
+* O `project_id` é o identificador único da pasta do projeto retornado pelo endpoint de upload. Ele deve residir sob `/verilog_code/runs/`.
+* **Funcionamento:** Executa comandos do Yosys no container `yosys` para ler os arquivos `.v` e `.sv`, gerando e retornando o netlist estrutural (`estrutura.json`).
 
 ### POST `/api/v1/verilog/simular-execucao`
 
-Dispara a simulação de hardware no container `icarus-verilog`.
+Dispara a simulação de hardware no container `icarus-verilog` e analisa o arquivo de sinais VCD resultante utilizando a biblioteca `vcdvcd` (com suporte a módulos/escopos).
 
 **Request Payload:**
 ```json
 {
-  "folder_path": "nome_da_pasta_ou_caminho_relativo"
+  "project_id": "runs/run_<uuid>"
 }
 ```
-* **Funcionamento:** Dá permissão de execução e executa o script `bash scripts/simular.sh` dentro do container `icarus-verilog`, retornando os logs e o conteúdo do arquivo de resultado (ex: `resultado.txt`).
 
-### POST `/api/v1/verilog/executar-projeto-zip`
+**Response Payload (`simulation_log`):**
+Retorna um objeto JSON estruturado contendo a simulação completa:
+```json
+{
+  "success": true,
+  "stdout": "...logs de compilação...",
+  "stderr": "",
+  "simulation_log": {
+    "metadata": {
+      "timescale": {
+        "timescale": 1e-12,
+        "magnitude": 1,
+        "unit": "ps",
+        "factor": 1e-12
+      },
+      "begintime": 0,
+      "endtime": 1040000
+    },
+    "variables": {
+      "tb_processador.clk": {
+        "size": "1",
+        "var_type": "reg",
+        "references": [
+          "tb_processador.clk",
+          "tb_processador.processador.clk"
+        ]
+      }
+    },
+    "modules": {
+      "tb_processador": {
+        "variables": {
+          "clk": {
+            "size": "1",
+            "var_type": "reg",
+            "references": [
+              "tb_processador.clk",
+              "tb_processador.processador.clk"
+            ]
+          }
+        },
+        "subscopes": [
+          "processador"
+        ]
+      }
+    },
+    "timeline": {
+      "0": {
+        "tb_processador.clk": "0"
+      },
+      "10000": {
+        "tb_processador.clk": "1"
+      }
+    }
+  }
+}
+```
 
-Recebe um arquivo compactado `.zip` contendo os fontes Verilog e a pasta `scripts/` correspondente.
+* **metadata**: Informações da simulação extraídas do cabeçalho do VCD.
+* **variables**: Mapeamento de caminhos de sinais únicos para seus metadados (`size`, `var_type`, etc.).
+* **modules**: Árvore de escopo estrutural do hardware. Mapeia cada escopo (módulo/submódulo) para suas variáveis locais e sub-escopos filhos (`subscopes`).
+* **timeline**: Histórico de mudanças de estado ciclo a ciclo. Mapeia cada carimbo de tempo (*timestamp*) para os sinais que mudaram de valor naquele instante.
+
+---
+
+### POST `/api/v1/verilog/upload-projeto-zip`
+
+Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 
 **Request Payload:**
 - Enviar como `multipart/form-data`.
 - Campo `file`: arquivo `.zip`.
 
 **Funcionamento:**
-1. A API cria uma pasta temporária exclusiva dentro da pasta de códigos compartilhada (`/verilog_code/temp_proj_<uuid>`).
-2. Extrai os arquivos do ZIP nessa pasta (tratando inclusive casos em que o zip tem uma subpasta raiz redundante).
-3. Dispara sequencialmente o mapeamento (no container `yosys`) e a simulação (no container `icarus-verilog`) sobre essa pasta temporária.
-4. Coleta os logs e os arquivos resultantes gerados.
-5. Exclui permanentemente a pasta temporária do servidor.
-6. Retorna a resposta combinada com os resultados dos dois processos.
+1. A API cria uma pasta exclusiva dentro do diretório `/verilog_code/runs/run_<uuid>`.
+2. Valida segurança contra Zip Bomb e Zip Slip.
+3. Extrai os arquivos do ZIP.
+4. Retorna o `project_id` correspondente para ser usado nas rotas de mapeamento e simulação.
+5. Após concluir o uso, deve-se chamar o endpoint `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
