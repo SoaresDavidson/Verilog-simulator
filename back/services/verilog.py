@@ -335,7 +335,7 @@ class VerilogService:
         class DecimalEncoder(json.JSONEncoder):
                 def default(self, obj):
                     if isinstance(obj, Decimal):
-                        return int(obj)
+                        return float(obj)
                     return super().default(obj)
 
         json_str = json.dumps(data, indent=2, cls=DecimalEncoder)
