@@ -41,30 +41,14 @@ def mapear_processador(
 
 @router.post(
     "/simular-execucao",
+    response_class=FileResponse,
     responses={
         200: {
-            "description": "Simulation succeeded. Returns the simulation results (metadata, module scopes, timeline, and netlist) directly as a JSON file stream.",
-            "content": {
-                "application/json": {
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "success": {"type": "boolean"},
-                            "stdout": {"type": "string"},
-                            "stderr": {"type": "string"},
-                            "simulation_log": {
-                                "type": "object",
-                                "properties": {
-                                    "metadata": {"type": "object"},
-                                    "modules": {"type": "object"},
-                                    "timeline": {"type": "object"}
-                                }
-                            },
-                            "netlist_content": {"type": "object"}
-                        }
-                    }
-                }
-            }
+            "model": SimularExecucaoResponse,
+            "description": (
+                "Simulation succeeded. Returns the simulation results (metadata, module scopes, "
+                "timeline, and netlist) directly as a JSON file stream (downloadable ciclos.json)."
+            )
         },
         400: {
             "model": SimularExecucaoResponse,
