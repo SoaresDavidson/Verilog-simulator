@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi.responses import FileResponse, JSONResponse
+import os
 from schemas.verilog import (
     MapearProcessadorRequest,
     MapearProcessadorResponse,
@@ -32,19 +34,64 @@ def mapear_processador(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/simular-execucao", response_model=SimularExecucaoResponse)
+@router.post(
+    "/simular-execucao",
+    responses={
+        200: {
+            "description": "Simulation succeeded. Returns the simulation results (metadata, module scopes, and timeline dict) directly as a JSON file stream.",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "metadata": {
+                                "type": "object",
+                                "description": "Simulation run details"
+                            },
+                            "modules": {
+                                "type": "object",
+                                "description": "Design module structure and variables hierarchy"
+                            },
+                            "timeline": {
+                                "type": "object",
+                                "description": "A temporal log mapping each timestamp string to a dictionary of signal name/value changes at that instant."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            "model": SimularExecucaoResponse,
+            "description": "Simulation or compilation failed. Returns standard output logs and error logs."
+        }
+    }
+)
 def simular_execucao(
     payload: SimularExecucaoRequest,
     service: VerilogService = Depends(VerilogService)
 ):
     try:
         result = service.simular_execucao(payload.project_id)
-        return SimularExecucaoResponse(
-            success=result["success"],
-            stdout=result["stdout"],
-            stderr=result["stderr"],
-            simulation_log=result["simulation_log"]
-        )
+        if result["success"]:
+            json_path = result["json_path"]
+            if not json_path or not os.path.exists(json_path):
+                raise HTTPException(status_code=500, detail="Simulation succeeded but output JSON file could not be found.")
+            return FileResponse(
+                path=json_path,
+                media_type="application/json",
+                filename="ciclos.json"
+            )
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "success": False,
+                    "stdout": result["stdout"],
+                    "stderr": result["stderr"],
+                    "simulation_log": None
+                }
+            )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except NotADirectoryError as e:

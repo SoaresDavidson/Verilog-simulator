@@ -85,67 +85,62 @@ Dispara a simulação de hardware no container `icarus-verilog` e analisa o arqu
 }
 ```
 
-**Response Payload (`simulation_log`):**
-Retorna um objeto JSON estruturado contendo a simulação completa:
+**Response Payload:**
+
+- **Sucesso (HTTP 200)**: Retorna diretamente o arquivo JSON de simulação (`ciclos.json`) como um fluxo de arquivos (`FileResponse`). O conteúdo do JSON segue a estrutura abaixo:
 ```json
 {
-  "success": true,
-  "stdout": "...logs de compilação...",
-  "stderr": "",
-  "simulation_log": {
-    "metadata": {
-      "timescale": {
-        "timescale": 1e-12,
-        "magnitude": 1,
-        "unit": "ps",
-        "factor": 1e-12
+  "metadata": {
+    "timescale": {
+      "timescale": 1e-12,
+      "magnitude": 1,
+      "unit": "ps",
+      "factor": 1e-12
+    },
+    "begintime": 0,
+    "endtime": 1040000
+  },
+  "modules": {
+    "tb_processador": {
+      "variables": {
+        "clk": {
+          "size": "1",
+          "var_type": "reg",
+          "references": [
+            "tb_processador.clk",
+            "tb_processador.processador.clk"
+          ]
+        }
       },
-      "begintime": 0,
-      "endtime": 1040000
+      "child_scopes": [
+        "tb_processador.processador"
+      ]
+    }
+  },
+  "timeline": {
+    "0": {
+      "tb_processador.clk": "0"
     },
-    "variables": {
-      "tb_processador.clk": {
-        "size": "1",
-        "var_type": "reg",
-        "references": [
-          "tb_processador.clk",
-          "tb_processador.processador.clk"
-        ]
-      }
-    },
-    "modules": {
-      "tb_processador": {
-        "variables": {
-          "clk": {
-            "size": "1",
-            "var_type": "reg",
-            "references": [
-              "tb_processador.clk",
-              "tb_processador.processador.clk"
-            ]
-          }
-        },
-        "subscopes": [
-          "processador"
-        ]
-      }
-    },
-    "timeline": {
-      "0": {
-        "tb_processador.clk": "0"
-      },
-      "10000": {
-        "tb_processador.clk": "1"
-      }
+    "10000": {
+      "tb_processador.clk": "1"
     }
   }
 }
 ```
 
 * **metadata**: Informações da simulação extraídas do cabeçalho do VCD.
-* **variables**: Mapeamento de caminhos de sinais únicos para seus metadados (`size`, `var_type`, etc.).
-* **modules**: Árvore de escopo estrutural do hardware. Mapeia cada escopo (módulo/submódulo) para suas variáveis locais e sub-escopos filhos (`subscopes`).
+* **modules**: Árvore de escopo estrutural do hardware. Mapeia cada escopo (módulo/submódulo) para suas variáveis locais e sub-escopos filhos (`child_scopes`).
 * **timeline**: Histórico de mudanças de estado ciclo a ciclo. Mapeia cada carimbo de tempo (*timestamp*) para os sinais que mudaram de valor naquele instante.
+
+- **Falha de Compilação/Simulação (HTTP 400)**: Retorna um objeto JSON contendo os logs de execução e erros do compilador:
+```json
+{
+  "success": false,
+  "stdout": "...logs de compilação do Icarus Verilog...",
+  "stderr": "...erros ou avisos do Icarus Verilog...",
+  "simulation_log": null
+}
+```
 
 ---
 

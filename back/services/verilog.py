@@ -180,23 +180,21 @@ class VerilogService:
             workdir=container_dir
         )
 
-        # Read the simulation log (either standard JSON or NDJSON/JSON Lines)
-        simulation_log = None
-        
         # 1. Try to find and parse VCD files first
+        json_path = None
         try:
             vcd_files = [f for f in os.listdir(local_dir) if f.endswith(".vcd")]
             if vcd_files:
                 vcd_path = os.path.join(local_dir, vcd_files[0])
-                # print(f"Found VCD file for parsing: {vcd_path}")
-                simulation_log = self._parse_vcd(vcd_path)
+                json_path = os.path.join(local_dir, "ciclos.json")
+                self._parse_vcd(vcd_path, output_path=json_path)
         except Exception as e:
             print(f"Error listing or parsing VCD: {e}")
         return {
             "success": run_res["success"],
             "stdout": run_res["stdout"],
             "stderr": run_res["stderr"],
-            "simulation_log": simulation_log
+            "json_path": json_path
         }
 
     def upload_zip_project(self, zip_bytes: bytes) -> str:
@@ -291,7 +289,7 @@ class VerilogService:
             "errors": errors
         }
 
-    def _parse_vcd(self, vcd_path: str, output_path: str | None = None, debug: bool = False) -> dict | None:
+    def _parse_vcd(self, vcd_path: str, output_path: str | None = None, debug: bool = False) -> str | dict | None:
         from vcdvcd import VCDVCD
         import json
         vcd = VCDVCD(vcd_path, store_scopes=True)
@@ -332,15 +330,20 @@ class VerilogService:
             "modules": modules,
             "timeline": timeline,
         }
+
         class DecimalEncoder(json.JSONEncoder):
-                def default(self, obj):
-                    if isinstance(obj, Decimal):
-                        return float(obj)
-                    return super().default(obj)
+            def default(self, obj):
+                if isinstance(obj, Decimal):
+                    if obj % 1 == 0:
+                        return int(obj)
+                    return float(obj)
+                return super().default(obj)
+
+        if output_path:
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, cls=DecimalEncoder)
+            return output_path
 
         json_str = json.dumps(data, indent=2, cls=DecimalEncoder)
-        if debug:
-            output_path = output_path or "ciclos.json"
-            with open(output_path, "w") as f:
-                f.write(json_str)
         return json.loads(json_str)
+

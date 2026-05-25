@@ -36,7 +36,7 @@ A API do backend fornece endpoints dedicados para gerenciar o upload de códigos
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/v1/verilog/upload-projeto-zip` | `file` (Multipart ZIP) | Valida segurança (*Zip Bomb/Slip*), extrai os arquivos sob `/verilog_code/runs/run_<uuid>` e retorna um `project_id`. |
 | **POST** | `/api/v1/verilog/mapear-processador` | `project_id` (JSON) | Roda o sintetizador **Yosys** dinamicamente para o projeto e retorna o JSON estruturado do netlist. |
-| **POST** | `/api/v1/verilog/simular-execucao` | `project_id` (JSON) | Compila e roda o simulador **Icarus Verilog** e retorna o array JSON contendo o estado dos sinais ciclo a ciclo. |
+| **POST** | `/api/v1/verilog/simular-execucao` | `project_id` (JSON) | Compila e roda o simulador **Icarus Verilog**, retornando os resultados (metadados, escopos e timeline) como stream de arquivo JSON. |
 | **DELETE** | `/api/v1/verilog/projeto/{project_id:path}` | `project_id` (Path) | Exclui permanentemente todos os arquivos temporários criados para a sessão do projeto no host. |
 | **POST** | `/api/v1/verilog/limpar` | Ninguém | Varre a pasta `/verilog_code/runs/` e limpa todas as pastas residuais de execuções antigas. |
 
