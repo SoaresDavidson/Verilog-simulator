@@ -1,12 +1,21 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import {
   ReactFlow,
   Controls,
   Background,
+  MiniMap,
   Handle,
   Position,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   Panel,
   BaseEdge,
   getSmoothStepPath,
@@ -16,114 +25,155 @@ import type { Node, Edge, NodeProps, EdgeProps } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import * as dagre from "dagre";
 
-// ─── ESTILOS INJETADOS ────────────────────────────────────────────────────────
+// ─── CSS INJETADO ─────────────────────────────────────────────────────────────
 const NL_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @keyframes nl-flow { 0% { stroke-dashoffset: 20; } 100% { stroke-dashoffset: 0; } }
-@keyframes nl-glow-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
 @keyframes nl-node-pop { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
+@keyframes nl-pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
 .nl-node { animation: nl-node-pop 0.18s cubic-bezier(.34,1.56,.64,1) both; font-family: 'JetBrains Mono', monospace; }
 .nl-edge-active { stroke-dasharray: 8 4; animation: nl-flow 0.5s linear infinite; }
-.nl-edge-ctrl   { stroke-dasharray: 5 3; animation: nl-flow 1s linear infinite; }
 
+/* ── TOOLBAR ── */
 .nl-toolbar {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(9,14,28,0.95); border: 1px solid rgba(148,163,184,0.15);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  background: #ffffff; border: 1px solid #e2e8f0;
   border-radius: 10px; padding: 6px 10px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px rgba(15,23,42,0.08);
   font-family: 'JetBrains Mono', monospace;
 }
 .nl-btn {
   font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 600;
-  letter-spacing: 0.04em; padding: 5px 10px; border-radius: 6px;
-  border: 1px solid rgba(148,163,184,0.18);
-  background: rgba(20,30,55,0.9); color: #94a3b8;
+  letter-spacing: 0.03em; padding: 5px 10px; border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc; color: #64748b;
   cursor: pointer; transition: all 0.14s; white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
 }
-.nl-btn:hover { background: rgba(40,58,90,0.95); color: #e2e8f0; border-color: rgba(148,163,184,0.35); }
-.nl-btn-on { background: rgba(37,99,235,0.2); color: #60a5fa; border-color: rgba(37,99,235,0.45); }
-.nl-sep { width: 1px; height: 18px; background: rgba(148,163,184,0.12); }
+.nl-btn:hover { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.nl-btn-on { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.nl-btn-danger:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.nl-sep { width: 1px; height: 18px; background: #e2e8f0; flex-shrink: 0; }
 
 .nl-search {
-  background: rgba(20,30,55,0.9); border: 1px solid rgba(148,163,184,0.18);
-  border-radius: 6px; color: #e2e8f0; font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; padding: 5px 9px; outline: none; width: 160px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 6px; color: #0f172a; font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; padding: 5px 9px; outline: none; width: 150px;
   transition: border-color 0.14s;
 }
-.nl-search:focus { border-color: rgba(37,99,235,0.5); }
-.nl-search::placeholder { color: #334155; }
+.nl-search:focus { border-color: #93c5fd; box-shadow: 0 0 0 2px #dbeafe; }
+.nl-search::placeholder { color: #cbd5e1; }
 
-.nl-legend {
-  display: flex; gap: 14px; align-items: center;
-  background: rgba(9,14,28,0.92); border: 1px solid rgba(148,163,184,0.1);
-  border-radius: 8px; padding: 6px 12px;
-  font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #475569;
+/* ── CATEGORY CHIPS ── */
+.nl-cat-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.nl-cat-chip {
+  font-size: 8.5px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
+  border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b;
+  cursor: pointer; transition: all 0.13s; font-family: 'JetBrains Mono'; letter-spacing: 0.04em;
 }
-.nl-legend-item { display: flex; align-items: center; gap: 5px; }
+.nl-cat-chip:hover { border-color: #93c5fd; color: #2563eb; background: #eff6ff; }
+.nl-cat-chip-on { color: #fff !important; border-color: transparent !important; }
+
+/* ── LEGEND ── */
+.nl-legend {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  background: #ffffff; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #64748b;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+}
+.nl-legend-title { font-weight: 700; color: #374151; font-size: 8px; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 2px; }
+.nl-legend-item { display: flex; align-items: center; gap: 4px; }
+.nl-legend-line { width: 18px; height: 3px; border-radius: 2px; flex-shrink: 0; }
 .nl-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
+/* ── TOOLTIP ── */
 .nl-tooltip {
   position: fixed; z-index: 9999; pointer-events: none;
-  background: rgba(9,14,28,0.98); border: 1px solid rgba(148,163,184,0.18);
-  border-radius: 8px; padding: 10px 14px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  background: #ffffff; border: 1px solid #e2e8f0;
+  border-radius: 10px; padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.14);
   min-width: 190px; max-width: 260px;
-  font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #64748b;
 }
-.nl-tt-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: #f1f5f9; margin-bottom: 5px; }
+.nl-tt-title { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 5px; }
 .nl-tt-badge { display: inline-block; font-size: 7.5px; font-weight: 700; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.06em; margin-bottom: 6px; }
 .nl-tt-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
-.nl-tt-key { color: #64748b; }
-.nl-tt-val { color: #34d399; font-weight: 600; }
-.nl-tt-div { border: none; border-top: 1px solid rgba(148,163,184,0.1); margin: 5px 0; }
+.nl-tt-key { color: #94a3b8; }
+.nl-tt-val { color: #2563eb; font-weight: 600; }
+.nl-tt-div { border: none; border-top: 1px solid #f1f5f9; margin: 5px 0; }
 
-/* Info panel */
+/* ── INFO PANEL ── */
 .nl-info {
-  position: absolute; top: 0; right: 0; width: 240px; height: 100%;
-  background: rgba(9,14,28,0.97); border-left: 1px solid rgba(148,163,184,0.1);
-  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #94a3b8;
+  position: absolute; top: 0; right: 0; width: 230px; height: 100%;
+  background: #ffffff; border-left: 1px solid #e2e8f0;
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #64748b;
   display: flex; flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.5); z-index: 50;
+  box-shadow: -4px 0 16px rgba(15,23,42,0.07); z-index: 50;
 }
 .nl-info-hdr {
-  padding: 12px 14px; border-bottom: 1px solid rgba(148,163,184,0.1);
+  padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
   display: flex; justify-content: space-between; align-items: center;
+  background: #f8fafc;
 }
-.nl-info-title { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 800; color: #e2e8f0; letter-spacing: 0.08em; text-transform: uppercase; }
+.nl-info-title { font-size: 10px; font-weight: 700; color: #0f172a; letter-spacing: 0.06em; text-transform: uppercase; }
 .nl-info-body { flex: 1; overflow-y: auto; padding: 12px; }
-.nl-info-body::-webkit-scrollbar { width: 2px; }
-.nl-info-body::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.15); border-radius: 1px; }
-.nl-info-stat { background: rgba(20,30,55,0.6); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
-.nl-info-stat-label { font-size: 8px; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
-.nl-info-stat-val { font-size: 14px; font-weight: 700; color: #60a5fa; }
-.nl-info-ports { margin-top: 10px; }
-.nl-info-port { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(148,163,184,0.05); }
+.nl-info-body::-webkit-scrollbar { width: 3px; }
+.nl-info-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+.nl-info-stat { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
+.nl-info-stat-label { font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+.nl-info-stat-val { font-size: 16px; font-weight: 700; color: #2563eb; }
+.nl-info-stat-val.green { color: #16a34a; }
+.nl-info-ports { margin-top: 6px; }
+.nl-info-port { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f8fafc; }
 .nl-info-port:last-child { border: none; }
-.nl-info-port-name { color: #94a3b8; }
-.nl-info-port-dir { font-size: 8px; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
-.nl-info-port-dir.in  { background: rgba(34,197,94,0.15); color: #4ade80; }
-.nl-info-port-dir.out { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.nl-info-port-name { color: #374151; font-size: 9px; }
+.nl-info-port-dir { font-size: 7.5px; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
+.nl-info-port-dir.in  { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.nl-info-port-dir.out { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.nl-info-sec-label {
+  font-size: 8px; color: #94a3b8; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; margin: 10px 0 5px;
+}
 
-/* ReactFlow overrides */
+/* ── STATS BAR ── */
+.nl-stats-bar {
+  font-family: 'JetBrains Mono'; font-size: 9px; color: #64748b;
+  background: #ffffff; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 6px 12px;
+  display: flex; gap: 14px;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+}
+.nl-stats-bar b { font-weight: 700; }
+
+/* ── HIGHLIGHTED NODES ── */
+.nl-node-highlighted { box-shadow: 0 0 0 2px #2563eb, 0 0 12px #2563eb40; border-radius: 6px; }
+
+/* ── REACTFLOW LIGHT OVERRIDES ── */
 .nl-canvas .react-flow__controls {
-  background: rgba(9,14,28,0.95) !important; border: 1px solid rgba(148,163,184,0.12) !important;
-  border-radius: 8px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  background: #ffffff !important; border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important; box-shadow: 0 2px 8px rgba(15,23,42,0.08) !important;
 }
 .nl-canvas .react-flow__controls-button {
-  background: transparent !important; border-color: rgba(148,163,184,0.08) !important;
-  fill: #475569 !important;
+  background: transparent !important; border-color: #f1f5f9 !important;
+  fill: #94a3b8 !important;
 }
-.nl-canvas .react-flow__controls-button:hover { background: rgba(30,45,80,0.7) !important; fill: #94a3b8 !important; }
-.nl-canvas .react-flow__background { opacity: 0.5 !important; }
+.nl-canvas .react-flow__controls-button:hover { background: #f8fafc !important; fill: #374151 !important; }
+.nl-canvas .react-flow__minimap {
+  background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important; box-shadow: 0 2px 8px rgba(15,23,42,0.08) !important;
+  overflow: hidden;
+}
+.nl-canvas .react-flow__background { opacity: 0.6 !important; }
+.nl-canvas .react-flow__edge-path { transition: stroke 0.2s, stroke-width 0.2s; }
 `;
 
 function injectNLCSS() {
-  if (document.getElementById("nl-styles")) return;
+  if (document.getElementById("nl-styles-light")) return;
   const s = document.createElement("style");
-  s.id = "nl-styles";
+  s.id = "nl-styles-light";
   s.textContent = NL_CSS;
   document.head.appendChild(s);
 }
@@ -141,6 +191,7 @@ interface NLNodeData extends Record<string, unknown> {
   cellName: string;
   isActive: boolean;
   isDimmed: boolean;
+  isHighlighted: boolean;
   ports: Array<{ name: string; dir: "input" | "output" }>;
   bits: number;
 }
@@ -148,12 +199,46 @@ interface NLNodeData extends Record<string, unknown> {
 interface NLEdgeData extends Record<string, unknown> {
   isActive: boolean;
   bitWidth?: number;
+  busType: "data" | "ctrl" | "clock" | "reset" | "output" | "wire";
+  isHighlighted: boolean;
+}
+
+// ─── CORES DOS BARRAMENTOS ────────────────────────────────────────────────────
+const BUS_COLORS: Record<string, string> = {
+  data: "#2563eb", // azul — dados
+  ctrl: "#d97706", // âmbar — controle
+  clock: "#16a34a", // verde — clock
+  reset: "#dc2626", // vermelho — reset
+  output: "#7c3aed", // roxo — saída
+  wire: "#94a3b8", // cinza — wire genérico
+};
+
+const BUS_LABELS: Record<string, string> = {
+  data: "Dados",
+  ctrl: "Controle",
+  clock: "Clock",
+  reset: "Reset",
+  output: "Saída",
+  wire: "Wire",
+};
+
+function classifyBus(
+  portName: string,
+): "data" | "ctrl" | "clock" | "reset" | "output" | "wire" {
+  const n = portName.toLowerCase();
+  if (/clk|clock/.test(n)) return "clock";
+  if (/rst|reset/.test(n)) return "reset";
+  if (/ctrl|control|sel|op|func|alu_op|funct/.test(n)) return "ctrl";
+  if (/out|result|q\b|y\b/.test(n)) return "output";
+  if (/data|bus|a\b|b\b|in\b|din|dout|mem|imm|addr/.test(n)) return "data";
+  return "wire";
 }
 
 // ─── CATEGORIA → VISUAL ───────────────────────────────────────────────────────
 interface CategoryConfig {
   color: string;
   bg: string;
+  border: string;
   badge: string;
   shape: "rect" | "trapezoid" | "diamond" | "ellipse" | "dshape";
 }
@@ -161,42 +246,190 @@ interface CategoryConfig {
 function getCategory(type: string): CategoryConfig {
   const t = type.toLowerCase().replace(/^\$/, "");
   if (/^(dff|sdff|adff|dffe)/.test(t))
-    return { color: "#f59e0b", bg: "#1a1000", badge: "DFF", shape: "rect" };
+    return {
+      color: "#d97706",
+      bg: "#fffbeb",
+      border: "#fde68a",
+      badge: "DFF",
+      shape: "rect",
+    };
   if (/^(mux|pmux|ternary)/.test(t))
     return {
-      color: "#a855f7",
-      bg: "#130a20",
+      color: "#9333ea",
+      bg: "#faf5ff",
+      border: "#e9d5ff",
       badge: "MUX",
       shape: "trapezoid",
     };
   if (/^(add|sub)/.test(t))
-    return { color: "#22c55e", bg: "#061408", badge: "ARITH", shape: "dshape" };
+    return {
+      color: "#16a34a",
+      bg: "#f0fdf4",
+      border: "#bbf7d0",
+      badge: "ARITH",
+      shape: "dshape",
+    };
   if (/^(mul|div)/.test(t))
-    return { color: "#10b981", bg: "#041210", badge: "ARITH", shape: "dshape" };
+    return {
+      color: "#059669",
+      bg: "#ecfdf5",
+      border: "#a7f3d0",
+      badge: "ARITH",
+      shape: "dshape",
+    };
   if (/^(and|or|xor|not|nand|nor)/.test(t))
-    return { color: "#3b82f6", bg: "#050f20", badge: "GATE", shape: "ellipse" };
+    return {
+      color: "#2563eb",
+      bg: "#eff6ff",
+      border: "#bfdbfe",
+      badge: "GATE",
+      shape: "ellipse",
+    };
   if (/^(shl|shr|sshl|sshr)/.test(t))
     return {
-      color: "#06b6d4",
-      bg: "#031014",
+      color: "#0891b2",
+      bg: "#ecfeff",
+      border: "#a5f3fc",
       badge: "SHIFT",
       shape: "diamond",
     };
   if (/^(lt|le|gt|ge|eq|ne)/.test(t))
-    return { color: "#ec4899", bg: "#180810", badge: "CMP", shape: "diamond" };
+    return {
+      color: "#e11d48",
+      bg: "#fff1f2",
+      border: "#fecdd3",
+      badge: "CMP",
+      shape: "diamond",
+    };
   if (/^(reduce)/.test(t))
     return {
-      color: "#f97316",
-      bg: "#180900",
+      color: "#ea580c",
+      bg: "#fff7ed",
+      border: "#fed7aa",
       badge: "REDUCE",
       shape: "ellipse",
     };
   if (/^(mem|memrd|memwr)/.test(t))
-    return { color: "#14b8a6", bg: "#03120f", badge: "MEM", shape: "rect" };
-  return { color: "#64748b", bg: "#0c1118", badge: "CELL", shape: "rect" };
+    return {
+      color: "#0d9488",
+      bg: "#f0fdfa",
+      border: "#99f6e4",
+      badge: "MEM",
+      shape: "rect",
+    };
+  return {
+    color: "#64748b",
+    bg: "#f8fafc",
+    border: "#e2e8f0",
+    badge: "CELL",
+    shape: "rect",
+  };
 }
 
-// ─── TOOLTIP GLOBAL ───────────────────────────────────────────────────────────
+const ALL_CATEGORIES = [
+  "DFF",
+  "MUX",
+  "ARITH",
+  "GATE",
+  "SHIFT",
+  "CMP",
+  "MEM",
+  "CELL",
+];
+const CAT_COLORS: Record<string, string> = {
+  DFF: "#d97706",
+  MUX: "#9333ea",
+  ARITH: "#16a34a",
+  GATE: "#2563eb",
+  SHIFT: "#0891b2",
+  CMP: "#e11d48",
+  MEM: "#0d9488",
+  CELL: "#64748b",
+};
+
+// ─── ÍCONES SVG ───────────────────────────────────────────────────────────────
+const IcClose = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+  >
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IcInfo = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+const IcFit = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+  </svg>
+);
+const IcMap = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+    <line x1="8" y1="2" x2="8" y2="18" />
+    <line x1="16" y1="6" x2="16" y2="22" />
+  </svg>
+);
+const IcFilter = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+const IcFlash = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <polygon
+      points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+// ─── TOOLTIP ──────────────────────────────────────────────────────────────────
 interface TooltipInfo {
   visible: boolean;
   x: number;
@@ -244,7 +477,7 @@ function TooltipProvider({ children }: { children: React.ReactNode }) {
           <span
             className="nl-tt-badge"
             style={{
-              background: `${tip.color}20`,
+              background: `${tip.color}18`,
               color: tip.color,
               border: `1px solid ${tip.color}40`,
             }}
@@ -264,9 +497,9 @@ function TooltipProvider({ children }: { children: React.ReactNode }) {
             <span className="nl-tt-key">status</span>
             <span
               className="nl-tt-val"
-              style={{ color: tip.isActive ? "#34d399" : "#475569" }}
+              style={{ color: tip.isActive ? "#16a34a" : "#94a3b8" }}
             >
-              {tip.isActive ? "● ativo" : "○ idle"}
+              {tip.isActive ? "ativo" : "idle"}
             </span>
           </div>
           {tip.ports.length > 0 && (
@@ -281,11 +514,9 @@ function TooltipProvider({ children }: { children: React.ReactNode }) {
                       padding: "1px 5px",
                       borderRadius: 2,
                       fontWeight: 700,
-                      background:
-                        p.dir === "input"
-                          ? "rgba(34,197,94,0.15)"
-                          : "rgba(245,158,11,0.15)",
-                      color: p.dir === "input" ? "#4ade80" : "#fbbf24",
+                      background: p.dir === "input" ? "#f0fdf4" : "#fffbeb",
+                      color: p.dir === "input" ? "#16a34a" : "#d97706",
+                      border: `1px solid ${p.dir === "input" ? "#bbf7d0" : "#fde68a"}`,
                     }}
                   >
                     {p.dir.toUpperCase()}
@@ -294,7 +525,7 @@ function TooltipProvider({ children }: { children: React.ReactNode }) {
               ))}
               {tip.ports.length > 5 && (
                 <div
-                  style={{ color: "#334155", fontSize: "8px", marginTop: 3 }}
+                  style={{ color: "#94a3b8", fontSize: "8px", marginTop: 3 }}
                 >
                   +{tip.ports.length - 5} portas
                 </div>
@@ -307,10 +538,11 @@ function TooltipProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── NODE SHAPES ──────────────────────────────────────────────────────────────
+// ─── NODE SHAPES (LIGHT THEME) ────────────────────────────────────────────────
 const NodeShapeRect = ({
   color,
   bg,
+  border,
   isActive,
   isDimmed,
   w = 140,
@@ -332,18 +564,12 @@ const NodeShapeRect = ({
       y="1.5"
       width={w - 3}
       height={h - 3}
-      rx="5"
-      fill={bg}
-      stroke={
-        isActive
-          ? color
-          : isDimmed
-            ? "rgba(71,85,105,0.3)"
-            : "rgba(71,85,105,0.55)"
-      }
+      rx="6"
+      fill={isDimmed ? "#f8fafc" : bg}
+      stroke={isActive ? color : isDimmed ? "#e2e8f0" : border}
       strokeWidth={isActive ? 2.5 : 1.5}
       style={{
-        filter: isActive ? `drop-shadow(0 0 10px ${color}70)` : "none",
+        filter: isActive ? `drop-shadow(0 0 8px ${color}50)` : "none",
         transition: "all 0.2s",
       }}
     />
@@ -353,9 +579,9 @@ const NodeShapeRect = ({
         y="1.5"
         width={w - 3}
         height={4}
-        rx="2"
+        rx="3"
         fill={color}
-        opacity="0.7"
+        opacity="0.8"
       />
     )}
   </svg>
@@ -364,6 +590,7 @@ const NodeShapeRect = ({
 const NodeShapeTrapezoid = ({
   color,
   bg,
+  border,
   isActive,
   isDimmed,
   w = 38,
@@ -382,17 +609,11 @@ const NodeShapeTrapezoid = ({
   >
     <path
       d={`M 2,6 L ${w - 2},${h * 0.16} L ${w - 2},${h * 0.84} L 2,${h - 6} Z`}
-      fill={bg}
-      stroke={
-        isActive
-          ? color
-          : isDimmed
-            ? "rgba(71,85,105,0.3)"
-            : "rgba(71,85,105,0.55)"
-      }
+      fill={isDimmed ? "#f8fafc" : bg}
+      stroke={isActive ? color : isDimmed ? "#e2e8f0" : border}
       strokeWidth={isActive ? 2.5 : 1.5}
       style={{
-        filter: isActive ? `drop-shadow(0 0 9px ${color}70)` : "none",
+        filter: isActive ? `drop-shadow(0 0 8px ${color}50)` : "none",
         transition: "all 0.2s",
       }}
     />
@@ -402,6 +623,7 @@ const NodeShapeTrapezoid = ({
 const NodeShapeDiamond = ({
   color,
   bg,
+  border,
   isActive,
   isDimmed,
   w = 110,
@@ -420,17 +642,11 @@ const NodeShapeDiamond = ({
   >
     <path
       d={`M ${w / 2},3 L ${w - 3},${h / 2} L ${w / 2},${h - 3} L 3,${h / 2} Z`}
-      fill={bg}
-      stroke={
-        isActive
-          ? color
-          : isDimmed
-            ? "rgba(71,85,105,0.3)"
-            : "rgba(71,85,105,0.55)"
-      }
+      fill={isDimmed ? "#f8fafc" : bg}
+      stroke={isActive ? color : isDimmed ? "#e2e8f0" : border}
       strokeWidth={isActive ? 2.5 : 1.5}
       style={{
-        filter: isActive ? `drop-shadow(0 0 9px ${color}70)` : "none",
+        filter: isActive ? `drop-shadow(0 0 8px ${color}50)` : "none",
         transition: "all 0.2s",
       }}
     />
@@ -440,6 +656,7 @@ const NodeShapeDiamond = ({
 const NodeShapeEllipse = ({
   color,
   bg,
+  border,
   isActive,
   isDimmed,
   w = 120,
@@ -461,17 +678,11 @@ const NodeShapeEllipse = ({
       cy={h / 2}
       rx={w / 2 - 2}
       ry={h / 2 - 2}
-      fill={bg}
-      stroke={
-        isActive
-          ? color
-          : isDimmed
-            ? "rgba(71,85,105,0.3)"
-            : "rgba(71,85,105,0.55)"
-      }
+      fill={isDimmed ? "#f8fafc" : bg}
+      stroke={isActive ? color : isDimmed ? "#e2e8f0" : border}
       strokeWidth={isActive ? 2.5 : 1.5}
       style={{
-        filter: isActive ? `drop-shadow(0 0 9px ${color}70)` : "none",
+        filter: isActive ? `drop-shadow(0 0 8px ${color}50)` : "none",
         transition: "all 0.2s",
       }}
     />
@@ -481,6 +692,7 @@ const NodeShapeEllipse = ({
 const NodeShapeDShape = ({
   color,
   bg,
+  border,
   isActive,
   isDimmed,
   w = 100,
@@ -499,35 +711,36 @@ const NodeShapeDShape = ({
   >
     <path
       d={`M 3,3 L ${w * 0.75},${h * 0.2} L ${w * 0.75},${h * 0.8} L 3,${h - 3} L 3,${h * 0.65} L ${w * 0.25},${h / 2} L 3,${h * 0.35} Z`}
-      fill={bg}
-      stroke={
-        isActive
-          ? color
-          : isDimmed
-            ? "rgba(71,85,105,0.3)"
-            : "rgba(71,85,105,0.55)"
-      }
+      fill={isDimmed ? "#f8fafc" : bg}
+      stroke={isActive ? color : isDimmed ? "#e2e8f0" : border}
       strokeWidth={isActive ? 2.5 : 1.5}
       strokeLinejoin="round"
       style={{
-        filter: isActive ? `drop-shadow(0 0 10px ${color}70)` : "none",
+        filter: isActive ? `drop-shadow(0 0 8px ${color}50)` : "none",
         transition: "all 0.2s",
       }}
     />
   </svg>
 );
 
-// ─── PORT NODE (entradas/saídas do módulo) ────────────────────────────────────
+// ─── PORT NODE ────────────────────────────────────────────────────────────────
 const PortNode = React.memo(({ data }: NodeProps) => {
   const d = data as NLNodeData;
   const { show, hide } = React.useContext(TooltipCtx);
   const isIn = d.nodeType === "input";
-  const color = isIn ? "#22c55e" : "#f59e0b";
-  const bg = isIn ? "#041208" : "#100800";
-
+  const color = isIn ? "#16a34a" : "#d97706";
+  const bg = isIn ? "#f0fdf4" : "#fffbeb";
+  const border = isIn ? "#bbf7d0" : "#fde68a";
   return (
     <div
       className="nl-node"
+      style={{
+        opacity: d.isDimmed ? 0.25 : 1,
+        transition: "opacity 0.2s",
+        position: "relative",
+        width: 120,
+        height: 52,
+      }}
       onMouseMove={(e) =>
         show({
           x: e.clientX,
@@ -542,18 +755,24 @@ const PortNode = React.memo(({ data }: NodeProps) => {
         })
       }
       onMouseLeave={hide}
-      style={{
-        opacity: d.isDimmed ? 0.28 : 1,
-        transition: "opacity 0.2s",
-        position: "relative",
-        width: 120,
-        height: 52,
-      }}
       aria-label={`Port ${d.label} ${isIn ? "input" : "output"}`}
     >
+      {d.isHighlighted && (
+        <div
+          style={{
+            position: "absolute",
+            inset: -2,
+            borderRadius: 8,
+            border: `2px solid #2563eb`,
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        />
+      )}
       <NodeShapeRect
         color={color}
         bg={bg}
+        border={border}
         isActive={d.isActive}
         isDimmed={d.isDimmed}
         w={120}
@@ -565,7 +784,7 @@ const PortNode = React.memo(({ data }: NodeProps) => {
           padding: "6px 10px",
           display: "flex",
           flexDirection: "column",
-          gap: 1,
+          gap: 2,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -574,7 +793,7 @@ const PortNode = React.memo(({ data }: NodeProps) => {
               fontSize: "7px",
               fontWeight: 700,
               letterSpacing: "0.06em",
-              background: `${color}20`,
+              background: `${color}18`,
               color,
               padding: "1px 5px",
               borderRadius: 2,
@@ -590,7 +809,8 @@ const PortNode = React.memo(({ data }: NodeProps) => {
                 height: 5,
                 borderRadius: "50%",
                 background: color,
-                boxShadow: `0 0 6px ${color}`,
+                boxShadow: `0 0 4px ${color}`,
+                animation: "nl-pulse-dot 1s infinite",
               }}
             />
           )}
@@ -599,7 +819,7 @@ const PortNode = React.memo(({ data }: NodeProps) => {
           style={{
             fontSize: "10px",
             fontWeight: 700,
-            color: d.isActive ? color : "#e2e8f0",
+            color: d.isActive ? color : "#374151",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -617,7 +837,7 @@ const PortNode = React.memo(({ data }: NodeProps) => {
             background: color,
             width: 8,
             height: 8,
-            border: `2px solid ${bg}`,
+            border: `2px solid white`,
           }}
         />
       )}
@@ -629,7 +849,7 @@ const PortNode = React.memo(({ data }: NodeProps) => {
             background: color,
             width: 8,
             height: 8,
-            border: `2px solid ${bg}`,
+            border: `2px solid white`,
           }}
         />
       )}
@@ -637,12 +857,11 @@ const PortNode = React.memo(({ data }: NodeProps) => {
   );
 });
 
-// ─── LOGIC NODE (células internas) ────────────────────────────────────────────
+// ─── LOGIC NODE ───────────────────────────────────────────────────────────────
 const LogicNode = React.memo(({ data }: NodeProps) => {
   const d = data as NLNodeData;
   const { show, hide } = React.useContext(TooltipCtx);
   const cfg = getCategory(d.nodeType);
-
   const dims: Record<string, { w: number; h: number }> = {
     trapezoid: { w: 38, h: 90 },
     diamond: { w: 110, h: 60 },
@@ -651,7 +870,6 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
     rect: { w: 140, h: 72 },
   };
   const { w, h } = dims[cfg.shape];
-
   const ShapeMap: Record<string, React.FC<any>> = {
     rect: NodeShapeRect,
     trapezoid: NodeShapeTrapezoid,
@@ -660,13 +878,20 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
     dshape: NodeShapeDShape,
   };
   const Shape = ShapeMap[cfg.shape];
-
   const labelX =
     cfg.shape === "trapezoid" ? "55%" : cfg.shape === "dshape" ? "62%" : "50%";
 
   return (
     <div
       className="nl-node"
+      style={{
+        opacity: d.isDimmed ? 0.2 : 1,
+        transition: "opacity 0.2s, transform 0.2s",
+        transform: d.isActive ? "scale(1.02)" : "scale(1)",
+        position: "relative",
+        width: w,
+        height: h,
+      }}
       onMouseMove={(e) =>
         show({
           x: e.clientX,
@@ -681,26 +906,29 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
         })
       }
       onMouseLeave={hide}
-      style={{
-        opacity: d.isDimmed ? 0.2 : 1,
-        transition: "opacity 0.2s, transform 0.2s",
-        transform: d.isActive ? "scale(1.02)" : "scale(1)",
-        position: "relative",
-        width: w,
-        height: h,
-      }}
       aria-label={`${cfg.badge} cell ${d.cellName}`}
     >
+      {d.isHighlighted && (
+        <div
+          style={{
+            position: "absolute",
+            inset: -2,
+            borderRadius: 8,
+            border: `2px solid #2563eb`,
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        />
+      )}
       <Shape
         color={cfg.color}
         bg={cfg.bg}
+        border={cfg.border}
         isActive={d.isActive}
         isDimmed={d.isDimmed}
         w={w}
         h={h}
       />
-
-      {/* Label content */}
       <div
         style={{
           position: "absolute",
@@ -718,7 +946,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
             fontSize: "7px",
             fontWeight: 700,
             letterSpacing: "0.07em",
-            background: d.isActive ? cfg.color : "rgba(71,85,105,0.4)",
+            background: d.isActive ? cfg.color : `${cfg.color}18`,
             color: d.isActive ? "#fff" : cfg.color,
             padding: "1px 5px",
             borderRadius: 2,
@@ -730,7 +958,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
           style={{
             fontSize: cfg.shape === "trapezoid" ? "7px" : "10px",
             fontWeight: 700,
-            color: d.isActive ? cfg.color : "#cbd5e1",
+            color: d.isActive ? cfg.color : "#374151",
             transform: cfg.shape === "trapezoid" ? "rotate(-90deg)" : "none",
             textAlign: "center",
             maxWidth: cfg.shape === "trapezoid" ? 24 : "90%",
@@ -746,7 +974,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
           <span
             style={{
               fontSize: "7px",
-              color: "#334155",
+              color: "#94a3b8",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -757,7 +985,6 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
           </span>
         )}
       </div>
-
       <Handle
         type="target"
         position={Position.Left}
@@ -765,7 +992,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
           background: cfg.color,
           width: 8,
           height: 8,
-          border: `2px solid ${cfg.bg}`,
+          border: `2px solid white`,
         }}
       />
       <Handle
@@ -775,7 +1002,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
           background: cfg.color,
           width: 8,
           height: 8,
-          border: `2px solid ${cfg.bg}`,
+          border: `2px solid white`,
         }}
       />
     </div>
@@ -784,7 +1011,7 @@ const LogicNode = React.memo(({ data }: NodeProps) => {
 
 const NODE_TYPES = { portNode: PortNode, logicNode: LogicNode };
 
-// ─── CUSTOM EDGE ──────────────────────────────────────────────────────────────
+// ─── CUSTOM EDGE COM BARRAMENTOS COLORIDOS ───────────────────────────────────
 const NLEdge = React.memo(
   ({
     id,
@@ -806,8 +1033,16 @@ const NLEdge = React.memo(
       targetY,
       targetPosition,
     });
-    const color = d.isActive ? "#3b82f6" : "rgba(71,85,105,0.4)";
-    const w = d.isActive ? 2.5 : 1.2;
+    const busColor = d.isHighlighted
+      ? "#2563eb"
+      : d.isActive
+        ? BUS_COLORS[d.busType]
+        : "#cbd5e1";
+    const sw = d.isHighlighted
+      ? 3
+      : d.isActive
+        ? Math.min(4, 1 + Math.log2((d.bitWidth ?? 1) + 1))
+        : 1;
     return (
       <>
         <BaseEdge
@@ -816,14 +1051,16 @@ const NLEdge = React.memo(
           markerEnd={markerEnd}
           className={d.isActive ? "nl-edge-active" : ""}
           style={{
-            stroke: color,
-            strokeWidth: w,
-            filter: d.isActive ? "drop-shadow(0 0 4px #3b82f6)" : "none",
-            strokeDasharray: d.isActive ? "8 4" : "none",
+            stroke: busColor,
+            strokeWidth: sw,
+            filter:
+              d.isActive || d.isHighlighted
+                ? `drop-shadow(0 0 3px ${busColor}60)`
+                : "none",
             transition: "stroke 0.2s, stroke-width 0.2s",
           }}
         />
-        {d.isActive && d.bitWidth && d.bitWidth > 1 && (
+        {(d.isActive || d.isHighlighted) && d.bitWidth && d.bitWidth > 1 && (
           <EdgeLabelRenderer>
             <div
               style={{
@@ -833,11 +1070,11 @@ const NLEdge = React.memo(
                 fontFamily: "JetBrains Mono",
                 fontSize: "7px",
                 fontWeight: 700,
-                color: "#3b82f6",
-                background: "#050c1a",
+                color: busColor,
+                background: "#ffffff",
                 padding: "1px 4px",
                 borderRadius: 3,
-                border: "1px solid rgba(59,130,246,0.35)",
+                border: `1px solid ${busColor}40`,
               }}
             >
               [{d.bitWidth - 1}:0]
@@ -850,7 +1087,7 @@ const NLEdge = React.memo(
 );
 const EDGE_TYPES = { nlEdge: NLEdge };
 
-// ─── AUTO-LAYOUT (DAGRE) ──────────────────────────────────────────────────────
+// ─── LAYOUT DAGRE ─────────────────────────────────────────────────────────────
 function layoutGraph(nodes: Node[], edges: Edge[]) {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
@@ -895,8 +1132,9 @@ function layoutGraph(nodes: Node[], edges: Edge[]) {
 function parseNetlist(
   netlist: any,
   activeSignals: Record<string, string>,
-  filter: string,
-  showDimmed: boolean,
+  catFilter: string,
+  textFilter: string,
+  showOnlyActive: boolean,
 ) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -907,7 +1145,8 @@ function parseNetlist(
 
   const modName = Object.keys(netlist.modules ?? {})[0];
   const mod = netlist.modules[modName];
-  if (!mod) return { nodes: [], edges: [] };
+  if (!mod)
+    return { nodes: [], edges: [], modName: "", cellCount: 0, portCount: 0 };
 
   const activeKeys = Object.keys(activeSignals ?? {}).map((k) =>
     k.toLowerCase(),
@@ -917,9 +1156,10 @@ function parseNetlist(
       (k) => k.endsWith(`.${name.toLowerCase()}`) || k === name.toLowerCase(),
     );
 
-  const flt = filter.toLowerCase();
-  const matchFilter = (name: string) =>
-    !flt || name.toLowerCase().includes(flt);
+  const matchText = (name: string) =>
+    !textFilter || name.toLowerCase().includes(textFilter.toLowerCase());
+  const matchCat = (type: string) =>
+    !catFilter || getCategory(type).badge === catFilter;
 
   // 1. Input ports
   Object.entries(mod.ports ?? {}).forEach(([pName, pData]: [string, any]) => {
@@ -932,7 +1172,7 @@ function parseNetlist(
       pData.bits.forEach((b: any) => {
         bitToSource[String(b)] = `port-${pName}`;
       });
-      if (matchFilter(pName))
+      if (matchText(pName))
         nodes.push({
           id: `port-${pName}`,
           type: "portNode",
@@ -943,6 +1183,7 @@ function parseNetlist(
             cellName: pName,
             isActive: active,
             isDimmed: false,
+            isHighlighted: false,
             ports: [{ name: pName, dir: "input" }],
             bits: pData.bits.length,
           } as NLNodeData,
@@ -966,6 +1207,9 @@ function parseNetlist(
   Object.entries(mod.cells ?? {}).forEach(([cName, cData]: [string, any]) => {
     const active = isCellActive(cData);
     const cfg = getCategory(cData.type);
+    if (showOnlyActive && !active) return;
+    if (!matchCat(cData.type)) return;
+    if (!matchText(cName) && !matchText(cData.type)) return;
     const ports = Object.entries(cData.port_directions ?? {}).map(([k, v]) => ({
       name: k,
       dir: v as any,
@@ -975,25 +1219,22 @@ function parseNetlist(
         Array.isArray(b) ? b.length : 1,
       ),
     );
-
-    if (matchFilter(cName) || matchFilter(cData.type)) {
-      nodes.push({
-        id: cName,
-        type: "logicNode",
-        data: {
-          label: cData.type.replace(/^\$/, "").toUpperCase(),
-          category: cData.type,
-          nodeType: cData.type,
-          cellName: cName,
-          isActive: active,
-          isDimmed: false,
-          ports,
-          bits: maxBits,
-        } as NLNodeData,
-        position: { x: 0, y: 0 },
-      });
-    }
-
+    nodes.push({
+      id: cName,
+      type: "logicNode",
+      data: {
+        label: cData.type.replace(/^\$/, "").toUpperCase(),
+        category: cData.type,
+        nodeType: cData.type,
+        cellName: cName,
+        isActive: active,
+        isDimmed: false,
+        isHighlighted: false,
+        ports,
+        bits: maxBits,
+      } as NLNodeData,
+      position: { x: 0, y: 0 },
+    });
     Object.entries(cData.connections ?? {}).forEach(
       ([port, bits]: [string, any]) => {
         if (cData.port_directions?.[port] === "output")
@@ -1008,7 +1249,7 @@ function parseNetlist(
   Object.entries(mod.ports ?? {}).forEach(([pName, pData]: [string, any]) => {
     if (pData.direction === "output") {
       const active = activePorts.has(pName);
-      if (matchFilter(pName))
+      if (matchText(pName))
         nodes.push({
           id: `port-${pName}`,
           type: "portNode",
@@ -1019,6 +1260,7 @@ function parseNetlist(
             cellName: pName,
             isActive: active,
             isDimmed: false,
+            isHighlighted: false,
             ports: [{ name: pName, dir: "output" }],
             bits: pData.bits.length,
           } as NLNodeData,
@@ -1047,6 +1289,7 @@ function parseNetlist(
           if (edgeSet.has(eid)) return;
           edgeSet.add(eid);
           const active = checkActive(src, cName);
+          const busType = classifyBus(port);
           edges.push({
             id: `e-${eid}`,
             source: src,
@@ -1055,12 +1298,14 @@ function parseNetlist(
             data: {
               isActive: active,
               bitWidth: Array.isArray(bits) ? bits.length : 1,
+              busType,
+              isHighlighted: false,
             } as NLEdgeData,
             markerEnd: {
               type: "arrowclosed" as any,
-              width: 9,
-              height: 9,
-              color: active ? "#3b82f6" : "rgba(71,85,105,0.4)",
+              width: 8,
+              height: 8,
+              color: active ? BUS_COLORS[busType] : "#cbd5e1",
             },
           });
         });
@@ -1083,38 +1328,36 @@ function parseNetlist(
         source: src,
         target: `port-${pName}`,
         type: "nlEdge",
-        data: { isActive: active, bitWidth: pData.bits.length } as NLEdgeData,
+        data: {
+          isActive: active,
+          bitWidth: pData.bits.length,
+          busType: "output",
+          isHighlighted: false,
+        } as NLEdgeData,
         markerEnd: {
           type: "arrowclosed" as any,
-          width: 9,
-          height: 9,
-          color: active ? "#22c55e" : "rgba(71,85,105,0.4)",
+          width: 8,
+          height: 8,
+          color: active ? BUS_COLORS.output : "#cbd5e1",
         },
       });
     });
   });
 
-  // Apply dimming: if anything is active, dim everything else
+  // Apply dimming
   const hasAnyActive = nodes.some((n) => (n.data as NLNodeData).isActive);
-  if (hasAnyActive) {
+  if (hasAnyActive)
     nodes.forEach((n) => {
       (n.data as NLNodeData).isDimmed = !(n.data as NLNodeData).isActive;
     });
-  }
-  if (!showDimmed && hasAnyActive) {
-    // filter to only active + 1-hop neighbors
-    const activeNodeIds = new Set(
-      nodes.filter((n) => (n.data as NLNodeData).isActive).map((n) => n.id),
-    );
-    edges.forEach((e) => {
-      if (e.data && (e.data as NLEdgeData).isActive) {
-        activeNodeIds.add(e.source);
-        activeNodeIds.add(e.target);
-      }
-    });
-  }
 
-  return { nodes, edges };
+  return {
+    nodes,
+    edges,
+    modName,
+    cellCount: Object.keys(mod.cells ?? {}).length,
+    portCount: Object.keys(mod.ports ?? {}).length,
+  };
 }
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
@@ -1127,7 +1370,7 @@ function getNetlistStats(netlist: any) {
   const ports = Object.entries(mod.ports ?? {});
   const categories: Record<string, number> = {};
   cells.forEach(([, cd]: [string, any]) => {
-    const cat = getCategory(cd.type).badge;
+    const cat = getCategory((cd as any).type).badge;
     categories[cat] = (categories[cat] ?? 0) + 1;
   });
   return {
@@ -1135,27 +1378,59 @@ function getNetlistStats(netlist: any) {
     cellCount: cells.length,
     portCount: ports.length,
     categories,
-    inputPorts: ports.filter(
-      ([, pd]: [string, any]) => pd.direction === "input",
-    ).length,
-    outputPorts: ports.filter(
-      ([, pd]: [string, any]) => pd.direction === "output",
-    ).length,
     allPorts: ports,
   };
 }
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function NetlistViewer({
+// ─── FIT VIEW BUTTON ──────────────────────────────────────────────────────────
+function FitViewButton() {
+  const { fitView } = useReactFlow();
+  return (
+    <button
+      className="nl-btn"
+      onClick={() => fitView({ padding: 0.15, duration: 400 })}
+      title="Ajustar visualização"
+    >
+      <IcFit /> Fit
+    </button>
+  );
+}
+
+// Hook para fitView com delay após mudança de nós
+function useDelayedFitView(nodes: Node[]) {
+  const { fitView } = useReactFlow();
+  const prevLen = useRef(0);
+  useEffect(() => {
+    if (nodes.length > 0 && nodes.length !== prevLen.current) {
+      prevLen.current = nodes.length;
+      const t = setTimeout(
+        () => fitView({ padding: 0.15, duration: 400 }),
+        120,
+      );
+      return () => clearTimeout(t);
+    }
+  }, [nodes.length, fitView]);
+}
+
+// ─── INNER COMPONENT (precisa de ReactFlowProvider) ───────────────────────────
+function NetlistViewerInner({
   netlistJson,
   activeSignals = {},
 }: NetlistViewerProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [filter, setFilter] = useState("");
+  useDelayedFitView(nodes);
+  const [textFilter, setTextFilter] = useState("");
+  const [catFilter, setCatFilter] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [showOnlyActive, setShowOnlyActive] = useState(false);
-  const [layout, setLayout] = useState<"LR" | "TB">("LR");
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [parsedMeta, setParsedMeta] = useState<{
+    modName: string;
+    cellCount: number;
+    portCount: number;
+  } | null>(null);
   const stats = useMemo(() => getNetlistStats(netlistJson), [netlistJson]);
 
   useEffect(() => {
@@ -1164,24 +1439,76 @@ export default function NetlistViewer({
 
   useEffect(() => {
     if (!netlistJson?.modules) return;
-    const { nodes: rawN, edges: rawE } = parseNetlist(
+    const {
+      nodes: rawN,
+      edges: rawE,
+      modName,
+      cellCount,
+      portCount,
+    } = parseNetlist(
       netlistJson,
       activeSignals,
-      filter,
-      !showOnlyActive,
+      catFilter,
+      textFilter,
+      showOnlyActive,
     );
     const laid = layoutGraph(rawN, rawE);
     setNodes(laid);
     setEdges(rawE);
+    setParsedMeta({ modName, cellCount, portCount });
+    setSelectedNodeId(null);
   }, [
     netlistJson,
     activeSignals,
-    filter,
+    catFilter,
+    textFilter,
     showOnlyActive,
-    layout,
     setNodes,
     setEdges,
   ]);
+
+  // Highlight 1-hop neighbors on node click
+  const handleNodeClick = useCallback((_: any, node: Node) => {
+    const nid = node.id;
+    setSelectedNodeId((prev) => (prev === nid ? null : nid));
+  }, []);
+
+  // Apply highlight to nodes and edges
+  const displayedNodes = useMemo(() => {
+    if (!selectedNodeId)
+      return nodes.map((n) => ({
+        ...n,
+        data: { ...n.data, isHighlighted: false },
+      }));
+    const connectedEdges = edges.filter(
+      (e) => e.source === selectedNodeId || e.target === selectedNodeId,
+    );
+    const neighborIds = new Set<string>([selectedNodeId]);
+    connectedEdges.forEach((e) => {
+      neighborIds.add(e.source);
+      neighborIds.add(e.target);
+    });
+    return nodes.map((n) => ({
+      ...n,
+      data: { ...n.data, isHighlighted: neighborIds.has(n.id) },
+    }));
+  }, [nodes, edges, selectedNodeId]);
+
+  const displayedEdges = useMemo(() => {
+    if (!selectedNodeId)
+      return edges.map((e) => ({
+        ...e,
+        data: { ...e.data, isHighlighted: false },
+      }));
+    return edges.map((e) => ({
+      ...e,
+      data: {
+        ...e.data,
+        isHighlighted:
+          e.source === selectedNodeId || e.target === selectedNodeId,
+      },
+    }));
+  }, [edges, selectedNodeId]);
 
   const activeCount = nodes.filter(
     (n) => (n.data as NLNodeData).isActive,
@@ -1194,21 +1521,20 @@ export default function NetlistViewer({
         style={{
           width: "100%",
           height: "100%",
-          background: "#050c1a",
+          background: "#f8fafc",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
           gap: 12,
-          fontFamily: "JetBrains Mono, monospace",
         }}
       >
         <svg
-          width="40"
-          height="40"
+          width="48"
+          height="48"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#1e3a5f"
+          stroke="#cbd5e1"
           strokeWidth="1.5"
         >
           <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -1218,8 +1544,14 @@ export default function NetlistViewer({
           <line x1="9" y1="20" x2="9" y2="23" />
           <line x1="15" y1="20" x2="15" y2="23" />
         </svg>
-        <div style={{ color: "#1e3a5f", fontSize: 11 }}>
-          Mapeie o netlist para visualizar o circuito
+        <div
+          style={{
+            color: "#94a3b8",
+            fontSize: 12,
+            fontFamily: "JetBrains Mono, monospace",
+          }}
+        >
+          Execute a simulação para visualizar o netlist
         </div>
       </div>
     );
@@ -1233,138 +1565,214 @@ export default function NetlistViewer({
           height: "100%",
           position: "relative",
           display: "flex",
-          background: "#050c1a",
+          flexDirection: "column",
+          background: "#f8fafc",
+          minHeight: 0,
         }}
       >
-        <div style={{ flex: 1, position: "relative" }} className="nl-canvas">
+        <div
+          style={{ flex: 1, position: "relative", minHeight: 0 }}
+          className="nl-canvas"
+        >
           <ReactFlow
-            nodes={nodes}
-            edges={edges}
+            nodes={displayedNodes}
+            edges={displayedEdges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeClick={handleNodeClick}
             nodeTypes={NODE_TYPES}
             edgeTypes={EDGE_TYPES}
             fitView
-            minZoom={0.15}
+            minZoom={0.1}
             maxZoom={3}
             nodesConnectable={false}
             nodesDraggable={true}
             defaultEdgeOptions={{ type: "nlEdge" }}
           >
             <Background
-              color="#0a1628"
+              color="#e2e8f0"
               gap={24}
               size={1}
               variant={"dots" as any}
             />
             <Controls showInteractive={false} />
+            {showMinimap && (
+              <MiniMap
+                nodeColor={(n) => {
+                  const d = n.data as NLNodeData;
+                  return d.nodeType === "input"
+                    ? "#16a34a"
+                    : d.nodeType === "output"
+                      ? "#d97706"
+                      : getCategory(d.nodeType).color;
+                }}
+                maskColor="rgba(241,245,249,0.7)"
+              />
+            )}
 
-            {/* Toolbar */}
+            {/* Toolbar top-left */}
             <Panel position="top-left">
               <div className="nl-toolbar">
                 <input
                   className="nl-search"
                   placeholder="Filtrar células..."
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
+                  value={textFilter}
+                  onChange={(e) => setTextFilter(e.target.value)}
                 />
                 <div className="nl-sep" />
+                <FitViewButton />
                 <button
-                  className={`nl-btn ${showOnlyActive ? "nl-btn-on" : ""}`}
-                  onClick={() => setShowOnlyActive((p) => !p)}
-                  title="Mostrar apenas elementos ativos"
+                  className={`nl-btn ${showMinimap ? "nl-btn-on" : ""}`}
+                  onClick={() => setShowMinimap((p) => !p)}
+                  title="Mini-mapa"
                 >
-                  ⚡ Ativos
+                  <IcMap /> Mapa
                 </button>
                 <button
                   className={`nl-btn ${showInfo ? "nl-btn-on" : ""}`}
                   onClick={() => setShowInfo((p) => !p)}
+                  title="Painel de informações"
                 >
-                  ◧ Info
+                  <IcInfo /> Info
                 </button>
                 {hasSimulation && (
                   <>
                     <div className="nl-sep" />
-                    <div
-                      style={{
-                        fontFamily: "JetBrains Mono",
-                        fontSize: "9px",
-                        color: "#22c55e",
-                        fontWeight: 700,
-                      }}
+                    <button
+                      className={`nl-btn ${showOnlyActive ? "nl-btn-on" : ""}`}
+                      onClick={() => setShowOnlyActive((p) => !p)}
+                      title="Mostrar apenas elementos ativos"
                     >
-                      {activeCount} ativos
-                    </div>
+                      <IcFlash /> Ativos{" "}
+                      {showOnlyActive && activeCount > 0 && `(${activeCount})`}
+                    </button>
+                  </>
+                )}
+                {selectedNodeId && (
+                  <>
+                    <div className="nl-sep" />
+                    <button
+                      className="nl-btn nl-btn-danger"
+                      onClick={() => setSelectedNodeId(null)}
+                      title="Limpar seleção"
+                    >
+                      <IcClose /> Limpar
+                    </button>
                   </>
                 )}
               </div>
             </Panel>
 
-            {/* Legend */}
+            {/* Category filter chips */}
+            <Panel position="top-left" style={{ top: 58 }}>
+              <div className="nl-cat-chips" style={{ maxWidth: 520 }}>
+                <button
+                  className={`nl-cat-chip ${!catFilter ? "nl-cat-chip-on" : ""}`}
+                  style={
+                    !catFilter
+                      ? { background: "#374151", borderColor: "transparent" }
+                      : {}
+                  }
+                  onClick={() => setCatFilter("")}
+                >
+                  <IcFilter style={{ display: "inline" }} /> ALL
+                </button>
+                {ALL_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    className={`nl-cat-chip ${catFilter === cat ? "nl-cat-chip-on" : ""}`}
+                    style={
+                      catFilter === cat
+                        ? { background: CAT_COLORS[cat] }
+                        : {
+                            borderColor: `${CAT_COLORS[cat]}60`,
+                            color: CAT_COLORS[cat],
+                          }
+                    }
+                    onClick={() => setCatFilter((p) => (p === cat ? "" : cat))}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </Panel>
+
+            {/* Stats top-right */}
+            {parsedMeta && (
+              <Panel
+                position="top-right"
+                style={{
+                  marginRight: showInfo ? 238 : 0,
+                  transition: "margin 0.2s",
+                }}
+              >
+                <div className="nl-stats-bar">
+                  <span>
+                    Módulo:{" "}
+                    <b style={{ color: "#2563eb" }}>{parsedMeta.modName}</b>
+                  </span>
+                  <span>
+                    Células:{" "}
+                    <b style={{ color: "#9333ea" }}>{parsedMeta.cellCount}</b>
+                  </span>
+                  <span>
+                    Portas:{" "}
+                    <b style={{ color: "#16a34a" }}>{parsedMeta.portCount}</b>
+                  </span>
+                  <span>
+                    Nós: <b style={{ color: "#d97706" }}>{nodes.length}</b>
+                  </span>
+                  <span>
+                    Arestas: <b style={{ color: "#0891b2" }}>{edges.length}</b>
+                  </span>
+                  {hasSimulation && activeCount > 0 && (
+                    <span>
+                      Ativos: <b style={{ color: "#16a34a" }}>{activeCount}</b>
+                    </span>
+                  )}
+                </div>
+              </Panel>
+            )}
+
+            {/* Bus legend bottom-left */}
             <Panel position="bottom-left">
               <div className="nl-legend">
-                {[
-                  { label: "DFF", color: "#f59e0b" },
-                  { label: "MUX", color: "#a855f7" },
-                  { label: "ARITH", color: "#22c55e" },
-                  { label: "GATE", color: "#3b82f6" },
-                  { label: "SHIFT", color: "#06b6d4" },
-                  { label: "CMP", color: "#ec4899" },
-                  { label: "MEM", color: "#14b8a6" },
-                ].map(({ label, color }) => (
-                  <div className="nl-legend-item" key={label}>
+                <span className="nl-legend-title">Barramentos</span>
+                {Object.entries(BUS_LABELS).map(([key, label]) => (
+                  <div className="nl-legend-item" key={key}>
                     <div
-                      className="nl-legend-dot"
-                      style={{ background: color }}
+                      className="nl-legend-line"
+                      style={{ background: BUS_COLORS[key] }}
                     />
-                    <span>{label}</span>
+                    <span style={{ color: "#374151" }}>{label}</span>
                   </div>
                 ))}
               </div>
             </Panel>
 
-            {/* Stats pill */}
-            {stats && (
-              <Panel
-                position="top-right"
-                style={{
-                  marginRight: showInfo ? 248 : 0,
-                  transition: "margin 0.2s",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "JetBrains Mono",
-                    fontSize: "9px",
-                    color: "#475569",
-                    background: "rgba(9,14,28,0.92)",
-                    border: "1px solid rgba(148,163,184,0.1)",
-                    borderRadius: 8,
-                    padding: "6px 12px",
-                    display: "flex",
-                    gap: 14,
-                  }}
-                >
-                  <span>
-                    Módulo: <b style={{ color: "#60a5fa" }}>{stats.modName}</b>
-                  </span>
-                  <span>
-                    Células:{" "}
-                    <b style={{ color: "#a855f7" }}>{stats.cellCount}</b>
-                  </span>
-                  <span>
-                    Portas:{" "}
-                    <b style={{ color: "#22c55e" }}>{stats.portCount}</b>
-                  </span>
-                  <span>
-                    Nós: <b style={{ color: "#f59e0b" }}>{nodes.length}</b>
-                  </span>
-                  <span>
-                    Arestas: <b style={{ color: "#06b6d4" }}>{edges.length}</b>
-                  </span>
-                </div>
-              </Panel>
-            )}
+            {/* Node type legend bottom-right */}
+            <Panel
+              position="bottom-right"
+              style={{
+                marginRight: showInfo ? 238 : 0,
+                transition: "margin 0.2s",
+              }}
+            >
+              <div className="nl-legend">
+                <span className="nl-legend-title">Células</span>
+                {Object.entries(CAT_COLORS)
+                  .slice(0, 6)
+                  .map(([cat, color]) => (
+                    <div className="nl-legend-item" key={cat}>
+                      <div
+                        className="nl-legend-dot"
+                        style={{ background: color }}
+                      />
+                      <span style={{ color: "#374151" }}>{cat}</span>
+                    </div>
+                  ))}
+              </div>
+            </Panel>
           </ReactFlow>
         </div>
 
@@ -1375,16 +1783,16 @@ export default function NetlistViewer({
               <span className="nl-info-title">Netlist Info</span>
               <button
                 className="nl-btn"
-                style={{ padding: "2px 7px" }}
+                style={{ padding: "3px 8px" }}
                 onClick={() => setShowInfo(false)}
               >
-                ✕
+                <IcClose />
               </button>
             </div>
             <div className="nl-info-body">
               <div
                 style={{
-                  color: "#a855f7",
+                  color: "#9333ea",
                   fontSize: "9px",
                   fontWeight: 700,
                   marginBottom: 8,
@@ -1405,27 +1813,10 @@ export default function NetlistViewer({
               {hasSimulation && (
                 <div className="nl-info-stat">
                   <div className="nl-info-stat-label">Nós Ativos</div>
-                  <div
-                    className="nl-info-stat-val"
-                    style={{ color: "#22c55e" }}
-                  >
-                    {activeCount}
-                  </div>
+                  <div className="nl-info-stat-val green">{activeCount}</div>
                 </div>
               )}
-
-              <div
-                style={{
-                  fontSize: "8px",
-                  color: "#475569",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  margin: "12px 0 6px",
-                }}
-              >
-                Por Categoria
-              </div>
+              <div className="nl-info-sec-label">Por Categoria</div>
               {Object.entries(stats.categories)
                 .sort((a, b) => b[1] - a[1])
                 .map(([cat, count]) => (
@@ -1435,29 +1826,24 @@ export default function NetlistViewer({
                       display: "flex",
                       justifyContent: "space-between",
                       padding: "3px 0",
-                      borderBottom: "1px solid rgba(148,163,184,0.05)",
+                      borderBottom: "1px solid #f1f5f9",
                       fontSize: "9px",
                     }}
                   >
-                    <span style={{ color: "#64748b" }}>{cat}</span>
-                    <span style={{ fontWeight: 700, color: "#94a3b8" }}>
-                      {count}
+                    <span
+                      style={{
+                        color: CAT_COLORS[cat] ?? "#64748b",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {cat}
+                    </span>
+                    <span style={{ fontWeight: 700, color: "#374151" }}>
+                      {count as number}
                     </span>
                   </div>
                 ))}
-
-              <div
-                style={{
-                  fontSize: "8px",
-                  color: "#475569",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  margin: "12px 0 6px",
-                }}
-              >
-                Portas do Módulo
-              </div>
+              <div className="nl-info-sec-label">Portas do Módulo</div>
               <div className="nl-info-ports">
                 {(stats.allPorts as any[]).map(
                   ([pName, pData]: [string, any]) => (
@@ -1470,7 +1856,7 @@ export default function NetlistViewer({
                           gap: 4,
                         }}
                       >
-                        <span style={{ color: "#334155", fontSize: "8px" }}>
+                        <span style={{ color: "#94a3b8", fontSize: "8px" }}>
                           [{pData.bits?.length ?? 1}b]
                         </span>
                         <span
@@ -1483,10 +1869,47 @@ export default function NetlistViewer({
                   ),
                 )}
               </div>
+              {selectedNodeId && (
+                <>
+                  <div className="nl-info-sec-label">No Selecionado</div>
+                  <div
+                    style={{
+                      background: "#eff6ff",
+                      border: "1px solid #bfdbfe",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                      fontSize: "9px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#2563eb",
+                        fontWeight: 700,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {selectedNodeId.replace(/^\$/, "")}
+                    </div>
+                    <div style={{ color: "#64748b" }}>
+                      Clique em outro nó para comparar, ou em Limpar para
+                      desfazer.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
       </div>
     </TooltipProvider>
+  );
+}
+
+// ─── EXPORT COM PROVIDER ──────────────────────────────────────────────────────
+export default function NetlistViewer(props: NetlistViewerProps) {
+  return (
+    <ReactFlowProvider>
+      <NetlistViewerInner {...props} />
+    </ReactFlowProvider>
   );
 }

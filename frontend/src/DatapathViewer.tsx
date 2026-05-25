@@ -2600,11 +2600,19 @@ function DatapathInner({
         data: { ...n.data, active: false, inactive: false },
       })),
     );
-    setTimeout(() => rfInstance.fitView({ padding: 0.12, duration: 400 }), 50);
+    setTimeout(() => rfInstance.fitView({ padding: 0.12, duration: 400 }), 100);
   }, [rfInstance, setNodes]);
 
   const fitView = useCallback(() => {
     rfInstance.fitView({ padding: 0.1, duration: 400 });
+  }, [rfInstance]);
+
+  // Delay initial fitView so ReactFlow has time to measure container dimensions
+  useEffect(() => {
+    const t = setTimeout(() => {
+      rfInstance.fitView({ padding: 0.12, duration: 300 });
+    }, 150);
+    return () => clearTimeout(t);
   }, [rfInstance]);
 
   const stageBadge = activeStage ? PIPELINE_STAGES[activeStage] : null;
@@ -2617,6 +2625,7 @@ function DatapathInner({
         display: "flex",
         position: "relative",
         background: "#050c1a",
+        minHeight: 0,
       }}
     >
       {/* Main canvas */}

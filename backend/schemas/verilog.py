@@ -20,10 +20,27 @@ class SimularExecucaoResponse(BaseModel):
     stderr: str = Field(..., description="Console standard error/warnings from the simulation run")
     simulation_log: Any = Field(
         None,
-        description="The parsed VCD simulation log object containing:\n\n"
-                    "- **metadata**: Details about the simulation run, including `timescale` (with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`.\n"
-                    "- **modules**: The design's hierarchical scopes tree. Each module contains `variables` (signals with size, type, and references in that scope) and `child_scopes` (nested child modules/scopes).\n"
-                    "- **timeline**: A temporal log mapping each timestamp string to a dictionary of signal name/value changes at that instant."
+        description=(
+            "The parsed VCD simulation log object containing:\n\n"
+            "- **metadata**: Details about the simulation run, including `timescale` "
+            "(with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`.\n"
+            "- **modules**: The design's hierarchical scopes tree. Each module contains "
+            "`variables` (signals with size, type, and references in that scope) and "
+            "`child_scopes` (nested child modules/scopes).\n"
+            "- **timeline**: A temporal log mapping each timestamp string to a dictionary "
+            "of signal name/value changes at that instant."
+        )
+    )
+    # Campo adicionado: a netlist estrutural gerada pelo Icarus (ou Yosys se disponível)
+    # embutida diretamente na resposta de simulação, evitando a necessidade de uma
+    # chamada separada a /mapear-processador.
+    netlist_content: Any = Field(
+        None,
+        description=(
+            "The structural netlist JSON object (same format as MapearProcessadorResponse.netlist_content). "
+            "Generated automatically during simulation when possible. May be null if the netlist "
+            "generation step was skipped or failed — the simulation result is still valid in that case."
+        )
     )
 
 class UploadZipResponse(BaseModel):

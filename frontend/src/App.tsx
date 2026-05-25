@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import NetlistViewer from "./NetlistViewer";
 import DatapathViewer from "./DatapathViewer";
+
 const API_BASE = "http://localhost:8000/api/v1";
 const STORAGE_KEY = "verilog_classroom_project";
 
@@ -78,6 +79,7 @@ function flattenSignals(modules, prefix = "") {
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const apiStatus = () => fetch(`${API_BASE}/status/`).then((r) => r.json());
+
 const apiUpload = async (file) => {
   const fd = new FormData();
   fd.append("file", file);
@@ -88,15 +90,7 @@ const apiUpload = async (file) => {
   if (!r.ok) throw new Error((await r.json()).detail);
   return r.json();
 };
-const apiMap = async (id) => {
-  const r = await fetch(`${API_BASE}/verilog/mapear-processador`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_id: id }),
-  });
-  if (!r.ok) throw new Error((await r.json()).detail);
-  return r.json();
-};
+
 const apiSimulate = async (id) => {
   const r = await fetch(`${API_BASE}/verilog/simular-execucao`, {
     method: "POST",
@@ -106,6 +100,7 @@ const apiSimulate = async (id) => {
   if (!r.ok) throw new Error((await r.json()).detail);
   return r.json();
 };
+
 const apiDelete = (id) =>
   fetch(`${API_BASE}/verilog/projeto/${id}`, { method: "DELETE" });
 
@@ -181,6 +176,34 @@ const Ic = {
     >
       <polygon points="5 4 15 12 5 20 5 4" fill="currentColor" />
       <line x1="19" y1="5" x2="19" y2="19" />
+    </svg>
+  ),
+  SkipStart: () => (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polygon points="19 20 9 12 19 4" fill="currentColor" />
+      <polygon points="10 20 3 12 10 4" fill="currentColor" />
+      <line x1="2" y1="19" x2="2" y2="5" />
+    </svg>
+  ),
+  SkipEnd: () => (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polygon points="5 4 15 12 5 20" fill="currentColor" />
+      <polygon points="14 4 21 12 14 20" fill="currentColor" />
+      <line x1="22" y1="5" x2="22" y2="19" />
     </svg>
   ),
   ChevR: () => (
@@ -337,6 +360,33 @@ const Ic = {
       <line x1="12" y1="19" x2="20" y2="19" />
     </svg>
   ),
+  Layers: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  ),
+  RefreshCw: () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  ),
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -350,14 +400,9 @@ function StatusPill({ label, ok }) {
 }
 
 function StepRow({ step, isActive }) {
-  const icons = [null, <Ic.Loader />, <Ic.Check />, <Ic.X />];
-  const stateClass =
-    ["vc-step-idle", "vc-step-loading", "vc-step-done", "vc-step-error"][
-      step.status
-    ] || "";
   return (
     <div
-      className={`vc-step-row ${isActive ? "vc-step-active" : ""} ${stateClass}`}
+      className={`vc-step-row ${isActive ? "vc-step-active" : ""} ${["vc-step-idle", "vc-step-loading", "vc-step-done", "vc-step-error"][step.status] || ""}`}
     >
       <div className="vc-step-num">
         {step.status === 0 && <span>{step.index + 1}</span>}
@@ -448,13 +493,13 @@ function ModuleTree({ modules, selected, onSelect, prefix = "" }) {
                   <Ic.Signal />
                   <span className="vc-mvar-name">{n}</span>
                   <span className="vc-mvar-meta">
-                    [{v.size ?? 1}b·{v.type ?? "wire"}]
+                    [{(v as any).size ?? 1}b·{(v as any).type ?? "wire"}]
                   </span>
                 </div>
               ))}
           {modules.variables && Object.keys(modules.variables).length > 8 && (
             <div className="vc-mvar vc-mvar-more">
-              +{Object.keys(modules.variables).length - 8} signals
+              +{Object.keys(modules.variables).length - 8} sinais
             </div>
           )}
           {modules.child_scopes &&
@@ -480,14 +525,14 @@ function WaveformViewer({
   selectedSignals,
   onTimeClick,
 }) {
-  const ROW = 32;
-  const LABEL = 190;
-  const W = 720;
+  const ROW = 32,
+    LABEL = 190,
+    W = 720;
   if (!sortedTimes?.length)
     return (
       <div className="vc-empty">
         <Ic.Activity />
-        <span>Run simulation to view waveforms</span>
+        <span>Execute a simulação para visualizar as formas de onda</span>
       </div>
     );
   const end = sortedTimes[sortedTimes.length - 1] || 1;
@@ -509,7 +554,6 @@ function WaveformViewer({
             <path d="M0,6 L6,0" stroke="#fde68a" strokeWidth="1" />
           </pattern>
         </defs>
-        {/* axis */}
         <line
           x1={LABEL}
           y1={28}
@@ -558,10 +602,8 @@ function WaveformViewer({
             prevX = x;
           }
           if (prev !== null) segs.push({ x: prevX, ex: W - 24, val: prev, y });
-
           return (
             <g key={sig.name}>
-              {/* row bg alternating */}
               <rect
                 x={0}
                 y={y - 2}
@@ -626,7 +668,7 @@ function WaveformViewer({
                           fontFamily="'IBM Plex Mono',monospace"
                         >
                           {seg.val != null
-                            ? `${parseInt(seg.val, 2).toString(16).toUpperCase()}`
+                            ? parseInt(seg.val, 2).toString(16).toUpperCase()
                             : "?"}
                         </text>
                       )}
@@ -645,7 +687,6 @@ function WaveformViewer({
             </g>
           );
         })}
-        {/* cursor */}
         {currentTime != null && (
           <g>
             <line
@@ -663,7 +704,6 @@ function WaveformViewer({
             />
           </g>
         )}
-        {/* click area */}
         <rect
           x={LABEL}
           y={24}
@@ -694,7 +734,7 @@ const GLOSSARY = [
   },
   {
     term: "Netlist",
-    def: "Descrição estrutural de um circuito digital: lista de células lógicas (AND, OR, DFF, MUX) e suas interconexões. Saída do Yosys após síntese.",
+    def: "Descrição estrutural de um circuito digital: lista de células lógicas (AND, OR, DFF, MUX) e suas interconexões, gerada a partir da simulação.",
   },
   {
     term: "VCD (Value Change Dump)",
@@ -713,16 +753,16 @@ const GLOSSARY = [
     def: "Em Verilog, `wire` é uma conexão combinacional (sempre dirigida), enquanto `reg` é atribuída em blocos procedurais e pode virar flip-flop na síntese.",
   },
   {
-    term: "Síntese (Yosys)",
-    def: "Converte RTL Verilog em uma netlist de primitivas lógicas de nível de porta. Yosys é um suite de síntese open-source amplamente utilizado.",
-  },
-  {
     term: "Simulação (Icarus)",
     def: "Executa um design Verilog com um testbench para verificar comportamento. Icarus Verilog é um compilador/simulador open-source que gera saída VCD.",
   },
   {
     term: "Testbench",
     def: "Módulo Verilog não-sintetizável que gera entradas para seu design e observa saídas, simulando o ambiente em que o circuito vai operar.",
+  },
+  {
+    term: "Barramento de Dados",
+    def: "Grupo de fios que transporta palavras de dados (endereços, valores) entre componentes. Largura típica: 8, 16, 32 ou 64 bits.",
   },
 ];
 
@@ -736,17 +776,17 @@ export default function VerilogClassroom() {
       return null;
     }
   });
+
+  // Pipeline: 2 etapas — Upload (0) + Simular (1)
   const [steps, setSteps] = useState([
     { index: 0, label: "Upload ZIP", status: 0 },
-    { index: 1, label: "Map Netlist", status: 0 },
-    { index: 2, label: "Simulate", status: 0 },
+    { index: 1, label: "Simular", status: 0 },
   ]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [mapResult, setMapResult] = useState(null);
   const [simResult, setSimResult] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [consoleColl, setConsoleColl] = useState({ map: true, sim: true });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [consoleColl, setConsoleColl] = useState({ sim: true });
   const [tab, setTab] = useState("waveform");
   const [selModule, setSelModule] = useState("");
   const [selSignals, setSelSignals] = useState([]);
@@ -792,36 +832,21 @@ export default function VerilogClassroom() {
     [precomputed, currentTime],
   );
 
-  // ---> ADICIONE ESTE BLOCO INTEIRO AQUI <---
-  // Este hook traduz os sinais do seu Verilog para os blocos do Gráfico
   const activeDatapathElements = useMemo(() => {
     if (!activeSignals) return [];
     const activeIds = [];
-
-    // Converte os nomes e valores dos sinais do ciclo atual para uma string
-    // para facilitar a busca (você pode melhorar essa lógica depois para
-    // buscar os nomes exatos das suas variáveis Verilog, como "ula_op" ou "pc_out").
     const activeState = JSON.stringify(activeSignals).toLowerCase();
-
-    // Regras heurísticas simples: se o sinal mudou/existe, acende o bloco correspondente
-    if (activeState.includes("pc")) {
-      activeIds.push("pc", "imem", "e-pc-imem");
-    }
-    if (activeState.includes("alu") || activeState.includes("ula")) {
+    if (activeState.includes("pc")) activeIds.push("pc", "imem", "e-pc-imem");
+    if (activeState.includes("alu") || activeState.includes("ula"))
       activeIds.push("alu", "mux_alu", "e-reg-aluA", "e-muxB-aluB");
-    }
-    if (activeState.includes("reg")) {
-      activeIds.push("regfile");
-    }
-    if (activeState.includes("mem")) {
+    if (activeState.includes("reg")) activeIds.push("regfile");
+    if (activeState.includes("mem"))
       activeIds.push("dmem", "e-alu-dmem", "e-dmem-muxWb1");
-    }
-    if (activeState.includes("ctrl") || activeState.includes("op")) {
+    if (activeState.includes("ctrl") || activeState.includes("op"))
       activeIds.push("control", "c-ctrl-alu", "c-ctrl-mux");
-    }
-
     return activeIds;
   }, [activeSignals]);
+
   useEffect(() => {
     if (projectId)
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ projectId }));
@@ -838,7 +863,6 @@ export default function VerilogClassroom() {
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
   }, [projectId]);
-
   useEffect(() => {
     if (!playing || !precomputed) return;
     clearInterval(playRef.current);
@@ -875,57 +899,42 @@ export default function VerilogClassroom() {
       setErrors((e) => ({ ...e, upload: err.message }));
     }
   };
-  const handleMap = async () => {
+
+  const handleSim = async () => {
     if (!projectId) return;
     updStep(1, 1);
     try {
-      const r = await apiMap(projectId);
-      setMapResult(r);
-      updStep(1, r.success ? 2 : 3);
-      if (r.success) setCurrentStep(2);
-      else
-        setErrors((e) => ({
-          ...e,
-          map: "Yosys reportou erros — veja o console",
-        }));
-    } catch (err) {
-      updStep(1, 3);
-      setErrors((e) => ({ ...e, map: err.message }));
-    }
-  };
-  const handleSim = async () => {
-    if (!projectId) return;
-    updStep(2, 1);
-    try {
       const r = await apiSimulate(projectId);
+      // Debug: log the full response so we can see the real shape
+      console.log("[SimResult]", JSON.stringify(r, null, 2).slice(0, 2000));
       setSimResult(r);
-      updStep(2, r.success ? 2 : 3);
+      updStep(1, r.success ? 2 : 3);
       if (r.success) {
-        setCurrentStep(3);
+        setCurrentStep(2);
         setTab("waveform");
         setSelSignals(
           flattenSignals(r.simulation_log?.modules || {}).slice(0, 6),
         );
         setCurrentTime(0);
-      } else
+      } else {
         setErrors((e) => ({
           ...e,
           sim: "Icarus reportou erros — veja o console",
         }));
+      }
     } catch (err) {
-      updStep(2, 3);
+      updStep(1, 3);
       setErrors((e) => ({ ...e, sim: err.message }));
     }
   };
+
   const handleReset = async () => {
     if (projectId) await apiDelete(projectId).catch(() => {});
     setProjectId(null);
-    setMapResult(null);
     setSimResult(null);
     setSteps([
       { index: 0, label: "Upload ZIP", status: 0 },
-      { index: 1, label: "Map Netlist", status: 0 },
-      { index: 2, label: "Simulate", status: 0 },
+      { index: 1, label: "Simular", status: 0 },
     ]);
     setCurrentStep(0);
     setErrors({});
@@ -934,6 +943,7 @@ export default function VerilogClassroom() {
     setCurrentTime(0);
     localStorage.removeItem(STORAGE_KEY);
   };
+
   const toggleSig = (sig) =>
     setSelSignals((s) =>
       s.find((x) => x.name === sig.name)
@@ -943,13 +953,23 @@ export default function VerilogClassroom() {
 
   const meta = simResult?.simulation_log?.metadata;
 
+  // Com o backend corrigido, netlist_content vem diretamente na resposta de simulação.
+  // Os fallbacks extras garantem compatibilidade com versões antigas do backend.
+  const netlistContent =
+    simResult?.netlist_content ??
+    simResult?.netlist ??
+    simResult?.simulation_log?.netlist ??
+    simResult?.simulation_log?.netlist_content ??
+    null;
+
   const TABS = [
     { id: "waveform", label: "Waveform", icon: <Ic.Activity /> },
-    { id: "datapath", label: "Datapath", icon: <Ic.Cpu /> }, // <--- NOVA ABA AQUI
+    { id: "datapath", label: "Datapath", icon: <Ic.Layers /> },
     { id: "netlist", label: "Netlist", icon: <Ic.Grid /> },
     { id: "console", label: "Console", icon: <Ic.Terminal /> },
     { id: "education", label: "Glossário", icon: <Ic.Book /> },
   ];
+
   return (
     <>
       <style>{`
@@ -978,7 +998,6 @@ export default function VerilogClassroom() {
           --cyan:     #0891b2;
           --shadow-sm: 0 1px 3px rgba(15,23,42,0.07), 0 1px 2px rgba(15,23,42,0.05);
           --shadow-md: 0 4px 12px rgba(15,23,42,0.09), 0 2px 6px rgba(15,23,42,0.06);
-          --shadow-lg: 0 10px 30px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.07);
           --mono: 'IBM Plex Mono', monospace;
           --serif: 'Fraunces', Georgia, serif;
           --radius: 8px;
@@ -989,93 +1008,37 @@ export default function VerilogClassroom() {
         @keyframes vc-spin { to { transform: rotate(360deg); } }
         @keyframes vc-fadein { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
 
-        /* ── LAYOUT ── */
         .vc-app { display: grid; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
         .vc-layout { display: grid; grid-template-columns: 272px 1fr; overflow: hidden; }
 
         /* ── HEADER ── */
-        .vc-header {
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          box-shadow: var(--shadow-sm);
-          padding: 0 24px;
-          display: flex; align-items: center; gap: 14px;
-          height: 54px; z-index: 10;
-        }
-        .vc-logo {
-          display: flex; align-items: center; gap: 10px;
-        }
-        .vc-logo-mark {
-          width: 30px; height: 30px; border-radius: 7px;
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          display: flex; align-items: center; justify-content: center;
-          color: white;
-          box-shadow: 0 2px 8px #2563eb40;
-        }
-        .vc-logo-text {
-          font-family: var(--serif); font-weight: 700; font-size: 17px;
-          color: var(--text); letter-spacing: -0.4px; line-height: 1;
-        }
-        .vc-logo-sub {
-          font-family: var(--mono); font-weight: 300; font-size: 10px;
-          color: var(--text3); letter-spacing: 2px; text-transform: uppercase;
-          display: block; margin-top: 1px;
-        }
+        .vc-header { background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 0 24px; display: flex; align-items: center; gap: 14px; height: 54px; z-index: 10; }
+        .vc-logo { display: flex; align-items: center; gap: 10px; }
+        .vc-logo-mark { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 8px #2563eb40; }
+        .vc-logo-text { font-family: var(--serif); font-weight: 700; font-size: 17px; color: var(--text); letter-spacing: -0.4px; line-height: 1; }
+        .vc-logo-sub { font-family: var(--mono); font-weight: 300; font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 1px; }
         .vc-sep { flex: 1; }
         .vc-header-pills { display: flex; gap: 8px; align-items: center; }
 
-        .vc-pill {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 10px; font-weight: 500; color: var(--text2);
-          background: var(--surface2); border: 1px solid var(--border);
-          border-radius: 20px; padding: 4px 10px;
-          letter-spacing: 0.3px;
-        }
+        .vc-pill { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 500; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; letter-spacing: 0.3px; }
         .vc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
         .vc-pill-ok .vc-dot { background: var(--green); box-shadow: 0 0 5px #16a34a60; }
         .vc-pill-err .vc-dot { background: var(--red); box-shadow: 0 0 5px #dc262660; }
 
-        .vc-btn-reset {
-          display: flex; align-items: center; gap: 6px;
-          background: transparent; border: 1px solid var(--border);
-          color: var(--text3); font-family: var(--mono); font-size: 10px;
-          padding: 5px 12px; border-radius: 6px; cursor: pointer;
-          transition: all 0.15s; letter-spacing: 0.2px;
-        }
+        .vc-btn-reset { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); color: var(--text3); font-family: var(--mono); font-size: 10px; padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.2px; }
         .vc-btn-reset:hover { border-color: var(--red); color: var(--red); background: #fef2f2; }
 
         /* ── SIDEBAR ── */
-        .vc-sidebar {
-          background: var(--surface);
-          border-right: 1px solid var(--border);
-          display: flex; flex-direction: column;
-          overflow-y: auto; overflow-x: hidden;
-        }
-
-        /* ── PIPELINE SECTION ── */
+        .vc-sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
         .vc-section { padding: 18px 16px; border-bottom: 1px solid var(--border); }
-        .vc-section-title {
-          font-size: 9px; font-weight: 600; color: var(--text4);
-          text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;
-        }
+        .vc-section-title { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
 
         .vc-steps { display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .vc-step-row {
-          display: flex; align-items: center; gap: 10px;
-          padding: 8px 10px; border-radius: 6px;
-          border: 1px solid transparent; transition: all 0.15s;
-          position: relative;
-        }
+        .vc-step-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; border: 1px solid transparent; transition: all 0.15s; position: relative; }
         .vc-step-active { background: #eff6ff; border-color: #bfdbfe; }
         .vc-step-done   { background: #f0fdf4; border-color: #bbf7d0; }
         .vc-step-error  { background: #fef2f2; border-color: #fecaca; }
-        .vc-step-num {
-          width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-          border: 1.5px solid var(--border2);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 10px; font-weight: 600; color: var(--text3);
-          background: var(--surface);
-        }
+        .vc-step-num { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text3); background: var(--surface); }
         .vc-step-active  .vc-step-num { border-color: var(--accent); color: var(--accent); }
         .vc-step-done    .vc-step-num { border-color: var(--green); color: var(--green); background: #f0fdf4; }
         .vc-step-error   .vc-step-num { border-color: var(--red); color: var(--red); }
@@ -1085,64 +1048,33 @@ export default function VerilogClassroom() {
         .vc-step-done   .vc-step-lbl { color: var(--green); }
         .vc-step-error  .vc-step-lbl { color: var(--red); }
 
-        /* ── UPLOAD AREA ── */
-        .vc-upload {
-          border: 1.5px dashed var(--border2); border-radius: var(--radius);
-          padding: 18px 12px; text-align: center; cursor: pointer;
-          transition: all 0.2s; color: var(--text3); font-size: 11px;
-          background: var(--surface2);
-        }
+        /* ── UPLOAD ── */
+        .vc-upload { border: 1.5px dashed var(--border2); border-radius: var(--radius); padding: 18px 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: var(--text3); font-size: 11px; background: var(--surface2); }
         .vc-upload:hover, .vc-upload-drag { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
         .vc-upload-icon { color: var(--text4); margin-bottom: 8px; display: flex; justify-content: center; }
         .vc-upload-hint { font-size: 9px; color: var(--text4); margin-top: 4px; }
-        .vc-upload-id {
-          font-size: 8.5px; color: var(--text3); margin-top: 6px;
-          word-break: break-all; background: var(--surface3); border-radius: 4px;
-          padding: 4px 6px; text-align: left;
-        }
+        .vc-upload-id { font-size: 8.5px; color: var(--text3); margin-top: 6px; word-break: break-all; background: var(--surface3); border-radius: 4px; padding: 4px 6px; text-align: left; }
 
         /* ── BUTTONS ── */
-        .vc-btn {
-          display: flex; align-items: center; justify-content: center; gap: 7px;
-          border-radius: 7px; font-family: var(--mono); font-size: 11px;
-          font-weight: 500; padding: 9px 14px; cursor: pointer;
-          transition: all 0.15s; width: 100%; border: none;
-          letter-spacing: 0.2px;
-        }
-        .vc-btn-primary {
-          background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-          color: white; box-shadow: 0 2px 8px #2563eb30;
-        }
+        .vc-btn { display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 7px; font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 9px 14px; cursor: pointer; transition: all 0.15s; width: 100%; border: none; letter-spacing: 0.2px; }
+        .vc-btn-primary { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; box-shadow: 0 2px 8px #2563eb30; }
         .vc-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 14px #2563eb40; transform: translateY(-1px); }
         .vc-btn-primary:active:not(:disabled) { transform: translateY(0); }
-        .vc-btn-secondary {
-          background: var(--surface2); color: var(--text2);
-          border: 1px solid var(--border);
-        }
+        .vc-btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
         .vc-btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
         .vc-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
         .vc-err { font-size: 10px; color: var(--red); margin-top: 5px; display: flex; gap: 4px; align-items: flex-start; }
         .vc-form-gap { display: flex; flex-direction: column; gap: 8px; }
 
-        /* ── PROJECT TIP ── */
-        .vc-tip {
-          border-radius: var(--radius); border: 1px solid #fde68a;
-          background: #fffbeb; padding: 10px 12px;
-          font-size: 9.5px; color: #92400e; line-height: 1.9;
-        }
+        /* ── TIP ── */
+        .vc-tip { border-radius: var(--radius); border: 1px solid #fde68a; background: #fffbeb; padding: 10px 12px; font-size: 9.5px; color: #92400e; line-height: 1.9; }
         .vc-tip-title { font-weight: 600; font-size: 9px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 
         /* ── MODULE TREE ── */
         .vc-modules { padding: 16px; flex: 1; }
         .vc-mtree { font-size: 11px; }
-        .vc-mnode {
-          display: flex; align-items: center; gap: 5px;
-          background: transparent; border: none; color: var(--text3);
-          font-family: var(--mono); font-size: 11px; cursor: pointer;
-          padding: 4px 0; width: 100%; text-align: left;
-          transition: color 0.1s;
-        }
+        .vc-mnode { display: flex; align-items: center; gap: 5px; background: transparent; border: none; color: var(--text3); font-family: var(--mono); font-size: 11px; cursor: pointer; padding: 4px 0; width: 100%; text-align: left; transition: color 0.1s; }
         .vc-mnode:hover { color: var(--text); }
         .vc-mchev { display: flex; color: var(--text4); }
         .vc-mlbl { color: var(--text2); font-weight: 500; }
@@ -1153,170 +1085,83 @@ export default function VerilogClassroom() {
         .vc-mvar-meta { color: var(--text4); font-size: 9px; }
         .vc-mvar-more { font-size: 9px; font-style: italic; }
 
-        /* ── MAIN PANEL ── */
+        /* ── MAIN ── */
         .vc-main { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
 
-        /* ── METRICS BAR ── */
-        .vc-metrics {
-          background: var(--surface); border-bottom: 1px solid var(--border);
-          display: flex; overflow-x: auto;
-          box-shadow: var(--shadow-sm);
-        }
-        .vc-metric {
-          padding: 12px 22px; border-right: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;
-        }
+        /* ── METRICS ── */
+        .vc-metrics { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; box-shadow: var(--shadow-sm); }
+        .vc-metric { padding: 12px 22px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
         .vc-metric-lbl { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1px; }
-        .vc-metric-val {
-          font-family: var(--serif); font-size: 22px; font-weight: 700;
-          color: var(--text); line-height: 1; letter-spacing: -0.5px;
-        }
+        .vc-metric-val { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
         .vc-metric-val.blue   { color: var(--accent); }
         .vc-metric-val.amber  { color: var(--amber); }
         .vc-metric-val.green  { color: var(--green); }
         .vc-metric-val.cyan   { color: var(--cyan); font-size: 15px; font-family: var(--mono); font-weight: 600; margin-top: 3px; }
         .vc-metric-unit { font-size: 9px; color: var(--text4); }
 
-        /* ── TAB BAR ── */
-        .vc-tabs {
-          background: var(--surface); border-bottom: 1px solid var(--border);
-          display: flex; padding: 0 8px;
-        }
-        .vc-tab {
-          display: flex; align-items: center; gap: 6px;
-          padding: 10px 14px; font-size: 11px; font-weight: 500; color: var(--text3);
-          background: transparent; border: none; border-bottom: 2px solid transparent;
-          cursor: pointer; font-family: var(--mono);
-          transition: all 0.15s; letter-spacing: 0.2px;
-          margin-bottom: -1px;
-        }
+        /* ── TABS ── */
+        .vc-tabs { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; padding: 0 8px; }
+        .vc-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: 11px; font-weight: 500; color: var(--text3); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--mono); transition: all 0.15s; letter-spacing: 0.2px; margin-bottom: -1px; }
         .vc-tab:hover { color: var(--text2); }
         .vc-tab.vc-tab-active { color: var(--accent); border-bottom-color: var(--accent); }
 
         /* ── CONTENT ── */
-        .vc-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-        .vc-content-scroll { flex: 1; overflow-y: auto; padding: 20px; animation: vc-fadein 0.2s ease; }
+        .vc-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+        .vc-content-scroll { flex: 1; overflow-y: auto; padding: 20px; animation: vc-fadein 0.2s ease; min-height: 0; }
+        /* Painéis que ocupam toda a área sem scroll (ReactFlow precisa de dimensões reais) */
+        .vc-flow-panel { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 
         /* ── SIGNAL CHIPS ── */
         .vc-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
-        .vc-chip {
-          display: flex; align-items: center; gap: 4px;
-          background: var(--surface); border: 1px solid var(--border);
-          color: var(--text3); font-size: 10px; font-weight: 500;
-          padding: 4px 9px; border-radius: 20px; cursor: pointer;
-          transition: all 0.12s; box-shadow: var(--shadow-sm);
-        }
+        .vc-chip { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--text3); font-size: 10px; font-weight: 500; padding: 4px 9px; border-radius: 20px; cursor: pointer; transition: all 0.12s; box-shadow: var(--shadow-sm); }
         .vc-chip:hover { border-color: var(--accent); color: var(--accent); }
         .vc-chip-on { border-color: var(--accent); color: var(--accent); background: #eff6ff; box-shadow: 0 0 0 1px #bfdbfe; }
 
-        /* ── SCROLL BOXES ── */
-        .vc-scroll-box {
-          overflow: auto; background: var(--surface); border-radius: var(--radius);
-          border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-          min-height: 260px;
-        }
-        .vc-empty {
-          display: flex; align-items: center; justify-content: center; gap: 8px;
-          height: 200px; color: var(--text4); font-size: 12px;
-        }
+        /* ── SCROLL BOX ── */
+        .vc-scroll-box { overflow: auto; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); min-height: 260px; }
+        .vc-empty { display: flex; align-items: center; justify-content: center; gap: 8px; height: 200px; color: var(--text4); font-size: 12px; }
 
-        /* ── EXPORT BAR ── */
+        /* ── EXPORT ── */
         .vc-exports { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-        .vc-export-btn {
-          display: flex; align-items: center; gap: 5px;
-          background: var(--surface); border: 1px solid var(--border);
-          color: var(--text3); font-family: var(--mono); font-size: 10px;
-          padding: 6px 12px; border-radius: 6px; cursor: pointer;
-          transition: all 0.12s; box-shadow: var(--shadow-sm);
-          font-weight: 500;
-        }
+        .vc-export-btn { display: flex; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); color: var(--text3); font-family: var(--mono); font-size: 10px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.12s; box-shadow: var(--shadow-sm); font-weight: 500; }
         .vc-export-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
 
         /* ── CONSOLE ── */
         .vc-console { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
-        .vc-console-hdr {
-          display: flex; align-items: center; gap: 8px;
-          padding: 8px 14px; background: var(--surface3); border: none;
-          color: var(--text2); font-family: var(--mono); font-size: 11px; font-weight: 500;
-          cursor: pointer; width: 100%; letter-spacing: 0.2px;
-        }
+        .vc-console-hdr { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--surface3); border: none; color: var(--text2); font-family: var(--mono); font-size: 11px; font-weight: 500; cursor: pointer; width: 100%; letter-spacing: 0.2px; }
         .vc-console-hdr:hover { background: var(--surface2); }
         .vc-console-chevron { margin-left: auto; color: var(--text4); }
         .vc-console-body { background: var(--surface); max-height: 320px; overflow-y: auto; }
         .vc-csec { padding: 10px 14px; }
         .vc-csec-lbl { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
         .vc-console-body pre { font-family: var(--mono); font-size: 10px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
-        .vc-cl-err  { color: var(--red); }
-        .vc-cl-warn { color: var(--amber); }
+        .vc-cl-err    { color: var(--red); }
+        .vc-cl-warn   { color: var(--amber); }
         .vc-cl-normal { color: var(--text2); }
 
         /* ── PLAYBACK ── */
-        .vc-playback {
-          background: var(--surface); border-top: 1px solid var(--border);
-          padding: 10px 20px; display: flex; align-items: center; gap: 10px;
-          box-shadow: 0 -2px 8px rgba(15,23,42,0.05);
-        }
-        .vc-play-btn {
-          width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-          background: linear-gradient(135deg, var(--accent), var(--accent2));
-          border: none; color: white;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; box-shadow: 0 2px 8px #2563eb35;
-          transition: all 0.15s;
-        }
+        .vc-playback { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 -2px 8px rgba(15,23,42,0.05); }
+        .vc-play-btn { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px #2563eb35; transition: all 0.15s; }
         .vc-play-btn:hover { transform: scale(1.08); box-shadow: 0 4px 14px #2563eb40; }
-        .vc-ctrl-btn {
-          width: 28px; height: 28px; flex-shrink: 0;
-          border-radius: 6px; border: 1px solid var(--border);
-          background: var(--surface2); color: var(--text3);
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; transition: all 0.12s;
-        }
+        .vc-ctrl-btn { width: 28px; height: 28px; flex-shrink: 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.12s; }
         .vc-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
-        .vc-slider {
-          flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px;
-          outline: none; cursor: pointer; background: var(--border);
-          transition: background 0.2s;
-        }
-        .vc-slider::-webkit-slider-thumb {
-          -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
-          background: var(--accent); cursor: pointer;
-          box-shadow: 0 0 0 3px white, 0 0 0 4px #bfdbfe;
-          transition: all 0.15s;
-        }
+        .vc-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; background: var(--border); transition: background 0.2s; }
+        .vc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 3px white, 0 0 0 4px #bfdbfe; transition: all 0.15s; }
         .vc-slider:hover::-webkit-slider-thumb { transform: scale(1.2); }
         .vc-time-lbl { font-size: 10.5px; color: var(--text3); min-width: 90px; text-align: right; font-weight: 500; }
-        .vc-speed-sel {
-          background: var(--surface2); border: 1px solid var(--border);
-          color: var(--text2); font-family: var(--mono); font-size: 10px;
-          padding: 4px 7px; border-radius: 6px; cursor: pointer; font-weight: 500;
-        }
-        .vc-cycle-badge {
-          background: linear-gradient(135deg, #eff6ff, #dbeafe);
-          border: 1px solid #bfdbfe; color: var(--accent);
-          font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
-          white-space: nowrap;
-        }
+        .vc-speed-sel { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-family: var(--mono); font-size: 10px; padding: 4px 7px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .vc-cycle-badge { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; color: var(--accent); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
 
         /* ── GLOSSARY ── */
         .vc-glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: 14px; }
-        .vc-gcard {
-          background: var(--surface); border: 1px solid var(--border);
-          border-radius: var(--radius); padding: 16px 18px;
-          box-shadow: var(--shadow-sm); transition: box-shadow 0.15s, transform 0.15s;
-        }
+        .vc-gcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); transition: box-shadow 0.15s, transform 0.15s; }
         .vc-gcard:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-        .vc-gterm {
-          font-family: var(--serif); font-size: 14px; font-weight: 700;
-          color: var(--text); margin-bottom: 8px; letter-spacing: -0.2px;
-        }
+        .vc-gterm { font-family: var(--serif); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: -0.2px; }
         .vc-gterm-accent { color: var(--accent); }
         .vc-gdef { font-size: 11px; color: var(--text2); line-height: 1.7; }
 
-        /* ── DIVIDERS AND MISC ── */
+        /* ── MISC ── */
         .vc-divider { height: 1px; background: var(--border); margin: 4px 0; }
-
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
@@ -1324,7 +1169,7 @@ export default function VerilogClassroom() {
       `}</style>
 
       <div className="vc-app">
-        {/* ── Header ── */}
+        {/* Header */}
         <header className="vc-header">
           <div className="vc-logo">
             <div className="vc-logo-mark">
@@ -1332,22 +1177,16 @@ export default function VerilogClassroom() {
             </div>
             <div>
               <div className="vc-logo-text">Verilog Classroom</div>
-              <span className="vc-logo-sub">Hardware IDE</span>
+              <span className="vc-logo-sub">Icarus Verilog IDE</span>
             </div>
           </div>
           <div className="vc-sep" />
           <div className="vc-header-pills">
             {apiStat ? (
-              <>
-                <StatusPill
-                  label="Yosys"
-                  ok={apiStat.dependencies?.yosys === "available"}
-                />
-                <StatusPill
-                  label="Icarus"
-                  ok={apiStat.dependencies?.icarus_verilog === "available"}
-                />
-              </>
+              <StatusPill
+                label="Icarus"
+                ok={apiStat.dependencies?.icarus_verilog === "available"}
+              />
             ) : (
               <StatusPill label="API offline" ok={false} />
             )}
@@ -1360,7 +1199,7 @@ export default function VerilogClassroom() {
         </header>
 
         <div className="vc-layout">
-          {/* ── Sidebar ── */}
+          {/* Sidebar */}
           <aside className="vc-sidebar">
             {/* Pipeline */}
             <div className="vc-section">
@@ -1423,42 +1262,19 @@ export default function VerilogClassroom() {
                   </div>
                 )}
 
-                {/* Map */}
-                <button
-                  className="vc-btn vc-btn-secondary"
-                  onClick={handleMap}
-                  disabled={!projectId || steps[1].status === 1}
-                >
-                  {steps[1].status === 1 ? (
-                    <>
-                      <Ic.Loader /> Mapeando…
-                    </>
-                  ) : (
-                    <>
-                      <Ic.Cpu /> Map Netlist
-                    </>
-                  )}
-                </button>
-                {errors.map && (
-                  <div className="vc-err">
-                    <Ic.X />
-                    {errors.map}
-                  </div>
-                )}
-
-                {/* Simulate */}
+                {/* Simular */}
                 <button
                   className="vc-btn vc-btn-primary"
                   onClick={handleSim}
-                  disabled={steps[1].status !== 2 || steps[2].status === 1}
+                  disabled={steps[0].status !== 2 || steps[1].status === 1}
                 >
-                  {steps[2].status === 1 ? (
+                  {steps[1].status === 1 ? (
                     <>
                       <Ic.Loader /> Simulando…
                     </>
                   ) : (
                     <>
-                      <Ic.Play /> Run Simulation
+                      <Ic.Play /> Executar Simulação
                     </>
                   )}
                 </button>
@@ -1476,6 +1292,8 @@ export default function VerilogClassroom() {
                   <br />
                   &nbsp;&nbsp;*.v &nbsp;(arquivos Verilog)
                   <br />
+                  &nbsp;&nbsp;*.tb.v &nbsp;(testbench)
+                  <br />
                   &nbsp;&nbsp;scripts/ &nbsp;(scripts de sim)
                 </div>
               </div>
@@ -1492,13 +1310,13 @@ export default function VerilogClassroom() {
                 />
               ) : (
                 <div style={{ fontSize: 11, color: "var(--text4)" }}>
-                  Nenhum dado de simulação
+                  Execute a simulação primeiro
                 </div>
               )}
             </div>
           </aside>
 
-          {/* ── Main ── */}
+          {/* Main */}
           <main className="vc-main">
             {/* Metrics */}
             {meta && (
@@ -1554,165 +1372,227 @@ export default function VerilogClassroom() {
 
             {/* Content */}
             <div className="vc-content">
-              <div className="vc-content-scroll">
-                {/* Waveform */}
-                {tab === "waveform" && (
-                  <>
-                    <div className="vc-chips">
-                      {allSignals.map((sig) => (
-                        <button
-                          key={sig.name}
-                          className={`vc-chip ${selSignals.find((x) => x.name === sig.name) ? "vc-chip-on" : ""}`}
-                          onClick={() => toggleSig(sig)}
+              {/* ── Datapath: fora do scroll para o ReactFlow ter dimensões reais ── */}
+              {tab === "datapath" && (
+                <div key="datapath" className="vc-flow-panel">
+                  <DatapathViewer
+                    activeSignals={activeSignals}
+                    activeElements={activeDatapathElements}
+                  />
+                </div>
+              )}
+
+              {/* ── Netlist: idem ── */}
+              {tab === "netlist" && (
+                <div key="netlist" className="vc-flow-panel">
+                  {netlistContent ? (
+                    <NetlistViewer
+                      netlistJson={netlistContent}
+                      activeSignals={activeSignals}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 12,
+                        background: "#f8fafc",
+                      }}
+                    >
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#cbd5e1"
+                        strokeWidth="1.5"
+                      >
+                        <rect x="4" y="4" width="16" height="16" rx="2" />
+                        <rect x="9" y="9" width="6" height="6" />
+                        <line x1="9" y1="1" x2="9" y2="4" />
+                        <line x1="15" y1="1" x2="15" y2="4" />
+                        <line x1="9" y1="20" x2="9" y2="23" />
+                        <line x1="15" y1="20" x2="15" y2="23" />
+                      </svg>
+                      <div
+                        style={{
+                          color: "#94a3b8",
+                          fontSize: 12,
+                          fontFamily: "var(--mono)",
+                          textAlign: "center",
+                          maxWidth: 340,
+                        }}
+                      >
+                        {simResult
+                          ? "Netlist não disponível — verifique se o Yosys está instalado no servidor e se o campo netlist_content foi retornado pelo backend."
+                          : "Execute a simulação para visualizar o netlist."}
+                      </div>
+                      {simResult && (
+                        <div
+                          style={{
+                            fontSize: 10,
+                            color: "#94a3b8",
+                            fontFamily: "var(--mono)",
+                            background: "#f1f5f9",
+                            borderRadius: 6,
+                            padding: "6px 12px",
+                            maxWidth: 440,
+                            wordBreak: "break-all",
+                            textAlign: "center",
+                          }}
                         >
-                          <Ic.Signal />
-                          {sig.shortName}
+                          Campos retornados pelo backend:{" "}
+                          <b style={{ color: "#374151" }}>
+                            {Object.keys(simResult).join(", ")}
+                          </b>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Demais abas: dentro do scroll normal ── */}
+              {tab !== "datapath" && tab !== "netlist" && (
+                <div className="vc-content-scroll">
+                  {/* Waveform */}
+                  {tab === "waveform" && (
+                    <>
+                      <div className="vc-chips">
+                        {allSignals.map((sig) => (
+                          <button
+                            key={sig.name}
+                            className={`vc-chip ${selSignals.find((x) => x.name === sig.name) ? "vc-chip-on" : ""}`}
+                            onClick={() => toggleSig(sig)}
+                          >
+                            <Ic.Signal />
+                            {sig.shortName}
+                          </button>
+                        ))}
+                      </div>
+                      <WaveformViewer
+                        sortedTimes={precomputed?.sorted}
+                        accumulated={precomputed?.accumulated}
+                        currentTime={currentTime}
+                        selectedSignals={selSignals}
+                        onTimeClick={setCurrentTime}
+                      />
+                      <div className="vc-exports">
+                        <button
+                          className="vc-export-btn"
+                          onClick={() => {
+                            if (!precomputed || !selSignals.length) return;
+                            const rows = precomputed.sorted.map((t) => {
+                              const s = precomputed.accumulated[t] || {};
+                              return [
+                                t,
+                                ...selSignals.map(
+                                  (sig) =>
+                                    s[sig.name] ?? s[sig.shortName] ?? "",
+                                ),
+                              ].join(",");
+                            });
+                            const csv = [
+                              "timestamp," +
+                                selSignals.map((s) => s.shortName).join(","),
+                              ...rows,
+                            ].join("\n");
+                            const a = document.createElement("a");
+                            a.href = URL.createObjectURL(
+                              new Blob([csv], { type: "text/csv" }),
+                            );
+                            a.download = "timeline.csv";
+                            a.click();
+                          }}
+                        >
+                          <Ic.Download /> Exportar CSV
                         </button>
+                        {netlistContent && (
+                          <button
+                            className="vc-export-btn"
+                            onClick={() => {
+                              const a = document.createElement("a");
+                              a.href = URL.createObjectURL(
+                                new Blob(
+                                  [JSON.stringify(netlistContent, null, 2)],
+                                  { type: "application/json" },
+                                ),
+                              );
+                              a.download = "netlist.json";
+                              a.click();
+                            }}
+                          >
+                            <Ic.Download /> Exportar Netlist JSON
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Console */}
+                  {tab === "console" && (
+                    <>
+                      {simResult && (
+                        <ConsolePanelLight
+                          title="Icarus Verilog — Simulation Output"
+                          stdout={simResult.stdout}
+                          stderr={simResult.stderr}
+                          collapsed={consoleColl.sim}
+                          onToggle={() =>
+                            setConsoleColl((c) => ({ ...c, sim: !c.sim }))
+                          }
+                        />
+                      )}
+                      {!simResult && (
+                        <div className="vc-empty">
+                          <Ic.Terminal />
+                          <span>
+                            Nenhuma saída de console — execute a simulação
+                            primeiro
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Glossary */}
+                  {tab === "education" && (
+                    <div className="vc-glossary">
+                      {GLOSSARY.map((g) => (
+                        <div key={g.term} className="vc-gcard">
+                          <div className="vc-gterm">
+                            <span className="vc-gterm-accent">
+                              {g.term.split(" ")[0]}
+                            </span>
+                            {" " + g.term.split(" ").slice(1).join(" ")}
+                          </div>
+                          <div className="vc-gdef">{g.def}</div>
+                        </div>
                       ))}
                     </div>
-                    <WaveformViewer
-                      sortedTimes={precomputed?.sorted}
-                      accumulated={precomputed?.accumulated}
-                      currentTime={currentTime}
-                      selectedSignals={selSignals}
-                      onTimeClick={setCurrentTime}
-                    />
-                    <div className="vc-exports">
-                      <button
-                        className="vc-export-btn"
-                        onClick={() => {
-                          if (!precomputed || !selSignals.length) return;
-                          const rows = precomputed.sorted.map((t) => {
-                            const s = precomputed.accumulated[t] || {};
-                            return [
-                              t,
-                              ...selSignals.map(
-                                (sig) => s[sig.name] ?? s[sig.shortName] ?? "",
-                              ),
-                            ].join(",");
-                          });
-                          const csv = [
-                            "timestamp," +
-                              selSignals.map((s) => s.shortName).join(","),
-                            ...rows,
-                          ].join("\n");
-                          const a = document.createElement("a");
-                          a.href = URL.createObjectURL(
-                            new Blob([csv], { type: "text/csv" }),
-                          );
-                          a.download = "timeline.csv";
-                          a.click();
-                        }}
-                      >
-                        <Ic.Download /> Exportar CSV
-                      </button>
-                      <button
-                        className="vc-export-btn"
-                        onClick={() => {
-                          if (!mapResult?.netlist_content) return;
-                          const a = document.createElement("a");
-                          a.href = URL.createObjectURL(
-                            new Blob(
-                              [
-                                JSON.stringify(
-                                  mapResult.netlist_content,
-                                  null,
-                                  2,
-                                ),
-                              ],
-                              { type: "application/json" },
-                            ),
-                          );
-                          a.download = "netlist.json";
-                          a.click();
-                        }}
-                      >
-                        <Ic.Download /> Exportar Netlist JSON
-                      </button>
-                    </div>
-                  </>
-                )}
-                {/* Datapath - O NOVO SIMULADOR */}
-                {tab === "datapath" && (
-                  <div
-                    style={{
-                      height: "600px",
-                      width: "100%",
-                      borderRadius: "var(--radius)",
-                      overflow: "hidden",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <DatapathViewer activeElements={activeDatapathElements} />
-                  </div>
-                )}
-                {/* Netlist */}
-                {/* Netlist */}
-                {tab === "netlist" && (
-                  <div style={{ height: "600px", width: "100%" }}>
-                    <NetlistViewer
-                      netlistJson={mapResult?.netlist_content}
-                      activeSignals={activeSignals} // <--- ADICIONE ESTA LINHA AQUI
-                    />
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {/* Console */}
-                {tab === "console" && (
-                  <>
-                    {mapResult && (
-                      <ConsolePanelLight
-                        title="Yosys — Mapping Output"
-                        stdout={mapResult.stdout}
-                        stderr={mapResult.stderr}
-                        collapsed={consoleColl.map}
-                        onToggle={() =>
-                          setConsoleColl((c) => ({ ...c, map: !c.map }))
-                        }
-                      />
-                    )}
-                    {simResult && (
-                      <ConsolePanelLight
-                        title="Icarus — Simulation Output"
-                        stdout={simResult.stdout}
-                        stderr={simResult.stderr}
-                        collapsed={consoleColl.sim}
-                        onToggle={() =>
-                          setConsoleColl((c) => ({ ...c, sim: !c.sim }))
-                        }
-                      />
-                    )}
-                    {!mapResult && !simResult && (
-                      <div className="vc-empty">
-                        Nenhuma saída de console — execute o pipeline primeiro
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Glossary */}
-                {tab === "education" && (
-                  <div className="vc-glossary">
-                    {GLOSSARY.map((g) => (
-                      <div key={g.term} className="vc-gcard">
-                        <div className="vc-gterm">
-                          <span className="vc-gterm-accent">
-                            {g.term.split(" ")[0]}
-                          </span>
-                          {" " + g.term.split(" ").slice(1).join(" ")}
-                        </div>
-                        <div className="vc-gdef">{g.def}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Playback */}
+              {/* Playback bar */}
               {precomputed && (
                 <div className="vc-playback">
+                  {/* Skip to start */}
                   <button
                     className="vc-ctrl-btn"
+                    title="Ir ao início"
+                    onClick={() => setCurrentTime(precomputed.sorted[0])}
+                  >
+                    <Ic.SkipStart />
+                  </button>
+                  {/* Step back */}
+                  <button
+                    className="vc-ctrl-btn"
+                    title="Passo anterior"
                     onClick={() => {
                       const idx = precomputed.sorted.indexOf(currentTime);
                       setCurrentTime(precomputed.sorted[Math.max(0, idx - 1)]);
@@ -1720,14 +1600,17 @@ export default function VerilogClassroom() {
                   >
                     <Ic.StepB />
                   </button>
+                  {/* Play/Pause */}
                   <button
                     className="vc-play-btn"
                     onClick={() => setPlaying((p) => !p)}
                   >
                     {playing ? <Ic.Pause /> : <Ic.Play />}
                   </button>
+                  {/* Step forward */}
                   <button
                     className="vc-ctrl-btn"
+                    title="Próximo passo"
                     onClick={() => {
                       const idx = precomputed.sorted.indexOf(currentTime);
                       setCurrentTime(
@@ -1739,6 +1622,19 @@ export default function VerilogClassroom() {
                   >
                     <Ic.StepF />
                   </button>
+                  {/* Skip to end */}
+                  <button
+                    className="vc-ctrl-btn"
+                    title="Ir ao fim"
+                    onClick={() =>
+                      setCurrentTime(
+                        precomputed.sorted[precomputed.sorted.length - 1],
+                      )
+                    }
+                  >
+                    <Ic.SkipEnd />
+                  </button>
+
                   <input
                     type="range"
                     className="vc-slider"
