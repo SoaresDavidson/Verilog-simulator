@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xyflow/react": "^12.10.2",
+    "dagre": "^0.8.5",
     "dockerode": "^5.0.0",
     "dotenv": "^17.4.2",
     "react": "^19.2.6",
@@ -17,6 +19,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/dagre": "^0.7.54",
     "@types/dockerode": "^4.0.1",
     "@types/node": "^24.12.4",
     "@types/react": "^19.2.14",

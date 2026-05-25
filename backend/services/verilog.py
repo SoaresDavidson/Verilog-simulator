@@ -86,6 +86,10 @@ class VerilogService:
         Executes Yosys synthesis/mapping dynamically inside the 'yosys' container,
         using the student's project folder as the working directory.
         """
+        print("\n" + "="*50)
+        print(f"[ALERTA] Rota de mapeamento chamada! Project ID: {project_id}")
+        print("="*50 + "\n")
+
         local_dir, container_dir = self._resolve_paths(project_id)
         
         # Find all .v and .sv files in the local student folder recursively
@@ -94,8 +98,11 @@ class VerilogService:
             for file in files:
                 if file.endswith((".v", ".sv")):
                     rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
+                    if "tb_" in file.lower() or "testbench" in rel_path.lower():
+                        continue
                     v_files.append(rel_path)
 
+        print(f"\n[DEBUG YOSYS] Arquivos que passaram no filtro: {v_files}\n")
         if not v_files:
             raise FileNotFoundError(f"No Verilog (.v or .sv) files found in '{local_dir}' for mapping.")
 
@@ -168,7 +175,7 @@ class VerilogService:
                 if file.endswith((".v", ".sv")):
                     rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
                     v_files.append(rel_path)
-                    
+
         if not v_files:
             raise FileNotFoundError(f"No Verilog (.v or .sv) files found in '{local_dir}' for simulation.")
 
@@ -346,4 +353,3 @@ class VerilogService:
 
         json_str = json.dumps(data, indent=2, cls=DecimalEncoder)
         return json.loads(json_str)
-

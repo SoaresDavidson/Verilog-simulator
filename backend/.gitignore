@@ -7,3 +7,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .env
+.claude
+verilog_code/runs/
+backend/ciclos.json
+back/ciclos.json

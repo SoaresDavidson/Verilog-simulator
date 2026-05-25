@@ -1,0 +1,68 @@
+/* ═══════════════════════════════════════════════════════════════
+   VERILOG DIDÁTICO — Sistema de Design (Light Theme)
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── Backgrounds ────────────────────────────────────────────── */
+  --bg-primary:   #FFFFFF;
+  --bg-secondary: #F8F9FA;
+  --bg-tertiary:  #F1F3F5;
+  --bg-sidebar:   #FAFBFC;
+
+  /* ── Texto ──────────────────────────────────────────────────── */
+  --text-primary:   #1A1D23;
+  --text-secondary: #52596B;
+  --text-muted:     #8B93A5;
+
+  /* ── Bordas ─────────────────────────────────────────────────── */
+  --border-subtle:  #E8EAED;
+  --border-default: #D1D5DB;
+  --border-strong:  #9CA3AF;
+
+  /* ── Sinais (semântica de hardware) ─────────────────────────── */
+  --signal-active:  #2563EB;
+  --signal-bubble:  #F59E0B;
+  --signal-flush:   #EF4444;
+  --signal-ok:      #10B981;
+  --signal-neutral: #6B7280;
+
+  /* ── Estágios do Pipeline ───────────────────────────────────── */
+  --stage-if:   #EEF2FF;
+  --stage-id:   #F0FDF4;
+  --stage-ex:   #FFF7ED;
+  --stage-mem:  #FEF3C7;
+  --stage-wb:   #F0F9FF;
+
+  /* ── Bordas dos estágios ────────────────────────────────────── */
+  --stage-if-border:  #818CF8;
+  --stage-id-border:  #34D399;
+  --stage-ex-border:  #FB923C;
+  --stage-mem-border: #FBBF24;
+  --stage-wb-border:  #38BDF8;
+
+  /* ── Tipografia ─────────────────────────────────────────────── */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+
+  /* ── Sombras ────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+
+  /* ── Raios ──────────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  --sidebar-width: 280px;
+  --header-height: 56px;
+
+  /* ── Transições ─────────────────────────────────────────────── */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.35s ease;
+}
