@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import NetlistViewer from "./NetlistViewer";
-import DatapathViewer from "./DatapathViewer";
+import NetlistViewer from "./components/NetlistViewer";
+import DatapathViewer from "./components/DatapathViewer";
 
 const API_BASE = "http://localhost:8000/api/v1";
 const STORAGE_KEY = "verilog_classroom_project";
@@ -19,6 +19,14 @@ function precomputeTimeline(timeline) {
   return { sorted, accumulated };
 }
 
+// Returns true if `modules` is a flat dict of scopes (backend format) rather than
+// a single scope object. The distinction: a flat dict has no "variables" / "child_scopes"
+// at the top level — those only appear inside individual scope entries.
+function _isFlatModuleDict(modules) {
+  if (!modules || typeof modules !== "object") return false;
+  return modules.variables === undefined && modules.child_scopes === undefined;
+}
+
 function countClockEdges(timeline, clockSignal) {
   const times = Object.keys(timeline)
     .map(Number)
@@ -27,8 +35,16 @@ function countClockEdges(timeline, clockSignal) {
     prev = "0";
   for (const t of times) {
     const changes = timeline[String(t)];
-    if (clockSignal in changes) {
-      const val = changes[clockSignal];
+    // Accept exact match OR suffix match (e.g. "clk" matches "tb.clk")
+    const key =
+      clockSignal in changes
+        ? clockSignal
+        : Object.keys(changes).find(
+            (k) =>
+              k === clockSignal || k.endsWith(`.${clockSignal}`),
+          );
+    if (key) {
+      const val = changes[key];
       if (prev === "0" && val === "1") edges++;
       prev = val;
     }
@@ -38,13 +54,26 @@ function countClockEdges(timeline, clockSignal) {
 
 function findClockSignal(modules) {
   if (!modules) return null;
+  if (_isFlatModuleDict(modules)) {
+    // Backend flat-dict format: { "tb": { variables: {...}, child_scopes: [...] }, ... }
+    for (const [scopeName, scope] of Object.entries(modules)) {
+      const s = scope as any;
+      if (s && s.variables) {
+        for (const [name] of Object.entries(s.variables)) {
+          if (/clk|clock/i.test(name as string)) return `${scopeName}.${name}`;
+        }
+      }
+    }
+    return null;
+  }
+  // Legacy single-scope recursive format
   const search = (mod) => {
     if (mod.variables) {
       for (const [name] of Object.entries(mod.variables)) {
         if (/clk|clock/i.test(name)) return name;
       }
     }
-    if (mod.child_scopes) {
+    if (mod.child_scopes && !Array.isArray(mod.child_scopes)) {
       for (const child of Object.values(mod.child_scopes)) {
         const f = search(child);
         if (f) return f;
@@ -58,6 +87,23 @@ function findClockSignal(modules) {
 function flattenSignals(modules, prefix = "") {
   if (!modules) return [];
   const signals = [];
+  if (_isFlatModuleDict(modules)) {
+    // Backend flat-dict format: iterate every scope and collect variables with full paths
+    for (const [scopeName, scope] of Object.entries(modules)) {
+      const s = scope as any;
+      if (s && s.variables) {
+        for (const [name, info] of Object.entries(s.variables)) {
+          signals.push({
+            name: `${scopeName}.${name}`,
+            shortName: name as string,
+            ...(info as object),
+          });
+        }
+      }
+    }
+    return signals;
+  }
+  // Legacy single-scope recursive format
   if (modules.variables) {
     for (const [name, info] of Object.entries(modules.variables)) {
       signals.push({
@@ -67,7 +113,7 @@ function flattenSignals(modules, prefix = "") {
       });
     }
   }
-  if (modules.child_scopes) {
+  if (modules.child_scopes && !Array.isArray(modules.child_scopes)) {
     for (const [scopeName, child] of Object.entries(modules.child_scopes)) {
       signals.push(
         ...flattenSignals(child, prefix ? `${prefix}.${scopeName}` : scopeName),
@@ -464,10 +510,31 @@ function ConsolePanelLight({ title, stdout, stderr, collapsed, onToggle }) {
   );
 }
 
-function ModuleTree({ modules, selected, onSelect, prefix = "" }) {
+function ModuleTree({ modules, selected, onSelect, prefix = "", flatDict = null }) {
   const [open, setOpen] = useState(true);
   if (!modules) return null;
+
+  // Top-level call with flat dict: render each scope entry as a child tree node
+  if (_isFlatModuleDict(modules)) {
+    return (
+      <div>
+        {Object.entries(modules).map(([scopeName, scope]) => (
+          <ModuleTree
+            key={scopeName}
+            modules={scope}
+            selected={selected}
+            onSelect={onSelect}
+            prefix={scopeName}
+            flatDict={modules}
+          />
+        ))}
+      </div>
+    );
+  }
+
   const displayName = prefix.split(".").pop() || "root";
+  const fd = flatDict ?? {};
+
   return (
     <div className="vc-mtree">
       <button
@@ -493,7 +560,7 @@ function ModuleTree({ modules, selected, onSelect, prefix = "" }) {
                   <Ic.Signal />
                   <span className="vc-mvar-name">{n}</span>
                   <span className="vc-mvar-meta">
-                    [{(v as any).size ?? 1}b·{(v as any).type ?? "wire"}]
+                    [{(v as any).size ?? 1}b·{(v as any).var_type ?? (v as any).type ?? "wire"}]
                   </span>
                 </div>
               ))}
@@ -502,7 +569,25 @@ function ModuleTree({ modules, selected, onSelect, prefix = "" }) {
               +{Object.keys(modules.variables).length - 8} sinais
             </div>
           )}
-          {modules.child_scopes &&
+          {/* child_scopes from backend is an array of scope-name strings */}
+          {modules.child_scopes && Array.isArray(modules.child_scopes) &&
+            (modules.child_scopes as string[]).map((childName) => {
+              const shortChild = childName.split(".").pop() ?? childName;
+              const childScope = (fd as any)[childName] ?? (fd as any)[shortChild];
+              if (!childScope) return null;
+              return (
+                <ModuleTree
+                  key={childName}
+                  modules={childScope}
+                  selected={selected}
+                  onSelect={onSelect}
+                  prefix={prefix ? `${prefix}.${childName}` : childName}
+                  flatDict={fd}
+                />
+              );
+            })}
+          {/* Legacy: child_scopes as object */}
+          {modules.child_scopes && !Array.isArray(modules.child_scopes) &&
             Object.entries(modules.child_scopes).map(([n, child]) => (
               <ModuleTree
                 key={n}
@@ -510,6 +595,7 @@ function ModuleTree({ modules, selected, onSelect, prefix = "" }) {
                 selected={selected}
                 onSelect={onSelect}
                 prefix={prefix ? `${prefix}.${n}` : n}
+                flatDict={flatDict}
               />
             ))}
         </div>
