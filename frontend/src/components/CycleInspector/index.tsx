@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import type { LogCiclo } from "../../types";
 import { ABI_NAMES } from "../DatapathDiagram/riscv-stages";
+import "./style.css";
 
 interface Props {
   cycle: LogCiclo;
@@ -152,7 +153,7 @@ export function CycleInspector({ cycle }: Props) {
     <div className="cycle-inspector">
       {/* ── Cards de Sinais ─────────────────────────────────────── */}
       <div>
-        <p className="sidebar-label" style={{ marginBottom: "8px" }}>
+        <p className="sidebar-label cycle-inspector-title">
           Sinais do Ciclo
         </p>
         <div className="info-grid">
@@ -163,13 +164,7 @@ export function CycleInspector({ cycle }: Props) {
               title={card.description}
             >
               <p className="info-card-label">
-                <span
-                  style={{
-                    marginRight: "4px",
-                    fontFamily: "var(--font-mono)",
-                    opacity: 0.6,
-                  }}
-                >
+                <span className="cycle-card-icon">
                   {card.icon}
                 </span>
                 {card.label}
@@ -181,14 +176,7 @@ export function CycleInspector({ cycle }: Props) {
               >
                 {card.value}
               </p>
-              <p
-                style={{
-                  fontSize: "0.6rem",
-                  color: "var(--text-muted)",
-                  marginTop: "3px",
-                  lineHeight: 1.3,
-                }}
-              >
+              <p className="cycle-card-desc">
                 {card.description}
               </p>
             </div>
@@ -198,28 +186,12 @@ export function CycleInspector({ cycle }: Props) {
 
       {/* ── Banco de Registradores ──────────────────────────────── */}
       <div className="reg-section">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginBottom: "8px",
-          }}
-        >
-          <p className="sidebar-label" style={{ margin: 0 }}>
+        <div className="cycle-reg-header">
+          <p className="sidebar-label cycle-reg-title">
             Banco de Registradores (x0–x31)
           </p>
           {hasAnyActive && (
-            <span
-              style={{
-                fontSize: "0.625rem",
-                background: "rgba(37,99,235,0.08)",
-                color: "var(--signal-active)",
-                border: "1px solid rgba(37,99,235,0.25)",
-                borderRadius: "4px",
-                padding: "1px 5px",
-              }}
-            >
+            <span className="cycle-reg-badge">
               {
                 allRegs.filter(
                   (r) =>

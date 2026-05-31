@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSession } from "../../context/SessionContext";
 import type { NetlistNode } from "../../types";
+import "./style.css";
 
 // ── Constantes ────────────────────────────────────────────────────────────
 
@@ -159,28 +160,13 @@ export function NetlistGraph() {
           aria-label="Buscar nó no netlist"
         />
 
-        <span
-          style={{
-            fontSize: "0.6875rem",
-            color: "var(--text-muted)",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <span className="netlist-count">
           {filteredNodes.length}/{netlist.nodes?.length || 0} nós
         </span>
       </div>
 
       {/* Filtros por tipo */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "6px",
-          padding: "10px 16px",
-          background: "var(--bg-primary)",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
-      >
+      <div className="netlist-type-filters">
         {allTypes.map((type) => {
           const { borderColor } = categorizeNode(type);
           const active = activeTypes.has(type);
@@ -188,16 +174,11 @@ export function NetlistGraph() {
             <button
               key={type}
               onClick={() => toggleType(type)}
+              className="netlist-type-btn"
               style={{
-                padding: "3px 8px",
-                borderRadius: "var(--radius-sm)",
                 border: `1px solid ${active ? borderColor : "var(--border-subtle)"}`,
                 background: active ? `${borderColor}22` : "var(--bg-secondary)",
                 color: active ? "var(--text-primary)" : "var(--text-muted)",
-                fontSize: "0.6875rem",
-                fontFamily: "var(--font-mono)",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
               }}
             >
               {type}
@@ -207,15 +188,7 @@ export function NetlistGraph() {
         {activeTypes.size > 0 && (
           <button
             onClick={() => setActiveTypes(new Set())}
-            style={{
-              padding: "3px 8px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--border-default)",
-              background: "transparent",
-              color: "var(--signal-flush)",
-              fontSize: "0.6875rem",
-              cursor: "pointer",
-            }}
+            className="netlist-clear-filters-btn"
           >
             Limpar filtros
           </button>
@@ -223,11 +196,11 @@ export function NetlistGraph() {
       </div>
 
       {/* SVG do grafo */}
-      <div style={{ overflowX: "auto" }}>
+      <div className="netlist-svg-container">
         <svg
           viewBox={`0 0 ${svgW} ${svgH}`}
           width={Math.max(svgW, 600)}
-          style={{ display: "block" }}
+          className="netlist-svg"
           aria-label="Grafo do netlist sintetizado"
           role="img"
         >
@@ -315,34 +288,14 @@ export function NetlistGraph() {
       </div>
 
       {/* Resumo dos grupos */}
-      <div
-        style={{
-          padding: "12px 16px",
-          borderTop: "1px solid var(--border-subtle)",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
-      >
+      <div className="netlist-groups-summary">
         {groups.map((g) => (
-          <div
-            key={g.type}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              fontSize: "0.6875rem",
-              color: "var(--text-muted)",
-            }}
-          >
+          <div key={g.type} className="netlist-group-item">
             <span
+              className="netlist-group-color-box"
               style={{
-                width: "10px",
-                height: "10px",
-                borderRadius: "2px",
                 background: g.color,
                 border: `1px solid ${g.borderColor}`,
-                display: "inline-block",
               }}
             />
             {g.type} ({g.nodes.length})

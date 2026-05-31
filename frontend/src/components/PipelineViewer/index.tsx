@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "../../context/SessionContext";
 import { CycleInspector } from "../CycleInspector";
 import { DatapathDiagram } from "../DatapathDiagram";
+import "./style.css";
 
 export function PipelineViewer() {
   const { cycles, currentCycle, setCycle, appState } = useSession();
@@ -71,7 +72,7 @@ export function PipelineViewer() {
 
         <span className="cycle-counter">
           Ciclo <strong>{c.ciclo}</strong>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+          <span className="cycle-counter-total">
             {" "}
             / {cycles.length}
           </span>

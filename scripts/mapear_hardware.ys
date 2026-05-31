@@ -1,5 +1,5 @@
 # list_ports.ys
-read_verilog -sv *.v
+read_verilog -p *.v
 
 # Roda hierarquia sem síntese (preserva nomes originais)
 hierarchy -auto-top

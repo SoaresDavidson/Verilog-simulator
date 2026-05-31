@@ -1,5 +1,6 @@
 import { useRef, useState, type DragEvent, type ChangeEvent } from "react";
 import { useSession } from "../../context/SessionContext";
+import "./style.css";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
 
@@ -19,22 +20,16 @@ function StepIcon({ status }: { status: StepStatus }) {
     return <span className="spinner" aria-label="Carregando" />;
   if (status === "done")
     return (
-      <span style={{ color: "var(--signal-ok)", fontSize: "0.875rem" }}>✓</span>
+      <span className="step-check">✓</span>
     );
   if (status === "error")
     return (
-      <span style={{ color: "var(--signal-flush)", fontSize: "0.875rem" }}>
+      <span className="step-x">
         ✕
       </span>
     );
   return (
-    <span
-      style={{
-        fontSize: "0.6875rem",
-        fontFamily: "var(--font-mono)",
-        color: "var(--text-muted)",
-      }}
-    />
+    <span className="step-bullet" />
   );
 }
 
@@ -167,7 +162,7 @@ export function UploadPanel() {
             ref={inputRef}
             type="file"
             accept=".zip"
-            style={{ display: "none" }}
+            className="upload-input-hidden"
             onChange={onInputChange}
           />
           <span className="upload-icon" aria-hidden="true">
@@ -192,7 +187,7 @@ export function UploadPanel() {
         >
           {appState === "uploading" ? (
             <>
-              <span className="spinner" style={{ marginRight: 6 }} /> Enviando…
+              <span className="spinner btn-spinner-icon" /> Enviando…
             </>
           ) : (
             "Enviar Projeto"
@@ -232,7 +227,7 @@ export function UploadPanel() {
           >
             {appState === "synthesizing" ? (
               <>
-                <span className="spinner" style={{ marginRight: 6 }} />{" "}
+                <span className="spinner btn-spinner-icon" />{" "}
                 Executando Yosys…
               </>
             ) : (
@@ -247,7 +242,7 @@ export function UploadPanel() {
           >
             {appState === "simulating" ? (
               <>
-                <span className="spinner" style={{ marginRight: 6 }} />{" "}
+                <span className="spinner btn-spinner-icon" />{" "}
                 Executando Icarus…
               </>
             ) : (
@@ -261,23 +256,14 @@ export function UploadPanel() {
       {projectId && (
         <section className="sidebar-section">
           <button
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              width: "100%",
-            }}
+            className="session-expand-btn"
             onClick={() => setSessionExpanded((p) => !p)}
             aria-expanded={sessionExpanded}
           >
-            <p className="sidebar-label" style={{ flex: 1, margin: 0 }}>
+            <p className="sidebar-label" style={{ flex: 1 }}>
               Sessão
             </p>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+            <span className="session-chevron">
               {sessionExpanded ? "▲" : "▼"}
             </span>
           </button>
@@ -299,42 +285,25 @@ export function UploadPanel() {
 
               {!confirmDelete ? (
                 <button
-                  className="btn btn-danger"
+                  className="btn btn-danger session-delete-btn"
                   onClick={() => setConfirmDelete(true)}
-                  style={{ width: "100%", fontSize: "0.75rem" }}
                 >
                   Excluir sessão
                 </button>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "6px",
-                  }}
-                >
+                <div className="session-confirm-container">
                   <button
-                    className="btn btn-danger"
+                    className="btn btn-danger session-confirm-btn"
                     onClick={() => {
                       doDelete();
                       setConfirmDelete(false);
                     }}
-                    style={{ flex: 1, fontSize: "0.6875rem" }}
                   >
                     Confirmar
                   </button>
                   <button
-                    className="btn btn-secondary"
+                    className="btn btn-secondary session-cancel-btn"
                     onClick={() => setConfirmDelete(false)}
-                    style={{
-                      flex: 1,
-                      fontSize: "0.6875rem",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-secondary)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "var(--radius-md)",
-                      cursor: "pointer",
-                      padding: "6px",
-                    }}
                   >
                     Cancelar
                   </button>
@@ -343,17 +312,7 @@ export function UploadPanel() {
 
               <button
                 onClick={doClean}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "0.6875rem",
-                  color: "var(--text-muted)",
-                  padding: "2px 0",
-                  textAlign: "left",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "2px",
-                }}
+                className="session-clean-btn"
               >
                 Limpar sessões antigas
               </button>
@@ -367,87 +326,39 @@ export function UploadPanel() {
         <p className="legend-title">Legenda</p>
         <div className="legend-list">
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "var(--stage-if)",
-                border: "1px solid var(--stage-if-border)",
-              }}
-            />
+            <span className="legend-swatch legend-stage--if" />
             Estágio IF
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "var(--stage-id)",
-                border: "1px solid var(--stage-id-border)",
-              }}
-            />
+            <span className="legend-swatch legend-stage--id" />
             Estágio ID
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "var(--stage-ex)",
-                border: "1px solid var(--stage-ex-border)",
-              }}
-            />
+            <span className="legend-swatch legend-stage--ex" />
             Estágio EX
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "var(--stage-mem)",
-                border: "1px solid var(--stage-mem-border)",
-              }}
-            />
+            <span className="legend-swatch legend-stage--mem" />
             Estágio MEM
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "var(--stage-wb)",
-                border: "1px solid var(--stage-wb-border)",
-              }}
-            />
+            <span className="legend-swatch legend-stage--wb" />
             Estágio WB
           </div>
           <div className="legend-row">
-            <span
-              className="legend-line"
-              style={{ background: "var(--signal-active)" }}
-            />
+            <span className="legend-line legend-signal-active" />
             Wire com dado
           </div>
           <div className="legend-row">
-            <span
-              className="legend-dashed"
-              style={{ borderColor: "var(--signal-active)" }}
-            />
+            <span className="legend-dashed legend-signal-forwarding" />
             Forwarding
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "rgba(245,158,11,0.2)",
-                border: "1px solid var(--signal-bubble)",
-              }}
-            />
+            <span className="legend-swatch legend-signal-stall" />
             Bolha (stall)
           </div>
           <div className="legend-row">
-            <span
-              className="legend-swatch"
-              style={{
-                background: "rgba(239,68,68,0.2)",
-                border: "1px solid var(--signal-flush)",
-              }}
-            />
+            <span className="legend-swatch legend-signal-flush" />
             Flush
           </div>
         </div>

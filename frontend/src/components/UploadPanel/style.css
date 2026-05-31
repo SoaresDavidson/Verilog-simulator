@@ -1,0 +1,125 @@
+.step-check {
+  color: var(--signal-ok);
+  font-size: 0.875rem;
+}
+
+.step-x {
+  color: var(--signal-flush);
+  font-size: 0.875rem;
+}
+
+.step-bullet {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.upload-input-hidden {
+  display: none;
+}
+
+.btn-spinner-icon {
+  margin-right: 6px;
+}
+
+.session-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.session-expand-btn p {
+  margin: 0;
+  flex: 1;
+}
+
+.session-chevron {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.session-delete-btn {
+  width: 100%;
+  font-size: 0.75rem;
+}
+
+.session-confirm-container {
+  display: flex;
+  gap: 6px;
+}
+
+.session-confirm-btn {
+  flex: 1;
+  font-size: 0.6875rem;
+}
+
+.session-cancel-btn {
+  flex: 1;
+  font-size: 0.6875rem;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.session-clean-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  padding: 2px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legend-stage--if {
+  background: var(--stage-if);
+  border: 1px solid var(--stage-if-border);
+}
+
+.legend-stage--id {
+  background: var(--stage-id);
+  border: 1px solid var(--stage-id-border);
+}
+
+.legend-stage--ex {
+  background: var(--stage-ex);
+  border: 1px solid var(--stage-ex-border);
+}
+
+.legend-stage--mem {
+  background: var(--stage-mem);
+  border: 1px solid var(--stage-mem-border);
+}
+
+.legend-stage--wb {
+  background: var(--stage-wb);
+  border: 1px solid var(--stage-wb-border);
+}
+
+.legend-signal-active {
+  background: var(--signal-active);
+}
+
+.legend-signal-forwarding {
+  border-color: var(--signal-active);
+}
+
+.legend-signal-stall {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid var(--signal-bubble);
+}
+
+.legend-signal-flush {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid var(--signal-flush);
+}

@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import NetlistViewer from "./components/NetlistViewer";
-import DatapathViewer from "./components/DatapathViewer";
+import { useState, useEffect, useRef, useCallback, useMemo, memo, lazy, Suspense } from "react";
+const NetlistViewer = lazy(() => import("./components/NetlistViewer"));
+// import DatapathViewer from "./components/DatapathViewer";
+import "./App.css";
 
 const API_BASE = "http://localhost:8000/api/v1";
 const STORAGE_KEY = "verilog_classroom_project";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-function precomputeTimeline(timeline) {
+function precomputeTimeline(timeline: JSON) {
   const sorted = Object.keys(timeline)
     .map(Number)
     .sort((a, b) => a - b);
@@ -152,287 +153,142 @@ const apiDelete = (id) =>
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const Ic = {
-  Upload: () => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  Upload: memo(() => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
-  ),
-  Cpu: () => (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Cpu: memo(() => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <rect x="4" y="4" width="16" height="16" rx="2" />
       <rect x="9" y="9" width="6" height="6" />
-      <line x1="9" y1="1" x2="9" y2="4" />
-      <line x1="15" y1="1" x2="15" y2="4" />
-      <line x1="9" y1="20" x2="9" y2="23" />
-      <line x1="15" y1="20" x2="15" y2="23" />
-      <line x1="20" y1="9" x2="23" y2="9" />
-      <line x1="20" y1="14" x2="23" y2="14" />
-      <line x1="1" y1="9" x2="4" y2="9" />
-      <line x1="1" y1="14" x2="4" y2="14" />
+      <line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" />
+      <line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" />
+      <line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" />
+      <line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" />
     </svg>
-  ),
-  Play: () => (
+  )),
+  Play: memo(() => (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5 3 19 12 5 21 5 3" />
     </svg>
-  ),
-  Pause: () => (
+  )),
+  Pause: memo(() => (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
       <rect x="6" y="4" width="4" height="16" />
       <rect x="14" y="4" width="4" height="16" />
     </svg>
-  ),
-  StepB: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  StepB: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="19 20 9 12 19 4 19 20" fill="currentColor" />
       <line x1="5" y1="19" x2="5" y2="5" />
     </svg>
-  ),
-  StepF: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  StepF: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="5 4 15 12 5 20 5 4" fill="currentColor" />
       <line x1="19" y1="5" x2="19" y2="19" />
     </svg>
-  ),
-  SkipStart: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  SkipStart: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="19 20 9 12 19 4" fill="currentColor" />
       <polygon points="10 20 3 12 10 4" fill="currentColor" />
       <line x1="2" y1="19" x2="2" y2="5" />
     </svg>
-  ),
-  SkipEnd: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  SkipEnd: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="5 4 15 12 5 20" fill="currentColor" />
       <polygon points="14 4 21 12 14 20" fill="currentColor" />
       <line x1="22" y1="5" x2="22" y2="19" />
     </svg>
-  ),
-  ChevR: () => (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  ChevR: memo(() => (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="9 18 15 12 9 6" />
     </svg>
-  ),
-  ChevD: () => (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  ChevD: memo(() => (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="6 9 12 15 18 9" />
     </svg>
-  ),
-  Check: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-    >
+  )),
+  Check: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
       <polyline points="20 6 9 17 4 12" />
     </svg>
-  ),
-  X: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  X: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
-  ),
-  Loader: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      style={{ animation: "vc-spin 0.75s linear infinite" }}
-    >
+  )),
+  Loader: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="vc-loader-spin">
       <path d="M21 12a9 9 0 11-6.219-8.56" />
     </svg>
-  ),
-  Trash: () => (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Trash: memo(() => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
-  ),
-  Signal: () => (
-    <svg
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  Signal: memo(() => (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
-  ),
-  Download: () => (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  Download: memo(() => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
-  ),
-  Book: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Book: memo(() => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
       <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
-  ),
-  Activity: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Activity: memo(() => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
-  ),
-  Grid: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Grid: memo(() => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <rect x="3" y="3" width="7" height="7" />
       <rect x="14" y="3" width="7" height="7" />
       <rect x="3" y="14" width="7" height="7" />
       <rect x="14" y="14" width="7" height="7" />
     </svg>
-  ),
-  Terminal: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Terminal: memo(() => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polyline points="4 17 10 11 4 5" />
       <line x1="12" y1="19" x2="20" y2="19" />
     </svg>
-  ),
-  Layers: () => (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
+  )),
+  Layers: memo(() => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
       <polyline points="2 12 12 17 22 12" />
     </svg>
-  ),
-  RefreshCw: () => (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
+  )),
+  RefreshCw: memo(() => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polyline points="23 4 23 10 17 10" />
       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
     </svg>
-  ),
+  )),
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -510,7 +366,7 @@ function ConsolePanelLight({ title, stdout, stderr, collapsed, onToggle }) {
   );
 }
 
-function ModuleTree({ modules, selected, onSelect, prefix = "", flatDict = null }) {
+function ModuleTreeBase({ modules, selected, onSelect, prefix = "", flatDict = null }) {
   const [open, setOpen] = useState(true);
   if (!modules) return null;
 
@@ -603,6 +459,7 @@ function ModuleTree({ modules, selected, onSelect, prefix = "", flatDict = null 
     </div>
   );
 }
+const ModuleTree = memo(ModuleTreeBase);
 
 function WaveformViewer({
   sortedTimes,
@@ -796,7 +653,7 @@ function WaveformViewer({
           width={W - LABEL - 24}
           height={36 + selectedSignals.length * ROW}
           fill="transparent"
-          style={{ cursor: "crosshair" }}
+          className="vc-waveform-crosshair"
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
             const relX = e.clientX - r.left;
@@ -808,6 +665,7 @@ function WaveformViewer({
     </div>
   );
 }
+const WaveformViewerMemo = memo(WaveformViewer);
 
 const GLOSSARY = [
   {
@@ -914,25 +772,9 @@ export default function VerilogClassroom() {
     [simResult, clockSignal],
   );
   const activeSignals = useMemo(
-    () => precomputed?.accumulated?.[currentTime] || {},
+    () => precomputed?.accumulated?.[currentTime],
     [precomputed, currentTime],
   );
-
-  const activeDatapathElements = useMemo(() => {
-    if (!activeSignals) return [];
-    const activeIds = [];
-    const activeState = JSON.stringify(activeSignals).toLowerCase();
-    if (activeState.includes("pc")) activeIds.push("pc", "imem", "e-pc-imem");
-    if (activeState.includes("alu") || activeState.includes("ula"))
-      activeIds.push("alu", "mux_alu", "e-reg-aluA", "e-muxB-aluB");
-    if (activeState.includes("reg")) activeIds.push("regfile");
-    if (activeState.includes("mem"))
-      activeIds.push("dmem", "e-alu-dmem", "e-dmem-muxWb1");
-    if (activeState.includes("ctrl") || activeState.includes("op"))
-      activeIds.push("control", "c-ctrl-alu", "c-ctrl-mux");
-    return activeIds;
-  }, [activeSignals]);
-
   useEffect(() => {
     if (projectId)
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ projectId }));
@@ -991,8 +833,6 @@ export default function VerilogClassroom() {
     updStep(1, 1);
     try {
       const r = await apiSimulate(projectId);
-      // Debug: log the full response so we can see the real shape
-      console.log("[SimResult]", JSON.stringify(r, null, 2).slice(0, 2000));
       setSimResult(r);
       updStep(1, r.success ? 2 : 3);
       if (r.success) {
@@ -1050,7 +890,7 @@ export default function VerilogClassroom() {
 
   const TABS = [
     { id: "waveform", label: "Waveform", icon: <Ic.Activity /> },
-    { id: "datapath", label: "Datapath", icon: <Ic.Layers /> },
+    // { id: "datapath", label: "Datapath", icon: <Ic.Layers /> },
     { id: "netlist", label: "Netlist", icon: <Ic.Grid /> },
     { id: "console", label: "Console", icon: <Ic.Terminal /> },
     { id: "education", label: "Glossário", icon: <Ic.Book /> },
@@ -1058,202 +898,6 @@ export default function VerilogClassroom() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&display=swap');
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-          --bg:       #f0f2f5;
-          --bg2:      #e8ebf0;
-          --surface:  #ffffff;
-          --surface2: #f8fafc;
-          --surface3: #f1f5f9;
-          --border:   #e2e8f0;
-          --border2:  #cbd5e1;
-          --text:     #0f172a;
-          --text2:    #374151;
-          --text3:    #64748b;
-          --text4:    #94a3b8;
-          --accent:   #2563eb;
-          --accent2:  #1d4ed8;
-          --amber:    #d97706;
-          --amber2:   #b45309;
-          --green:    #16a34a;
-          --red:      #dc2626;
-          --purple:   #7c3aed;
-          --cyan:     #0891b2;
-          --shadow-sm: 0 1px 3px rgba(15,23,42,0.07), 0 1px 2px rgba(15,23,42,0.05);
-          --shadow-md: 0 4px 12px rgba(15,23,42,0.09), 0 2px 6px rgba(15,23,42,0.06);
-          --mono: 'IBM Plex Mono', monospace;
-          --serif: 'Fraunces', Georgia, serif;
-          --radius: 8px;
-        }
-
-        body { background: var(--bg); color: var(--text); font-family: var(--mono); -webkit-font-smoothing: antialiased; }
-
-        @keyframes vc-spin { to { transform: rotate(360deg); } }
-        @keyframes vc-fadein { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-
-        .vc-app { display: grid; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
-        .vc-layout { display: grid; grid-template-columns: 272px 1fr; overflow: hidden; }
-
-        /* ── HEADER ── */
-        .vc-header { background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 0 24px; display: flex; align-items: center; gap: 14px; height: 54px; z-index: 10; }
-        .vc-logo { display: flex; align-items: center; gap: 10px; }
-        .vc-logo-mark { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 8px #2563eb40; }
-        .vc-logo-text { font-family: var(--serif); font-weight: 700; font-size: 17px; color: var(--text); letter-spacing: -0.4px; line-height: 1; }
-        .vc-logo-sub { font-family: var(--mono); font-weight: 300; font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 1px; }
-        .vc-sep { flex: 1; }
-        .vc-header-pills { display: flex; gap: 8px; align-items: center; }
-
-        .vc-pill { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 500; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; letter-spacing: 0.3px; }
-        .vc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .vc-pill-ok .vc-dot { background: var(--green); box-shadow: 0 0 5px #16a34a60; }
-        .vc-pill-err .vc-dot { background: var(--red); box-shadow: 0 0 5px #dc262660; }
-
-        .vc-btn-reset { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); color: var(--text3); font-family: var(--mono); font-size: 10px; padding: 5px 12px; border-radius: 6px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.2px; }
-        .vc-btn-reset:hover { border-color: var(--red); color: var(--red); background: #fef2f2; }
-
-        /* ── SIDEBAR ── */
-        .vc-sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-        .vc-section { padding: 18px 16px; border-bottom: 1px solid var(--border); }
-        .vc-section-title { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; }
-
-        .vc-steps { display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .vc-step-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; border: 1px solid transparent; transition: all 0.15s; position: relative; }
-        .vc-step-active { background: #eff6ff; border-color: #bfdbfe; }
-        .vc-step-done   { background: #f0fdf4; border-color: #bbf7d0; }
-        .vc-step-error  { background: #fef2f2; border-color: #fecaca; }
-        .vc-step-num { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text3); background: var(--surface); }
-        .vc-step-active  .vc-step-num { border-color: var(--accent); color: var(--accent); }
-        .vc-step-done    .vc-step-num { border-color: var(--green); color: var(--green); background: #f0fdf4; }
-        .vc-step-error   .vc-step-num { border-color: var(--red); color: var(--red); }
-        .vc-step-loading .vc-step-num { border-color: var(--amber); color: var(--amber); }
-        .vc-step-lbl { font-size: 11px; font-weight: 500; color: var(--text2); }
-        .vc-step-active .vc-step-lbl { color: var(--accent); }
-        .vc-step-done   .vc-step-lbl { color: var(--green); }
-        .vc-step-error  .vc-step-lbl { color: var(--red); }
-
-        /* ── UPLOAD ── */
-        .vc-upload { border: 1.5px dashed var(--border2); border-radius: var(--radius); padding: 18px 12px; text-align: center; cursor: pointer; transition: all 0.2s; color: var(--text3); font-size: 11px; background: var(--surface2); }
-        .vc-upload:hover, .vc-upload-drag { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
-        .vc-upload-icon { color: var(--text4); margin-bottom: 8px; display: flex; justify-content: center; }
-        .vc-upload-hint { font-size: 9px; color: var(--text4); margin-top: 4px; }
-        .vc-upload-id { font-size: 8.5px; color: var(--text3); margin-top: 6px; word-break: break-all; background: var(--surface3); border-radius: 4px; padding: 4px 6px; text-align: left; }
-
-        /* ── BUTTONS ── */
-        .vc-btn { display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 7px; font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 9px 14px; cursor: pointer; transition: all 0.15s; width: 100%; border: none; letter-spacing: 0.2px; }
-        .vc-btn-primary { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; box-shadow: 0 2px 8px #2563eb30; }
-        .vc-btn-primary:hover:not(:disabled) { box-shadow: 0 4px 14px #2563eb40; transform: translateY(-1px); }
-        .vc-btn-primary:active:not(:disabled) { transform: translateY(0); }
-        .vc-btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-        .vc-btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
-        .vc-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
-
-        .vc-err { font-size: 10px; color: var(--red); margin-top: 5px; display: flex; gap: 4px; align-items: flex-start; }
-        .vc-form-gap { display: flex; flex-direction: column; gap: 8px; }
-
-        /* ── TIP ── */
-        .vc-tip { border-radius: var(--radius); border: 1px solid #fde68a; background: #fffbeb; padding: 10px 12px; font-size: 9.5px; color: #92400e; line-height: 1.9; }
-        .vc-tip-title { font-weight: 600; font-size: 9px; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-
-        /* ── MODULE TREE ── */
-        .vc-modules { padding: 16px; flex: 1; }
-        .vc-mtree { font-size: 11px; }
-        .vc-mnode { display: flex; align-items: center; gap: 5px; background: transparent; border: none; color: var(--text3); font-family: var(--mono); font-size: 11px; cursor: pointer; padding: 4px 0; width: 100%; text-align: left; transition: color 0.1s; }
-        .vc-mnode:hover { color: var(--text); }
-        .vc-mchev { display: flex; color: var(--text4); }
-        .vc-mlbl { color: var(--text2); font-weight: 500; }
-        .vc-msel { color: var(--accent); font-weight: 600; }
-        .vc-mchildren { margin-left: 14px; border-left: 1.5px solid var(--border); padding-left: 10px; }
-        .vc-mvar { display: flex; align-items: center; gap: 5px; padding: 2px 0; color: var(--text4); }
-        .vc-mvar-name { color: var(--text3); font-size: 10px; }
-        .vc-mvar-meta { color: var(--text4); font-size: 9px; }
-        .vc-mvar-more { font-size: 9px; font-style: italic; }
-
-        /* ── MAIN ── */
-        .vc-main { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
-
-        /* ── METRICS ── */
-        .vc-metrics { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; box-shadow: var(--shadow-sm); }
-        .vc-metric { padding: 12px 22px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-        .vc-metric-lbl { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1px; }
-        .vc-metric-val { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; letter-spacing: -0.5px; }
-        .vc-metric-val.blue   { color: var(--accent); }
-        .vc-metric-val.amber  { color: var(--amber); }
-        .vc-metric-val.green  { color: var(--green); }
-        .vc-metric-val.cyan   { color: var(--cyan); font-size: 15px; font-family: var(--mono); font-weight: 600; margin-top: 3px; }
-        .vc-metric-unit { font-size: 9px; color: var(--text4); }
-
-        /* ── TABS ── */
-        .vc-tabs { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; padding: 0 8px; }
-        .vc-tab { display: flex; align-items: center; gap: 6px; padding: 10px 14px; font-size: 11px; font-weight: 500; color: var(--text3); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--mono); transition: all 0.15s; letter-spacing: 0.2px; margin-bottom: -1px; }
-        .vc-tab:hover { color: var(--text2); }
-        .vc-tab.vc-tab-active { color: var(--accent); border-bottom-color: var(--accent); }
-
-        /* ── CONTENT ── */
-        .vc-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-        .vc-content-scroll { flex: 1; overflow-y: auto; padding: 20px; animation: vc-fadein 0.2s ease; min-height: 0; }
-        /* Painéis que ocupam toda a área sem scroll (ReactFlow precisa de dimensões reais) */
-        .vc-flow-panel { flex: 1; min-height: 0; position: relative; overflow: hidden; }
-
-        /* ── SIGNAL CHIPS ── */
-        .vc-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
-        .vc-chip { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--text3); font-size: 10px; font-weight: 500; padding: 4px 9px; border-radius: 20px; cursor: pointer; transition: all 0.12s; box-shadow: var(--shadow-sm); }
-        .vc-chip:hover { border-color: var(--accent); color: var(--accent); }
-        .vc-chip-on { border-color: var(--accent); color: var(--accent); background: #eff6ff; box-shadow: 0 0 0 1px #bfdbfe; }
-
-        /* ── SCROLL BOX ── */
-        .vc-scroll-box { overflow: auto; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm); min-height: 260px; }
-        .vc-empty { display: flex; align-items: center; justify-content: center; gap: 8px; height: 200px; color: var(--text4); font-size: 12px; }
-
-        /* ── EXPORT ── */
-        .vc-exports { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-        .vc-export-btn { display: flex; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); color: var(--text3); font-family: var(--mono); font-size: 10px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.12s; box-shadow: var(--shadow-sm); font-weight: 500; }
-        .vc-export-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
-
-        /* ── CONSOLE ── */
-        .vc-console { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 10px; box-shadow: var(--shadow-sm); }
-        .vc-console-hdr { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--surface3); border: none; color: var(--text2); font-family: var(--mono); font-size: 11px; font-weight: 500; cursor: pointer; width: 100%; letter-spacing: 0.2px; }
-        .vc-console-hdr:hover { background: var(--surface2); }
-        .vc-console-chevron { margin-left: auto; color: var(--text4); }
-        .vc-console-body { background: var(--surface); max-height: 320px; overflow-y: auto; }
-        .vc-csec { padding: 10px 14px; }
-        .vc-csec-lbl { font-size: 9px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .vc-console-body pre { font-family: var(--mono); font-size: 10px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
-        .vc-cl-err    { color: var(--red); }
-        .vc-cl-warn   { color: var(--amber); }
-        .vc-cl-normal { color: var(--text2); }
-
-        /* ── PLAYBACK ── */
-        .vc-playback { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 -2px 8px rgba(15,23,42,0.05); }
-        .vc-play-btn { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px #2563eb35; transition: all 0.15s; }
-        .vc-play-btn:hover { transform: scale(1.08); box-shadow: 0 4px 14px #2563eb40; }
-        .vc-ctrl-btn { width: 28px; height: 28px; flex-shrink: 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.12s; }
-        .vc-ctrl-btn:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
-        .vc-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; background: var(--border); transition: background 0.2s; }
-        .vc-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 3px white, 0 0 0 4px #bfdbfe; transition: all 0.15s; }
-        .vc-slider:hover::-webkit-slider-thumb { transform: scale(1.2); }
-        .vc-time-lbl { font-size: 10.5px; color: var(--text3); min-width: 90px; text-align: right; font-weight: 500; }
-        .vc-speed-sel { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-family: var(--mono); font-size: 10px; padding: 4px 7px; border-radius: 6px; cursor: pointer; font-weight: 500; }
-        .vc-cycle-badge { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; color: var(--accent); font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-
-        /* ── GLOSSARY ── */
-        .vc-glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr)); gap: 14px; }
-        .vc-gcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); transition: box-shadow 0.15s, transform 0.15s; }
-        .vc-gcard:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-        .vc-gterm { font-family: var(--serif); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; letter-spacing: -0.2px; }
-        .vc-gterm-accent { color: var(--accent); }
-        .vc-gdef { font-size: 11px; color: var(--text2); line-height: 1.7; }
-
-        /* ── MISC ── */
-        .vc-divider { height: 1px; background: var(--border); margin: 4px 0; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text4); }
-      `}</style>
-
       <div className="vc-app">
         {/* Header */}
         <header className="vc-header">
@@ -1338,7 +982,7 @@ export default function VerilogClassroom() {
                   ref={fileRef}
                   type="file"
                   accept=".zip"
-                  style={{ display: "none" }}
+                  className="vc-display-none"
                   onChange={(e) => handleFile(e.target.files[0])}
                 />
                 {errors.upload && (
@@ -1395,7 +1039,7 @@ export default function VerilogClassroom() {
                   onSelect={setSelModule}
                 />
               ) : (
-                <div style={{ fontSize: 11, color: "var(--text4)" }}>
+                <div className="vc-hier-empty">
                   Execute a simulação primeiro
                 </div>
               )}
@@ -1409,10 +1053,7 @@ export default function VerilogClassroom() {
               <div className="vc-metrics">
                 <div className="vc-metric">
                   <div className="vc-metric-lbl">Timescale</div>
-                  <div
-                    className="vc-metric-val amber"
-                    style={{ fontSize: 18, fontFamily: "var(--mono)" }}
-                  >
+                  <div className="vc-metric-val amber vc-metric-mono-font">
                     {meta.timescale?.unit ?? "ns"}
                   </div>
                 </div>
@@ -1458,37 +1099,19 @@ export default function VerilogClassroom() {
 
             {/* Content */}
             <div className="vc-content">
-              {/* ── Datapath: fora do scroll para o ReactFlow ter dimensões reais ── */}
-              {tab === "datapath" && (
-                <div key="datapath" className="vc-flow-panel">
-                  <DatapathViewer
-                    activeSignals={activeSignals}
-                    activeElements={activeDatapathElements}
-                  />
-                </div>
-              )}
 
               {/* ── Netlist: idem ── */}
               {tab === "netlist" && (
                 <div key="netlist" className="vc-flow-panel">
                   {netlistContent ? (
-                    <NetlistViewer
-                      netlistJson={netlistContent}
-                      activeSignals={activeSignals}
-                    />
+                    <Suspense fallback={<div className="vc-empty"><Ic.Loader /><span>Carregando visualizador...</span></div>}>
+                      <NetlistViewer
+                        netlistJson={netlistContent}
+                        activeSignals={activeSignals}
+                      />
+                    </Suspense>
                   ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 12,
-                        background: "#f8fafc",
-                      }}
-                    >
+                    <div className="vc-panel-empty-state">
                       <svg
                         width="48"
                         height="48"
@@ -1504,35 +1127,15 @@ export default function VerilogClassroom() {
                         <line x1="9" y1="20" x2="9" y2="23" />
                         <line x1="15" y1="20" x2="15" y2="23" />
                       </svg>
-                      <div
-                        style={{
-                          color: "#94a3b8",
-                          fontSize: 12,
-                          fontFamily: "var(--mono)",
-                          textAlign: "center",
-                          maxWidth: 340,
-                        }}
-                      >
+                      <div className="vc-empty-title">
                         {simResult
                           ? "Netlist não disponível — verifique se o Yosys está instalado no servidor e se o campo netlist_content foi retornado pelo backend."
                           : "Execute a simulação para visualizar o netlist."}
                       </div>
                       {simResult && (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "#94a3b8",
-                            fontFamily: "var(--mono)",
-                            background: "#f1f5f9",
-                            borderRadius: 6,
-                            padding: "6px 12px",
-                            maxWidth: 440,
-                            wordBreak: "break-all",
-                            textAlign: "center",
-                          }}
-                        >
+                        <div className="vc-empty-details">
                           Campos retornados pelo backend:{" "}
-                          <b style={{ color: "#374151" }}>
+                          <b className="vc-text-dark">
                             {Object.keys(simResult).join(", ")}
                           </b>
                         </div>
@@ -1560,7 +1163,7 @@ export default function VerilogClassroom() {
                           </button>
                         ))}
                       </div>
-                      <WaveformViewer
+                      <WaveformViewerMemo
                         sortedTimes={precomputed?.sorted}
                         accumulated={precomputed?.accumulated}
                         currentTime={currentTime}
