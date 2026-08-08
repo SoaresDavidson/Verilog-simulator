@@ -1,0 +1,28 @@
+[project]
+name = "back"
+version = "0.1.0"
+description = "Verilog Classroom Backend API"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.1",
+    "uvicorn>=0.30.0",
+    "pydantic-settings>=2.0.0",
+    "docker>=7.0.0",
+    "python-multipart>=0.0.18",
+    "vcdvcd",
+    "ruff>=0.16.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.14.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires Docker and a running Yosys container",
+]
+pythonpath = ["."]
+testpaths = ["tests"]
