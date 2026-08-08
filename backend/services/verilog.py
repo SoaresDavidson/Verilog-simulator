@@ -1,10 +1,12 @@
 import io
 import json
 import os
+import shlex
 import shutil
 import uuid
 import zipfile
 from decimal import Decimal
+from pathlib import Path
 
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
@@ -45,7 +47,7 @@ class VerilogService:
         # Safety Check: The folder_path (which represents our project_id) must be a safe relative path
         # starting with "runs/run_" to prevent path traversal and restrict access to dedicated run folders.
         normalized_path = os.path.normpath(folder_path).replace("\\", "/")
-        if ".." in normalized_path.split("/") or normalized_path.startswith("/") or normalized_path.startswith("./"):
+        if ".." in normalized_path.split("/") or normalized_path.startswith(("/", "./")):
             raise ValueError("Invalid project ID: directory traversal detected.")
             
         if not normalized_path.startswith("runs/run_"):
@@ -69,8 +71,36 @@ class VerilogService:
         """
         Delegates Yosys synthesis and preserves the API response contract.
         """
+        local_dir, container_dir = self._resolve_paths(project_id)
+        verilog_files = []
+        for root, dirs, files in os.walk(local_dir):
+            for file in files:
+                if file.endswith((".v", ".sv")):
+                    rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
+                    if "tb_" in file.lower() or "testbench" in rel_path.lower():
+                        continue
+                    verilog_files.append(rel_path)
+
+        verilog_files.sort()
+        if not verilog_files:
+            raise FileNotFoundError(f"No synthesizable Verilog (.v or .sv) files found in '{local_dir}'.")
+
+        yosys_commands = [f"read_verilog -sv {shlex.quote(path)}" for path in verilog_files]
+        yosys_commands.extend(
+            (
+                "hierarchy -auto-top",
+                "tee -o relatorio.txt stat",
+                "write_json estrutura.json",
+            )
+        )
+        command = ["yosys", "-p", "; ".join(yosys_commands)]
+
         try:
-            result = self.yosys_integration.synthesize(project_id)
+            result = self.yosys_integration.synthesize(
+                output_dir=Path(local_dir),
+                container_workdir=container_dir,
+                command=command,
+            )
         except YosysSynthesisError as exc:
             result = exc.result
         return {
@@ -121,7 +151,7 @@ class VerilogService:
                 vcd_path = os.path.join(local_dir, vcd_files[0])
                 # print(f"Found VCD file for parsing: {vcd_path}")
                 simulation_log = self._parse_vcd(vcd_path)
-        except Exception as e:
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
             print(f"Error listing or parsing VCD: {e}")
         return {
             "success": run_res.success,
@@ -172,11 +202,11 @@ class VerilogService:
             # Return the safe project ID (relative path from /verilog_code)
             project_id = os.path.relpath(target_path, "/verilog_code").replace("\\", "/")
             return project_id
-        except Exception as e:
+        except Exception:
             # In case of validation or extraction error, clean up the created run folder
             if os.path.exists(temp_folder_path):
                 shutil.rmtree(temp_folder_path, ignore_errors=True)
-            raise e
+            raise
 
     def delete_project(self, project_id: str) -> bool:
         """
@@ -213,7 +243,7 @@ class VerilogService:
                 try:
                     shutil.rmtree(path)
                     deleted_folders.append(name)
-                except Exception as e:
+                except OSError as e:
                     errors.append(f"Failed to delete {name}: {e!s}")
 
         return {

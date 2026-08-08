@@ -1,5 +1,10 @@
+import zipfile
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from integrations.docker import DockerIntegrationError
+from integrations.yosys import YosysError
 from schemas.verilog import (
     MapearProcessadorRequest,
     MapearProcessadorResponse,
@@ -11,10 +16,21 @@ from services.verilog import VerilogService
 
 router = APIRouter()
 
+
+def get_verilog_service() -> VerilogService:
+    return VerilogService()
+
+
+type ServiceDependency = Annotated[VerilogService, Depends(get_verilog_service)]
+type ProjectUpload = Annotated[
+    UploadFile,
+    File(description="ZIP archive containing Verilog files and 'scripts' subfolder"),
+]
+
 @router.post("/mapear-processador", response_model=MapearProcessadorResponse)
 def mapear_processador(
     payload: MapearProcessadorRequest,
-    service: VerilogService = Depends(VerilogService)
+    service: ServiceDependency,
 ):
     try:
         result = service.mapear_processador(payload.project_id)
@@ -30,13 +46,13 @@ def mapear_processador(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except YosysError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/simular-execucao", response_model=SimularExecucaoResponse)
 def simular_execucao(
     payload: SimularExecucaoRequest,
-    service: VerilogService = Depends(VerilogService)
+    service: ServiceDependency,
 ):
     try:
         result = service.simular_execucao(payload.project_id)
@@ -52,15 +68,15 @@ def simular_execucao(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except DockerIntegrationError as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/upload-projeto-zip", response_model=UploadZipResponse)
 async def upload_projeto_zip(
-    file: UploadFile = File(..., description="ZIP archive containing Verilog files and 'scripts' subfolder"),
-    service: VerilogService = Depends(VerilogService)
+    file: ProjectUpload,
+    service: ServiceDependency,
 ):
-    if not file.filename.endswith(".zip"):
+    if not (file.filename or "").endswith(".zip"):
         raise HTTPException(status_code=400, detail="Only ZIP archive files (.zip) are supported.")
     try:
         zip_bytes = await file.read()
@@ -71,13 +87,13 @@ async def upload_projeto_zip(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except (OSError, zipfile.BadZipFile, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"Failed to process and upload project ZIP: {e!s}")
 
 @router.delete("/projeto/{project_id:path}")
 def deletar_projeto(
     project_id: str,
-    service: VerilogService = Depends(VerilogService)
+    service: ServiceDependency,
 ):
     try:
         success = service.delete_project(project_id)
@@ -86,12 +102,12 @@ def deletar_projeto(
         return {"success": True, "message": "Project run directory successfully deleted."}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except OSError as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete project directory: {e!s}")
 
 @router.post("/limpar")
 def limpar_todas_execucoes(
-    service: VerilogService = Depends(VerilogService)
+    service: ServiceDependency,
 ):
     try:
         result = service.clean_all_runs()
@@ -100,6 +116,5 @@ def limpar_todas_execucoes(
             "message": f"Successfully deleted {result['deleted_count']} run folder(s).",
             "details": result
         }
-    except Exception as e:
+    except OSError as e:
         raise HTTPException(status_code=500, detail=f"Failed to perform cleanup: {e!s}")
-
