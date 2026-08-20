@@ -25,26 +25,26 @@ services:
 
   react-vite:
     build:
-      context: ./verilog-visual
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: react-vite
     ports:
       - "5173:5173"
     volumes:
-      - ./verilog-visual:/app
+      - ./frontend:/app
       - react_node_modules:/app/node_modules
     environment:
       CHOKIDAR_USEPOLLING: "true"
 
   back:
     build:
-      context: ./back
+      context: ./backend
       dockerfile: Dockerfile
     container_name: fastapi-back
     ports:
       - "8000:8000"
     volumes:
-      - ./back:/app
+      - ./backend:/app
       - /app/.venv
       - ./verilog_code:/verilog_code
       - /var/run/docker.sock:/var/run/docker.sock
