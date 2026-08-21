@@ -1,0 +1,1 @@
+# diretorio para armazenar codigos em verilog para testes
