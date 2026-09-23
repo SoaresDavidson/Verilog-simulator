@@ -52,6 +52,19 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DOCKER_HOST=unix:///var/run/docker.sock
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import sys, urllib.request
+          url = "http://localhost:8000/api/v1/status/live"
+          sys.exit(0 if urllib.request.urlopen(url, timeout=3).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   react_node_modules:

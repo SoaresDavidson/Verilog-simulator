@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +23,14 @@ class Settings(BaseSettings):
     DOCKER_TIMEOUT_SECONDS: int = 30
     YOSYS_CONTAINER_NAME: str = "yosys"
     YOSYS_TIMEOUT_SECONDS: int = 30
+    ICARUS_CONTAINER_NAME: str = "icarus-verilog"
+
+    # Shared volume where every project run is extracted and executed
+    VERILOG_RUNS_DIR: Path = Path("/verilog_code/runs")
+
+    # Readiness checks (GET /api/v1/status/)
+    HEALTH_TIMEOUT_SECONDS: float = 5
+    HEALTH_CACHE_TTL_SECONDS: float = 5
 
 
 settings = Settings()

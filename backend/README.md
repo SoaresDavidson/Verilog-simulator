@@ -163,3 +163,81 @@ Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 3. Extrai os arquivos do ZIP.
 4. Retorna o `project_id` correspondente para ser usado nas rotas de mapeamento e simulação.
 5. Após concluir o uso, deve-se chamar o endpoint `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+
+### GET `/api/v1/status/live`
+
+Liveness. Responde `200` com `{"status": "alive"}` enquanto o processo estiver de
+pé, sem consultar nenhuma dependência externa. É o endpoint usado pelo
+`healthcheck` do `docker-compose.yml`.
+
+### GET `/api/v1/status/`
+
+Readiness. Verifica de fato cada dependência antes de responder:
+
+| Check | O que é verificado |
+|---|---|
+| `docker_daemon` | Conexão e `ping` no daemon Docker |
+| `yosys` | Container em execução e `yosys -V` respondendo |
+| `icarus` | Container em execução e `iverilog -V` respondendo |
+| `storage` | Diretório de runs existe e é gravável |
+
+**Status agregado e código HTTP:**
+
+- `ok` → `200`: todas as dependências saudáveis.
+- `degraded` → `200`: container de pé, mas o binário da ferramenta não respondeu.
+  A API continua utilizável.
+- `error` → `503`: daemon inacessível, container ausente/parado ou storage
+  indisponível. A API não consegue executar síntese nem simulação.
+
+**Exemplo de resposta (`503`):**
+```json
+{
+  "status": "error",
+  "checks": {
+    "docker_daemon": { "status": "error", "detail": "Could not connect to Docker daemon: ...", "container": null },
+    "yosys":         { "status": "error", "detail": "Docker daemon unreachable, container not verified.", "container": "yosys" },
+    "icarus":        { "status": "error", "detail": "Docker daemon unreachable, container not verified.", "container": "icarus-verilog" },
+    "storage":       { "status": "ok", "detail": "Runs directory '/verilog_code/runs' is writable.", "container": null }
+  }
+}
+```
+
+O resultado fica em cache por `HEALTH_CACHE_TTL_SECONDS` para que chamadas
+frequentes do orquestrador não conversem com o daemon a cada requisição, e cada
+comando de versão respeita `HEALTH_TIMEOUT_SECONDS`.
+
+## Variáveis de Ambiente
+
+Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `DOCKER_HOST` | `None` | Endereço do daemon Docker (`unix:///var/run/docker.sock`) |
+| `DOCKER_TIMEOUT_SECONDS` | `30` | Timeout padrão de comandos em container |
+| `YOSYS_CONTAINER_NAME` | `yosys` | Nome do container de síntese |
+| `YOSYS_TIMEOUT_SECONDS` | `30` | Timeout da execução do Yosys |
+| `ICARUS_CONTAINER_NAME` | `icarus-verilog` | Nome do container de simulação |
+| `VERILOG_RUNS_DIR` | `/verilog_code/runs` | Diretório onde cada run é extraído |
+| `HEALTH_TIMEOUT_SECONDS` | `5` | Timeout dos comandos de verificação de readiness |
+| `HEALTH_CACHE_TTL_SECONDS` | `5` | Validade do cache do `GET /api/v1/status/` |
+| `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON) |
+
+## Testes
+
+Testes unitários (não exigem Docker):
+
+```bash
+uv run pytest
+```
+
+Testes de integração (exigem os containers `yosys` e `icarus-verilog` de pé):
+
+```bash
+uv run pytest -m integration
+```
+
+Lint e formatação:
+
+```bash
+uv run ruff check .
+```
