@@ -1,0 +1,29 @@
+/* Tela 4 — simulação (#31, #33, #34) */
+
+.sim-scr { min-width: 0; }
+
+/* Execução */
+.sim-run { display: flex; flex-direction: column; gap: 8px; }
+.sim-run__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.sim-run__status { font-size: 13px; }
+.sim-run[data-status="success"] .sim-run__status { color: var(--s1); }
+.sim-run__actions { display: flex; gap: 8px; }
+.sim-run__outputs { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sim-out summary { cursor: pointer; font-family: var(--fd); font-size: 11px; color: var(--muted); }
+.sim-out__pre {
+  margin-top: 6px; max-height: 220px; overflow: auto; padding: 8px; font-family: var(--fd); font-size: 11px;
+  background: var(--surface); border: 1px solid var(--ov); border-radius: var(--r); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.sim-out__note { font-size: 11px; margin-top: 4px; }
+.sim-warn { border: 1px solid var(--sx); background: var(--sxb); color: var(--sx); border-radius: var(--r); padding: 8px 10px; font-size: 12px; }
+
+/* Timeline */
+.sim-tl {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 12px;
+  border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface-hi);
+}
+.sim-tl__buttons { display: flex; gap: 4px; }
+.sim-tl__range { flex: 1 1 160px; min-width: 0; accent-color: var(--accent); }
+.sim-tl__time { font-family: var(--fd); font-size: 11px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.sim-tl__opts { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+.sim-tl__opts select { background: var(--surface); color: var(--fg); border: 1px solid var(--ov); border-radius: var(--r); padding: 2px 4px; }
