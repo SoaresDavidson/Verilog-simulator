@@ -1,12 +1,10 @@
 import io
 import json
 import os
-import shlex
 import shutil
 import uuid
 import zipfile
 from decimal import Decimal
-from pathlib import Path
 
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
@@ -33,6 +31,7 @@ class VerilogService:
             YosysConfig(
                 container_name=settings.YOSYS_CONTAINER_NAME,
                 timeout_seconds=settings.YOSYS_TIMEOUT_SECONDS,
+                verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 docker_host=settings.DOCKER_HOST,
             ),
             docker_integration=self.docker_integration,
@@ -71,36 +70,8 @@ class VerilogService:
         """
         Delegates Yosys synthesis and preserves the API response contract.
         """
-        local_dir, container_dir = self._resolve_paths(project_id)
-        verilog_files = []
-        for root, dirs, files in os.walk(local_dir):
-            for file in files:
-                if file.endswith((".v", ".sv")):
-                    rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
-                    if "tb_" in file.lower() or "testbench" in rel_path.lower():
-                        continue
-                    verilog_files.append(rel_path)
-
-        verilog_files.sort()
-        if not verilog_files:
-            raise FileNotFoundError(f"No synthesizable Verilog (.v or .sv) files found in '{local_dir}'.")
-
-        yosys_commands = [f"read_verilog -sv {shlex.quote(path)}" for path in verilog_files]
-        yosys_commands.extend(
-            (
-                "hierarchy -auto-top",
-                "tee -o relatorio.txt stat",
-                "write_json estrutura.json",
-            )
-        )
-        command = ["yosys", "-p", "; ".join(yosys_commands)]
-
         try:
-            result = self.yosys_integration.synthesize(
-                output_dir=Path(local_dir),
-                container_workdir=container_dir,
-                command=command,
-            )
+            result = self.yosys_integration.synthesize(project_id)
         except YosysSynthesisError as exc:
             result = exc.result
         return {
