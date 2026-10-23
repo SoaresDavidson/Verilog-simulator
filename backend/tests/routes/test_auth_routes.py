@@ -108,6 +108,8 @@ def test_run_routes_require_session_token(
 
     assert missing.status_code == 401
     assert crossed.status_code == 403
+    assert missing.json()["error"]["code"] == "SESSION_TOKEN_MISSING"
+    assert crossed.json()["error"]["code"] == "SESSION_TOKEN_INVALID"
     assert ok.status_code == 200
     tool = (
         fake_tools.mapear_processador
@@ -208,6 +210,8 @@ def test_limpar_requires_valid_admin_token(
     wrong = api_client.post(f"{BASE}/limpar", headers={"X-Admin-Token": "errado"})
     assert missing.status_code == 401
     assert wrong.status_code == 403
+    assert missing.json()["error"]["code"] == "ADMIN_TOKEN_MISSING"
+    assert wrong.json()["error"]["code"] == "ADMIN_TOKEN_INVALID"
     assert (runs_dir.parent / body["project_id"]).is_dir()
 
     with caplog.at_level(logging.WARNING, logger="routes.verilog"):

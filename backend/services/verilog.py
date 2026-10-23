@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,6 +23,7 @@ from integrations.yosys import (
     YosysIntegration,
     YosysSynthesisError,
 )
+from logging_config import truncate_for_log
 from schemas.netlist import Netlist
 from services.project_upload import (
     UploadLimits,
@@ -62,6 +64,19 @@ def _describe_netlist_error(exc: ValidationError) -> str:
         "e foi descartada. Isso costuma indicar uma versão incompatível do Yosys "
         "no servidor; avise o professor. Detalhes:\n" + "\n".join(details)
     )
+
+
+def _log_tool_finished(
+    tool: str, project_id: str, started: float, success: bool, stderr: str
+) -> None:
+    """Log the end of a tool run with its duration; stderr only at DEBUG, truncated."""
+    elapsed = time.perf_counter() - started
+    if success:
+        logger.info("%s de %s concluída em %.2f s.", tool, project_id, elapsed)
+    else:
+        logger.info("%s de %s terminou com falha em %.2f s.", tool, project_id, elapsed)
+    if stderr:
+        logger.debug("stderr da %s de %s: %s", tool.lower(), project_id, truncate_for_log(stderr))
 
 
 class VerilogService:
@@ -110,10 +125,13 @@ class VerilogService:
         returned as success: the response becomes ``success: false`` with an
         explanation appended to ``stderr``.
         """
+        logger.info("Síntese iniciada para %s.", project_id)
+        started = time.perf_counter()
         try:
             result = self.yosys_integration.synthesize(project_id)
         except YosysSynthesisError as exc:
             result = exc.result
+        _log_tool_finished("Síntese", project_id, started, result.success, result.stderr)
         response = {
             "success": result.success,
             "stdout": result.stdout,
@@ -130,7 +148,13 @@ class VerilogService:
             netlist = Netlist.model_validate(result.netlist_content)
         except ValidationError as exc:
             logger.warning(
-                "Netlist of %s does not match the contract: %s", project_id, exc
+                "Netlist de %s fora do contrato (%d erro(s)); primeiros campos: %s",
+                project_id,
+                exc.error_count(),
+                ", ".join(
+                    ".".join(str(part) for part in error["loc"])
+                    for error in exc.errors(include_input=False)[:_MAX_REPORTED_NETLIST_ERRORS]
+                ),
             )
             response["success"] = False
             response["stderr"] = "\n".join(
@@ -152,13 +176,16 @@ class VerilogService:
         An unparsable VCD is non-fatal: the run result is kept, ``simulation_log``
         is ``None`` and the parse failure is appended to ``stderr``.
         """
+        logger.info("Simulação iniciada para %s.", project_id)
+        started = time.perf_counter()
         try:
             result = self.icarus_integration.simulate(project_id, selection)
         except (IcarusCompilationError, IcarusSimulationError) as exc:
             result = exc.result
         except VcdParseError as exc:
-            logger.warning("Simulation of %s produced an unparsable VCD: %s", project_id, exc)
             result = exc.result
+            _log_tool_finished("Simulação", project_id, started, result.success, result.stderr)
+            logger.warning("Simulação de %s gerou um VCD ilegível: %s", project_id, exc)
             message = "Aviso: o arquivo VCD gerado pela simulação não pôde ser interpretado."
             return {
                 "success": result.success,
@@ -166,6 +193,9 @@ class VerilogService:
                 "stderr": "\n".join(part for part in (result.stderr, message) if part),
                 "simulation_log": None,
             }
+        _log_tool_finished("Simulação", project_id, started, result.success, result.stderr)
+        if result.success and result.simulation_log is None:
+            logger.warning("Simulação de %s terminou sem gerar arquivo VCD.", project_id)
         return {
             "success": result.success,
             "stdout": result.stdout,
@@ -246,7 +276,9 @@ class VerilogService:
                     shutil.rmtree(path)
                     deleted_folders.append(name)
                 except OSError as e:
-                    errors.append(f"Failed to delete {name}: {e!s}")
+                    # Reported to the admin without the OS message (it carries paths).
+                    logger.warning("Falha ao remover o run %s: %s", name, e)
+                    errors.append(f"Falha ao remover {name}.")
 
         return {
             "deleted_count": len(deleted_folders),

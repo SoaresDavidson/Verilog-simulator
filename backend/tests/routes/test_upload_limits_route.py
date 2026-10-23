@@ -41,7 +41,10 @@ def test_content_length_above_limit_returns_413(
     response = _upload(api_client, os.urandom(MULTIPART_OVERHEAD_BYTES + 5000))
 
     assert response.status_code == 413
-    assert "excede o limite" in response.json()["detail"]
+    error = response.json()["error"]
+    assert error["code"] == "UPLOAD_TOO_LARGE"
+    assert "excede o limite" in error["message"]
+    assert error["request_id"] == response.headers["X-Request-ID"]
     assert list(runs_dir.iterdir()) == []
     assert list(temp_dir.iterdir()) == []
 

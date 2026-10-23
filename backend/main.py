@@ -9,8 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from body_limit import BodySizeLimitMiddleware
 from config import settings
+from errors import register_error_handlers
+from logging_config import configure_logging
+from request_id import RequestIdMiddleware
 from routes.api import api_router
 from services.runs_gc import RetentionPolicy, periodic_collection
+
+# Configured before the app is built so startup messages already use it (#12).
+configure_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
 
 
 @asynccontextmanager
@@ -39,6 +45,10 @@ app = FastAPI(
     swagger_ui_parameters={"syntaxHighlight": False}
 )
 
+# Error schema (#12): handlers plus the innermost middleware that turns any
+# unhandled exception into a generic 500 (inside CORS and the request id).
+register_error_handlers(app)
+
 # Cap request bodies while they stream in (#9). Registered before CORS so that
 # 413 responses still carry the CORS headers.
 app.add_middleware(BodySizeLimitMiddleware, limit_bytes=lambda: settings.MAX_UPLOAD_BYTES)
@@ -53,6 +63,9 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
+# Outermost: request id in the log context and in every response header (#12).
+app.add_middleware(RequestIdMiddleware)
+
 # Include all API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
@@ -64,4 +77,5 @@ def root():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # log_config=None keeps the configuration done by configure_logging().
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_config=None)

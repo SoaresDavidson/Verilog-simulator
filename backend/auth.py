@@ -15,9 +15,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Depends, Header, Request, status
 
 from config import settings
+from errors import ApiError
+from logging_config import bind_project_id
 from services.runs_gc import run_registry
 
 #: Session metadata file kept inside every run. Hidden (dot) files are never
@@ -74,12 +76,13 @@ def session_matches(run_dir: Path, token: str) -> bool:
 
 
 def run_name_from_project_id(project_id: str) -> str:
-    """Return ``run_<32hex>`` for a canonical project ID or raise ``400``."""
+    """Return ``run_<32hex>`` for a canonical project ID or raise ``400`` (``ApiError``)."""
     match = _PROJECT_ID_PATTERN.fullmatch(project_id)
     if match is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="project_id inválido: use o valor devolvido pelo upload.",
+        raise ApiError(
+            status.HTTP_400_BAD_REQUEST,
+            "INVALID_PROJECT_ID",
+            "project_id inválido: use o valor devolvido pelo upload.",
         )
     return match.group(1)
 
@@ -88,25 +91,26 @@ def authorize_run(project_id: str, token: str | None) -> AuthorizedRun:
     """Check that ``token`` owns the run ``project_id``.
 
     Raises:
-        HTTPException: ``401`` without token, ``400`` for a malformed ID, ``404``
+        ApiError: ``401`` without token, ``400`` for a malformed ID, ``404``
             when the run does not exist and ``403`` when the token belongs to
             another session.
     """
     if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Envie o token de sessão no header {SESSION_HEADER}.",
+        raise ApiError(
+            status.HTTP_401_UNAUTHORIZED,
+            "SESSION_TOKEN_MISSING",
+            f"Envie o token de sessão no header {SESSION_HEADER}.",
         )
     run_name = run_name_from_project_id(project_id)
+    bind_project_id(project_id)
     run_dir = settings.VERILOG_RUNS_DIR / run_name
     if not run_dir.is_dir():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado."
-        )
+        raise ApiError(status.HTTP_404_NOT_FOUND, "PROJECT_NOT_FOUND", "Projeto não encontrado.")
     if not session_matches(run_dir, token):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Token de sessão inválido para este projeto.",
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN,
+            "SESSION_TOKEN_INVALID",
+            "Token de sessão inválido para este projeto.",
         )
     return AuthorizedRun(project_id=project_id, run_name=run_name, run_dir=run_dir)
 
@@ -142,9 +146,7 @@ async def require_run_in_use_from_body(
     with run_registry.in_use(run.run_name):
         # The collector may have removed the run between authorization and marking.
         if not run.run_dir.is_dir():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado."
-            )
+            raise ApiError(status.HTTP_404_NOT_FOUND, "PROJECT_NOT_FOUND", "Projeto não encontrado.")
         yield run
 
 
@@ -163,18 +165,20 @@ def require_admin(x_admin_token: AdminTokenHeader = None) -> None:
     """
     configured = settings.ADMIN_TOKEN
     if not configured:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+        raise ApiError(status.HTTP_404_NOT_FOUND, "NOT_FOUND", "Recurso não encontrado.")
     if not x_admin_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Envie o token de administrador no header {ADMIN_HEADER}.",
+        raise ApiError(
+            status.HTTP_401_UNAUTHORIZED,
+            "ADMIN_TOKEN_MISSING",
+            f"Envie o token de administrador no header {ADMIN_HEADER}.",
         )
     if not secrets.compare_digest(
         x_admin_token.encode("utf-8"), configured.encode("utf-8")
     ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Token de administrador inválido.",
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN,
+            "ADMIN_TOKEN_INVALID",
+            "Token de administrador inválido.",
         )
 
 
