@@ -1,11 +1,11 @@
-import io
 import json
 import os
 import shutil
-import uuid
-import zipfile
+from dataclasses import dataclass
 from decimal import Decimal
+from pathlib import Path
 
+from auth import create_session
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
 from integrations.yosys import (
@@ -13,6 +13,24 @@ from integrations.yosys import (
     YosysIntegration,
     YosysSynthesisError,
 )
+from services.project_upload import (
+    UploadLimits,
+    extract_project_zip,
+    new_run_name,
+    open_project_zip,
+)
+from services.runs_gc import RetentionPolicy, collect_if_due, run_registry
+
+#: Minimum spacing between the collections triggered by uploads.
+_OPPORTUNISTIC_GC_INTERVAL_SECONDS = 5 * 60
+
+
+@dataclass(frozen=True, slots=True)
+class UploadedProject:
+    """Run created by an accepted upload."""
+
+    project_id: str
+    session_token: str
 
 
 class VerilogService:
@@ -131,53 +149,42 @@ class VerilogService:
             "simulation_log": simulation_log
         }
 
-    def upload_zip_project(self, zip_bytes: bytes) -> str:
+    def upload_zip_project(self, archive_path: Path) -> UploadedProject:
         """
-        Unzips a project archive into a run folder inside the shared verilog_code directory,
-        validates security limits, and returns a safe project ID (relative path) pointing to the
-        extracted sources.
+        Validates and extracts the uploaded archive (already streamed to disk) into a new
+        run folder, creates its session and returns the canonical project ID
+        (``runs/run_<32hex>``) together with the session token.
+
+        Raises:
+            ProjectUploadError: If the archive is invalid, unsafe, too large or has no
+                Verilog sources (400/413). Nothing is left in the runs folder.
         """
-        # Create a unique run directory name inside /verilog_code/runs
-        temp_folder_name = f"run_{uuid.uuid4().hex}"
-        temp_folder_path = os.path.join(str(settings.VERILOG_RUNS_DIR), temp_folder_name)
-        os.makedirs(temp_folder_path, exist_ok=True)
-        
-        try:
-            # Extract the zip file safely
-            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_ref:
-                # 1. Zip Bomb Prevention: Limit decompressed size to 50MB
-                total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
-                MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
-                if total_uncompressed_size > MAX_UNCOMPRESSED_SIZE:
-                    raise ValueError("Security limit exceeded: ZIP archive decompressed size is too large.")
+        limits = UploadLimits(
+            max_uncompressed_bytes=settings.MAX_UNCOMPRESSED_BYTES,
+            max_entries=settings.MAX_ZIP_ENTRIES,
+            max_depth=settings.MAX_ZIP_DEPTH,
+            max_path_length=settings.MAX_ZIP_PATH_LENGTH,
+            max_compression_ratio=settings.MAX_COMPRESSION_RATIO,
+        )
+        # Best-effort housekeeping, in case the periodic task is not running (#10).
+        collect_if_due(
+            settings.VERILOG_RUNS_DIR,
+            RetentionPolicy.from_settings(settings),
+            min_interval_seconds=_OPPORTUNISTIC_GC_INTERVAL_SECONDS,
+        )
 
-                # 2. Zip Slip Prevention: Verify all paths resolve inside the target directory
-                temp_folder_abs = os.path.abspath(temp_folder_path)
-                for member in zip_ref.namelist():
-                    member_abs = os.path.abspath(os.path.join(temp_folder_abs, member))
-                    if not member_abs.startswith(temp_folder_abs):
-                        raise ValueError(f"Security violation: ZIP entry '{member}' attempts directory traversal.")
-                
-                # Perform safe extraction
-                zip_ref.extractall(temp_folder_path)
-                
-            # Handle possible nested directories (if zip was created by archiving the root folder itself)
-            target_path = temp_folder_path
-            v_files_root = [f for f in os.listdir(target_path) if f.endswith((".v", ".sv"))]
-            if not v_files_root:
-                subdirs = [d for d in os.listdir(target_path) if os.path.isdir(os.path.join(target_path, d))]
-                subdirs = [d for d in subdirs if not d.startswith(".")]
-                if len(subdirs) == 1:
-                    target_path = os.path.join(target_path, subdirs[0])
-
-            # Return the safe project ID (relative path from /verilog_code)
-            project_id = os.path.relpath(target_path, str(settings.VERILOG_RUNS_DIR.parent)).replace("\\", "/")
-            return project_id
-        except Exception:
-            # In case of validation or extraction error, clean up the created run folder
-            if os.path.exists(temp_folder_path):
-                shutil.rmtree(temp_folder_path, ignore_errors=True)
-            raise
+        run_name = new_run_name()
+        with run_registry.in_use(run_name), open_project_zip(archive_path) as archive:
+            project_id = extract_project_zip(
+                archive, settings.VERILOG_RUNS_DIR, limits, run_name=run_name
+            )
+            run_dir = settings.VERILOG_RUNS_DIR / run_name
+            try:
+                session_token = create_session(run_dir)
+            except BaseException:
+                shutil.rmtree(run_dir, ignore_errors=True)
+                raise
+        return UploadedProject(project_id=project_id, session_token=session_token)
 
     def delete_project(self, project_id: str) -> bool:
         """

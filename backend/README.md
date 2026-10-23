@@ -59,6 +59,64 @@ backend/
    - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+## Autenticação e sessão
+
+Não há contas de usuário: cada upload cria uma **sessão** vinculada ao run.
+
+1. `POST /api/v1/verilog/upload-projeto-zip` devolve `project_id` e `session_token`. O token
+   é exibido só nessa resposta; o backend guarda apenas o hash SHA-256 dele em
+   `runs/run_<uuid>/.session` (arquivo oculto, nunca lido como fonte nem extraído de ZIPs).
+2. O cliente guarda o token e o envia no header `X-Session-Token` em toda rota que opera
+   sobre o run.
+3. `POST /api/v1/verilog/limpar` é administrativa e exige `X-Admin-Token` igual à variável
+   `ADMIN_TOKEN`. Sem `ADMIN_TOKEN` configurado a rota fica desabilitada (`404`). Cada
+   execução é registrada em log (`warning`) com a origem da requisição e a quantidade de runs
+   removidos.
+
+| Rota | Header obrigatório |
+|---|---|
+| `POST /verilog/upload-projeto-zip` | — |
+| `POST /verilog/mapear-processador` | `X-Session-Token` |
+| `POST /verilog/simular-execucao` | `X-Session-Token` |
+| `DELETE /verilog/projeto/{project_id}` | `X-Session-Token` |
+| `POST /verilog/limpar` | `X-Admin-Token` |
+
+Respostas de autorização: `401` header ausente, `403` token que não pertence ao run (nada é
+apagado nem devolvido), `404` run inexistente (ou `/limpar` desabilitada), `400` `project_id`
+fora do formato `runs/run_<32 hex>`.
+
+Exemplo:
+
+```bash
+resp=$(curl -s -F file=@projeto.zip http://localhost:8000/api/v1/verilog/upload-projeto-zip)
+id=$(echo "$resp" | jq -r .project_id); token=$(echo "$resp" | jq -r .session_token)
+curl -X POST http://localhost:8000/api/v1/verilog/mapear-processador \
+  -H "X-Session-Token: $token" -H 'Content-Type: application/json' \
+  -d "{\"project_id\": \"$id\"}"
+curl -X DELETE "http://localhost:8000/api/v1/verilog/projeto/$id" -H "X-Session-Token: $token"
+```
+
+## Retenção dos projetos enviados
+
+Os projetos enviados são **temporários**. Um coletor automático apaga os runs:
+
+- **por inatividade:** runs sem nenhuma modificação há mais de `RUN_TTL_HOURS` horas (padrão
+  6 h). O "último uso" é o `mtime` mais recente de qualquer arquivo dentro do run, então
+  sintetizar ou simular renova o prazo;
+- **por espaço:** se `RUNS_MAX_TOTAL_BYTES` > 0 e o total ultrapassar o teto, os runs mais antigos
+  são removidos primeiro até voltar abaixo dele.
+
+Regras de segurança do coletor:
+
+- só considera diretórios `run_*` dentro de `VERILOG_RUNS_DIR`;
+- nunca remove um run em uso (upload, mapeamento ou simulação em andamento), seja qual for a idade;
+- falha ao remover um run entra no relatório e não interrompe a coleta dos demais.
+
+A coleta roda ao subir a API e depois a cada `GC_INTERVAL_MINUTES` minutos (task no `lifespan`
+do FastAPI); como reforço, cada upload dispara uma coleta oportunista (no máximo uma a cada 5
+minutos). Cada coleta é registrada em log com runs removidos, bytes liberados e erros. O
+`GET /api/v1/status/` mostra a quantidade de runs, o espaço ocupado e o horário da última coleta.
+
 ## Endpoints Principais
 
 ### POST `/api/v1/verilog/mapear-processador`
@@ -158,11 +216,51 @@ Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 - Campo `file`: arquivo `.zip`.
 
 **Funcionamento:**
-1. A API cria uma pasta exclusiva dentro do diretório `/verilog_code/runs/run_<uuid>`.
-2. Valida segurança contra Zip Bomb e Zip Slip.
-3. Extrai os arquivos do ZIP.
-4. Retorna o `project_id` correspondente para ser usado nas rotas de mapeamento e simulação.
-5. Após concluir o uso, deve-se chamar o endpoint `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+1. O upload é gravado em disco em blocos (nunca inteiro em memória). Requisições cujo
+   `Content-Length` ou volume recebido passem de `MAX_UPLOAD_BYTES` são abortadas com `413`.
+2. Cada nome de entrada é validado antes de qualquer escrita: caminhos absolutos, com `..`,
+   com caracteres inválidos, mais longos que `MAX_ZIP_PATH_LENGTH` ou mais profundos que
+   `MAX_ZIP_DEPTH` são rejeitados; ZIPs com mais de `MAX_ZIP_ENTRIES` entradas também.
+3. Os arquivos são extraídos um a um em `runs/run_<uuid>` (dentro de `VERILOG_RUNS_DIR`),
+   contando os bytes realmente escritos (`MAX_UNCOMPRESSED_BYTES`) e a razão de compressão de
+   cada entrada (`MAX_COMPRESSION_RATIO`, avaliada a partir de 1 MB) para barrar zip bombs. O
+   destino é verificado com `Path.resolve().is_relative_to(...)`.
+4. Só são extraídas as extensões usadas no fluxo; o restante é ignorado em silêncio:
+
+   | Extensão | Motivo |
+   |---|---|
+   | `.v`, `.sv` | Fontes Verilog/SystemVerilog |
+   | `.vh`, `.svh` | Headers incluídos com `` `include `` |
+   | `.mem`, `.hex`, `.txt` | Imagens de memória e estímulos lidos por `$readmemh`/`$readmemb`/`$fopen` |
+
+   Saídas das ferramentas (`estrutura.json`, `relatorio.txt`, `*.vcd`), arquivos ocultos e
+   pastas `__MACOSX` nunca são extraídos, para que um ZIP não traga resultados pré-fabricados.
+5. Se todos os arquivos estiverem dentro de uma única pasta raiz (ZIP criado compactando a
+   própria pasta do projeto), essa pasta é removida na extração: a raiz do run é a raiz do projeto.
+   Demais subpastas são preservadas e as fontes são procuradas recursivamente.
+6. O projeto precisa conter ao menos um arquivo `.v` ou `.sv` (em qualquer subpasta).
+7. Após concluir o uso, deve-se chamar `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+
+**Resposta `200`:**
+```json
+{
+  "project_id": "runs/run_0123456789abcdef0123456789abcdef",
+  "session_token": "<token opaco>",
+  "message": "Projeto enviado com sucesso. ..."
+}
+```
+O `project_id` segue sempre o formato `^runs/run_[0-9a-f]{32}$`, nunca inclui o nome de
+pastas internas do ZIP.
+
+**Erros:**
+
+| Código | Quando |
+|---|---|
+| `400` | Arquivo não é `.zip`; ZIP vazio, corrompido ou protegido por senha; sem nenhum `.v`/`.sv`; caminho inseguro, longo ou profundo demais; entradas duplicadas; razão de compressão suspeita |
+| `413` | Upload acima de `MAX_UPLOAD_BYTES`, extração acima de `MAX_UNCOMPRESSED_BYTES` ou mais de `MAX_ZIP_ENTRIES` entradas |
+
+Em qualquer rejeição nenhuma pasta residual permanece em `VERILOG_RUNS_DIR` e o arquivo
+temporário do upload é apagado.
 
 ### GET `/api/v1/status/live`
 
@@ -180,6 +278,17 @@ Readiness. Verifica de fato cada dependência antes de responder:
 | `yosys` | Container em execução e `yosys -V` respondendo |
 | `icarus` | Container em execução e `iverilog -V` respondendo |
 | `storage` | Diretório de runs existe e é gravável |
+
+Além dos checks, a resposta traz o bloco `runs` (informativo, não altera o status):
+
+```json
+"runs": {
+  "count": 12,
+  "total_bytes": 3456789,
+  "last_collection_at": "2026-10-23T12:00:00Z",
+  "last_collection_removed": 3
+}
+```
 
 **Status agregado e código HTTP:**
 
@@ -208,7 +317,7 @@ comando de versão respeita `HEALTH_TIMEOUT_SECONDS`.
 
 ## Variáveis de Ambiente
 
-Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
+Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.env.example`).
 
 | Variável | Padrão | Descrição |
 |---|---|---|
@@ -223,6 +332,16 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
 | `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON, ex.: `["http://localhost:5173"]`) |
 | `PROJECT_NAME` | `Verilog Classroom API` | Titulo da API |
 | `API_V1_STR` | `/api/v1` | Prefixo das rotas |
+| `MAX_UPLOAD_BYTES` | `10485760` | Tamanho máximo do ZIP enviado (10 MB) |
+| `MAX_UNCOMPRESSED_BYTES` | `52428800` | Total de bytes escritos na extração (50 MB) |
+| `MAX_ZIP_ENTRIES` | `500` | Número máximo de entradas no ZIP |
+| `MAX_ZIP_DEPTH` | `8` | Profundidade máxima de pastas |
+| `MAX_ZIP_PATH_LENGTH` | `255` | Comprimento máximo de um caminho no ZIP |
+| `MAX_COMPRESSION_RATIO` | `200` | Razão máxima descompactado/compactado por entrada (acima de 1 MB) |
+| `ADMIN_TOKEN` | `None` | Token exigido em `POST /verilog/limpar` (`X-Admin-Token`); sem ele a rota fica desabilitada |
+| `RUN_TTL_HOURS` | `6` | Horas sem uso até um run ser coletado (`0` desliga a expiração por idade) |
+| `RUNS_MAX_TOTAL_BYTES` | `0` | Teto de espaço dos runs; acima dele os mais antigos saem primeiro (`0` = sem teto) |
+| `GC_INTERVAL_MINUTES` | `30` | Intervalo da coleta periódica (`0` desliga a task; a coleta no upload continua) |
 
 ## Testes
 

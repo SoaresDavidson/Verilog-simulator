@@ -4,6 +4,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import ClassVar
@@ -12,6 +13,7 @@ from integrations.docker import (
     DockerIntegration,
     DockerIntegrationError,
 )
+from services.runs_gc import CollectionState, collection_state, measure_runs
 
 
 class HealthStatus(StrEnum):
@@ -54,11 +56,22 @@ class CheckResult:
 
 
 @dataclass(frozen=True, slots=True)
+class RunsStatus:
+    """Disk usage of the runs and outcome of the last automatic collection."""
+
+    count: int
+    total_bytes: int
+    last_collection_at: datetime | None = None
+    last_collection_removed: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class HealthReport:
     """Aggregated readiness report for every dependency."""
 
     status: HealthStatus
     checks: dict[str, CheckResult] = field(default_factory=dict)
+    runs: RunsStatus | None = None
 
     @property
     def is_ready(self) -> bool:
@@ -79,9 +92,11 @@ class HealthService:
         self,
         config: HealthConfig | None = None,
         docker_integration: DockerIntegration | None = None,
+        gc_state: CollectionState | None = None,
     ) -> None:
         self.config = config or HealthConfig()
         self.docker_integration = docker_integration or DockerIntegration()
+        self.gc_state = gc_state or collection_state
         self._lock = threading.Lock()
         self._cached_report: HealthReport | None = None
         self._cached_at: float = 0.0
@@ -133,7 +148,21 @@ class HealthService:
             )
 
         checks["storage"] = self._check_storage()
-        return HealthReport(status=self._aggregate(checks), checks=checks)
+        return HealthReport(
+            status=self._aggregate(checks),
+            checks=checks,
+            runs=self._runs_status(),
+        )
+
+    def _runs_status(self) -> RunsStatus:
+        usage = measure_runs(self.config.runs_dir)
+        last = self.gc_state.last_report
+        return RunsStatus(
+            count=usage.count,
+            total_bytes=usage.total_bytes,
+            last_collection_at=last.finished_at if last else None,
+            last_collection_removed=last.removed_count if last else None,
+        )
 
     def _check_docker_daemon(self) -> CheckResult:
         try:

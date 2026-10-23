@@ -51,4 +51,14 @@ def get_status(response: Response, service: HealthDependency) -> StatusResponse:
             }
             for name, check in report.checks.items()
         },
+        runs=(
+            {
+                "count": report.runs.count,
+                "total_bytes": report.runs.total_bytes,
+                "last_collection_at": report.runs.last_collection_at,
+                "last_collection_removed": report.runs.last_collection_removed,
+            }
+            if report.runs is not None
+            else None
+        ),
     )

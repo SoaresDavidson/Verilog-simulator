@@ -28,5 +28,20 @@ class SimularExecucaoResponse(BaseModel):
     )
 
 class UploadZipResponse(BaseModel):
-    project_id: str = Field(..., description="The unique project ID/folder path created for this session's project")
+    project_id: str = Field(
+        ...,
+        description=(
+            "Canonical session ID, always `runs/run_<32 hex>`; sources may live in "
+            "subfolders of the run"
+        ),
+        pattern=r"^runs/run_[0-9a-f]{32}$",
+        examples=["runs/run_0123456789abcdef0123456789abcdef"],
+    )
     message: str = Field(..., description="Success message and instructions")
+    session_token: str = Field(
+        ...,
+        description=(
+            "Opaque session token, returned only here. Send it in the "
+            "`X-Session-Token` header of every route that operates on this run"
+        ),
+    )

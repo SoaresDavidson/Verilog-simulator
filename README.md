@@ -10,3 +10,16 @@ Atualmente, ferramentas de simulação de hardware utilizam as ondas geradas pel
 - Backend local: veja [backend/README.md](backend/README.md) (`cd backend && uv sync && uv run uvicorn main:app --reload`).
 - Frontend local: veja [frontend/README.md](frontend/README.md).
 - Variaveis de ambiente do backend: [backend/.env.example](backend/.env.example).
+
+# API: sessão e autenticação
+- O upload (`POST /api/v1/verilog/upload-projeto-zip`) devolve `project_id` e `session_token`.
+- `mapear-processador`, `simular-execucao` e `DELETE /projeto/{project_id}` exigem o header
+  `X-Session-Token` com o token recebido no upload (`401` sem token, `403` token de outra sessão).
+- `POST /api/v1/verilog/limpar` exige `X-Admin-Token` igual à variável `ADMIN_TOKEN` do backend;
+  sem `ADMIN_TOKEN` configurado a rota fica desabilitada.
+- Detalhes e variáveis em [`backend/README.md`](backend/README.md) e `backend/.env.example`.
+
+# Retenção
+Os projetos enviados são temporários: runs sem uso por mais de `RUN_TTL_HOURS` (padrão 6 h) são
+apagados automaticamente, e um teto opcional de espaço (`RUNS_MAX_TOTAL_BYTES`) remove os mais
+antigos primeiro. Veja [`backend/README.md`](backend/README.md#retenção-dos-projetos-enviados).

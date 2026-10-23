@@ -1,11 +1,17 @@
 """Testes das rotas de Verilog com o service mockado."""
 
 from collections.abc import Iterator
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
+from auth import (
+    AuthorizedRun,
+    require_run_in_use_from_body,
+    require_run_session_from_path,
+)
 from main import app
 from routes.verilog import get_verilog_service
 
@@ -19,7 +25,12 @@ def svc() -> MagicMock:
 
 @pytest.fixture
 def client(svc: MagicMock) -> Iterator[TestClient]:
+    # Autenticação é coberta em test_auth_routes.py; aqui só o mapeamento de erros.
     app.dependency_overrides[get_verilog_service] = lambda: svc
+    app.dependency_overrides[require_run_in_use_from_body] = lambda: None
+    app.dependency_overrides[require_run_session_from_path] = lambda: AuthorizedRun(
+        project_id="runs/run_x", run_name="run_x", run_dir=Path("/nonexistent")
+    )
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
