@@ -38,9 +38,3 @@ extend-exclude = [".venv"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "T20"]
 ignore = ["E501"]  # comprimento de linha fica a cargo do ruff format
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["T20"]
-# Temporario: rotas e servico serao reescritos (#12/#4); remover estes ignores depois.
-"routes/verilog.py" = ["B904"]
-"services/verilog.py" = ["B007"]

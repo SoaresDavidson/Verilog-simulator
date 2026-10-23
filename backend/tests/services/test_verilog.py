@@ -104,7 +104,7 @@ def test_mapear_processador_rejects_incompatible_netlist(
     assert result["stderr"].startswith("warning\n")
     assert "não segue o formato esperado" in result["stderr"]
     assert expected in result["stderr"]
-    assert "does not match the contract" in caplog.text
+    assert "fora do contrato" in caplog.text
 
 
 def test_simular_execucao_preserves_success_response() -> None:

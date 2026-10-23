@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,6 +9,10 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "Verilog Classroom API"
     API_V1_STR: str = "/api/v1"
+
+    # Logging (#12): level name and output format (``text`` for dev, ``json`` for prod)
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: Literal["text", "json"] = "text"
 
     # CORS Origins (comma-separated string or list)
     ALLOWED_ORIGINS: list[str] = [

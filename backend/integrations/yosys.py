@@ -17,7 +17,7 @@ from .docker import (
     DockerIntegration,
     DockerTimeoutError,
 )
-from .projects import is_fresh_artifact, remove_artifacts, resolve_project_dir
+from .projects import NoVerilogSourcesError, is_fresh_artifact, remove_artifacts, resolve_project_dir
 
 logger = logging.getLogger(__name__)
 
@@ -279,8 +279,9 @@ class YosysIntegration:
                 sources.append(relative_path)
         sources.sort(key=lambda path: path.as_posix())
         if not sources:
-            raise FileNotFoundError(
-                f"No synthesizable Verilog (.v or .sv) files found in '{project_dir}'."
+            raise NoVerilogSourcesError(
+                "Nenhum arquivo Verilog sintetizável (.v ou .sv fora de testbenches) "
+                "foi encontrado no projeto."
             )
         return sources
 
