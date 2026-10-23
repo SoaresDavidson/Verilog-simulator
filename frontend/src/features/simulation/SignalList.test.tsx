@@ -86,4 +86,15 @@ describe('Tela 4 — lista de sinais (#31)', () => {
     expect(rst).not.toBeChecked()
     expect(row('tb.clk')).toHaveClass('sel')
   })
+
+  it('alternar visibilidade sincroniza com o waveform', async () => {
+    const user = userEvent.setup()
+    renderApp({ initialState: simulatedState(undefined, { selectedSignals: ['rst'] }) })
+    expect(screen.getByRole('img', { name: /Formas de onda de 1 sinal,/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Exibir tb.uut.data' }))
+    expect(screen.getByRole('img', { name: /Formas de onda de 2 sinais,/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Exibir tb.rst' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Exibir tb.uut.data' }))
+    expect(screen.getByText(/Nenhum sinal visível/)).toBeInTheDocument()
+  })
 })

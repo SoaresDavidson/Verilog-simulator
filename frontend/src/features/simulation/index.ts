@@ -29,3 +29,8 @@ export {
   type LogicState,
   type SignalInfo,
 } from './signals'
+export { buildRow, buildWaveformModel, type WaveformModel, type WaveRow, type WaveSegment } from './waveform/model'
+export type { WaveformRenderer, WaveformRendererFactory } from './waveform/renderer'
+export { createCanvasRenderer } from './waveform/canvasRenderer'
+export { Waveform, type WaveformProps } from './waveform/Waveform'
+export type { WaveformViewport } from './waveform/viewport'

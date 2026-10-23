@@ -6,10 +6,13 @@ import { useSessionState } from '../../state/hooks'
 import { RunPanel } from './RunPanel'
 import { SignalList } from './SignalList'
 import { defaultVisibleIds, listSignals } from './signals'
+import { MAX_WAVEFORM_SIGNALS } from './limits'
 import { indexSimLog } from './simlog'
 import { TimelineControls } from './TimelineControls'
 import { usePlayback } from './usePlayback'
 import { useSimulationRun } from './useSimulationRun'
+import { buildWaveformModel } from './waveform/model'
+import { Waveform } from './waveform/Waveform'
 import './simulation.css'
 
 /** Tela 4 (#s4) — simulação Icarus, lista de sinais, waveform e timeline. */
@@ -35,6 +38,12 @@ export function SimulationScreen() {
     setVisibility({ log: simLog, ids: next })
   }
 
+  const visibleSignals = useMemo(() => signals.filter((s) => visibleIds.has(s.id)), [signals, visibleIds])
+  const waveModel = useMemo(
+    () => (simLog && sim?.usable ? buildWaveformModel(simLog, visibleSignals, playback.time, MAX_WAVEFORM_SIGNALS) : null),
+    [simLog, sim, visibleSignals, playback.time],
+  )
+
   const lastTime = sim?.usable ? sim.timestamps[sim.timestamps.length - 1] : null
 
   return (
@@ -57,6 +66,7 @@ export function SimulationScreen() {
             onToggle={toggleSignal}
             selectedSignals={state.selectedSignals}
           />
+          {waveModel && <Waveform model={waveModel} onSeekTime={playback.seekTime} />}
         </div>
       )}
 

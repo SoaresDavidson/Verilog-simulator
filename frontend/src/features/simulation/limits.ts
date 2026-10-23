@@ -6,3 +6,6 @@
 
 /** Máximo de linhas renderizadas de uma vez na lista de sinais. */
 export const MAX_LIST_ROWS = 300
+
+/** Máximo de sinais desenhados no waveform ao mesmo tempo. */
+export const MAX_WAVEFORM_SIGNALS = 64
