@@ -4,6 +4,7 @@ import { Screen } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
 import { stepBlockReason } from '../../state/session'
 import { FileTree } from './FileTree'
+import { SynthesisPanel } from './SynthesisPanel'
 import './synthesis.css'
 
 /**
@@ -22,6 +23,7 @@ export function SynthesisScreen() {
           <FileTree files={state.files} onReupload={() => nav.goTo(1)} />
         </div>
         <div className="sp">
+          <SynthesisPanel />
           <div className="scr__actions">
             {blockReason && (
               <span id="syn-advance-reason" className="syn-block-reason">

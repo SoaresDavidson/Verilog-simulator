@@ -82,7 +82,7 @@ describe('Tela 2a — árvore de arquivos (#26)', () => {
       },
     })
     expect(screen.getByRole('button', { name: /ver caminho de dados/i })).toBeDisabled()
-    expect(screen.getByText(/sem projeto válido/i)).toBeInTheDocument()
+    expect(screen.getByText(/sem projeto válido/i, { selector: '#syn-advance-reason' })).toBeInTheDocument()
   })
 
   it('com project_id válido mas sem síntese o avanço continua bloqueado', () => {
