@@ -42,7 +42,8 @@ describe('navegação em etapas', () => {
     const user = userEvent.setup()
     renderApp({ initialState: synthesizedState({ step: 2 }) })
 
-    await user.click(screen.getByRole('button', { name: /ver caminho de dados/i }))
+    // O botão da tela 2 também exige sinais (#29); aqui vale a guarda global do stepper.
+    await user.click(stepButton(/caminho de dados/i))
     expect(screen.getByRole('heading', { level: 1, name: 'Caminho de Dados' })).toBeInTheDocument()
     expect(stepButton(/simulação/i)).toHaveAccessibleDescription(/selecione pelo menos 1 sinal/i)
 
