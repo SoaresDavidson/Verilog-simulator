@@ -3,6 +3,7 @@ import { Screen } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
 import { advanceBlockReason } from './advance'
 import { FileTree } from './FileTree'
+import { SignalSelector } from './SignalSelector'
 import { SynthesisPanel } from './SynthesisPanel'
 import { TopModulePanel } from './TopModulePanel'
 import './synthesis.css'
@@ -24,6 +25,7 @@ export function SynthesisScreen() {
         <div className="sp">
           <SynthesisPanel />
           <TopModulePanel />
+          <SignalSelector />
           <div className="scr__actions">
             {blockReason && (
               <span id="syn-advance-reason" className="syn-block-reason">

@@ -1,6 +1,6 @@
 /**
  * Guarda do botão "avançar" da tela 2: além das guardas globais
- * (`stepBlockReason`), exige top confirmado pela síntese.
+ * (`stepBlockReason`), exige top confirmado pela síntese e ao menos 1 sinal.
  */
 import { isSynthesisConfirmed, stepBlockReason, type SessionState } from '../../state/session'
 import { moduleCandidates } from './netlist'
@@ -17,5 +17,7 @@ export function advanceBlockReason(state: SessionState): string | null {
   const reason = stepBlockReason(state, 3)
   if (reason) return reason
   if (!isTopConfirmed(state)) return 'Módulo top não confirmado pela síntese.'
+  // `SignalSelector` só despacha referências da netlist atual e nova síntese limpa a seleção.
+  if (state.selectedSignals.length === 0) return 'Selecione pelo menos 1 sinal.'
   return null
 }

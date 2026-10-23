@@ -113,3 +113,77 @@ export function checkTopModule(netlist: Netlist, topModule: string | null | unde
   if (!moduleCandidates(netlist).includes(topModule)) return { ok: false, message: TOP_MESSAGES.invalid }
   return { ok: true, top: topModule }
 }
+
+export type SignalDirection = 'input' | 'output' | 'inout' | 'internal'
+
+export interface SignalOption {
+  /** Referência hierárquica `top.inst.sinal` (valor persistido em `selectedSignals`). */
+  ref: string
+  name: string
+  /** Caminho de instância (`top`, `top.u_alu`...). */
+  scope: string
+  width: number
+  direction: SignalDirection
+}
+
+/** Teto de sinais listados (proteção contra netlists gigantes ou cíclicas). */
+export const MAX_SIGNAL_OPTIONS = 50_000
+const MAX_HIERARCHY_DEPTH = 64
+
+function portDirection(value: unknown): SignalDirection {
+  return value === 'input' || value === 'output' || value === 'inout' ? value : 'internal'
+}
+
+/**
+ * Sinais selecionáveis (#29): portas e `netnames` visíveis (`hide_name = 0`)
+ * do top e, recursivamente, das instâncias de módulos da própria netlist.
+ * Ordem determinística: a do JSON dentro de cada módulo, instâncias por nome.
+ */
+export function signalOptions(netlist: Netlist, top: string): SignalOption[] {
+  const modules = recordOf(netlist.modules)
+  const out: SignalOption[] = []
+  const seen = new Set<string>()
+
+  const push = (option: SignalOption) => {
+    if (out.length >= MAX_SIGNAL_OPTIONS || seen.has(option.ref)) return
+    seen.add(option.ref)
+    out.push(option)
+  }
+
+  const visit = (moduleName: string, scope: string, stack: string[]) => {
+    if (out.length >= MAX_SIGNAL_OPTIONS || stack.length > MAX_HIERARCHY_DEPTH || stack.includes(moduleName)) return
+    const mod = Object.hasOwn(modules, moduleName) ? modules[moduleName] : null
+    if (!isRecord(mod)) return
+    const ports = recordOf(mod.ports)
+    for (const [name, port] of Object.entries(ports)) {
+      push({ ref: `${scope}.${name}`, name, scope, width: signalWidth(port), direction: portDirection(recordOf(port).direction) })
+    }
+    for (const [name, net] of Object.entries(recordOf(mod.netnames))) {
+      if (Object.hasOwn(ports, name) || !isRecord(net)) continue
+      const hidden = typeof net.hide_name === 'number' ? net.hide_name !== 0 : name.startsWith('$')
+      if (hidden) continue
+      push({ ref: `${scope}.${name}`, name, scope, width: signalWidth(net), direction: 'internal' })
+    }
+    const instances = Object.entries(recordOf(mod.cells))
+      .filter(([, cell]) => isRecord(cell) && typeof cell.type === 'string' && Object.hasOwn(modules, cell.type))
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    for (const [instance, cell] of instances) {
+      visit((cell as { type: string }).type, `${scope}.${instance}`, [...stack, moduleName])
+    }
+  }
+
+  visit(top, top, [])
+  return out
+}
+
+/** Busca por nome/referência, sem diferenciar caixa. */
+export function filterSignals(options: readonly SignalOption[], query: string): SignalOption[] {
+  const q = query.trim().toLowerCase()
+  if (q === '') return [...options]
+  return options.filter((option) => option.ref.toLowerCase().includes(q))
+}
+
+/** Rótulo de largura: `1 bit` ou `[N-1:0]`. */
+export function widthLabel(width: number): string {
+  return width <= 1 ? '1 bit' : `[${width - 1}:0]`
+}

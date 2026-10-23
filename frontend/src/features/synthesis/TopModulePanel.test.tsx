@@ -43,7 +43,8 @@ describe('Tela 2b — módulo top (#27)', () => {
     const current = items.find((li) => li.getAttribute('aria-current') === 'true')
     expect(current?.querySelector('.nm')?.textContent).toBe('cpu')
     expect(within(current as HTMLElement).getByText('top')).toBeInTheDocument()
-    expect(advance()).toBeEnabled()
+    // Top e síntese confirmados: o que falta para avançar é só a seleção de sinais.
+    expect(screen.getByText('Selecione pelo menos 1 sinal.', { selector: '#syn-advance-reason' })).toBeInTheDocument()
   })
 
   it('top fora da netlist é rejeitado com erro seguro', async () => {
