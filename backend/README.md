@@ -158,11 +158,30 @@ Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 - Campo `file`: arquivo `.zip`.
 
 **Funcionamento:**
-1. A API cria uma pasta exclusiva dentro do diretório `/verilog_code/runs/run_<uuid>`.
-2. Valida segurança contra Zip Bomb e Zip Slip.
-3. Extrai os arquivos do ZIP.
-4. Retorna o `project_id` correspondente para ser usado nas rotas de mapeamento e simulação.
-5. Após concluir o uso, deve-se chamar o endpoint `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+1. O ZIP é validado e extraído em uma pasta exclusiva `runs/run_<uuid>` dentro de `VERILOG_RUNS_DIR`.
+2. Se todos os arquivos estiverem dentro de uma única pasta raiz (ZIP criado compactando a
+   própria pasta do projeto), essa pasta é removida na extração: a raiz do run é a raiz do projeto.
+   Demais subpastas são preservadas e as fontes são procuradas recursivamente.
+3. O projeto precisa conter ao menos um arquivo `.v` ou `.sv` (em qualquer subpasta).
+4. Após concluir o uso, deve-se chamar `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+
+**Resposta `200`:**
+```json
+{
+  "project_id": "runs/run_0123456789abcdef0123456789abcdef",
+  "message": "Projeto enviado com sucesso. Use o project_id para mapear e simular."
+}
+```
+O `project_id` segue sempre o formato `^runs/run_[0-9a-f]{32}$`, nunca inclui o nome de
+pastas internas do ZIP.
+
+**Erros:**
+
+| Código | Quando |
+|---|---|
+| `400` | Arquivo não é `.zip`, ZIP vazio, corrompido ou sem nenhum `.v`/`.sv` |
+
+Em qualquer rejeição nenhuma pasta residual permanece em `VERILOG_RUNS_DIR`.
 
 ### GET `/api/v1/status/live`
 

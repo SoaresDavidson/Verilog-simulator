@@ -2,7 +2,6 @@ import io
 import json
 import os
 import shutil
-import uuid
 import zipfile
 from decimal import Decimal
 
@@ -13,6 +12,7 @@ from integrations.yosys import (
     YosysIntegration,
     YosysSynthesisError,
 )
+from services.project_upload import ProjectUploadError, extract_project_zip
 
 
 class VerilogService:
@@ -133,51 +133,20 @@ class VerilogService:
 
     def upload_zip_project(self, zip_bytes: bytes) -> str:
         """
-        Unzips a project archive into a run folder inside the shared verilog_code directory,
-        validates security limits, and returns a safe project ID (relative path) pointing to the
-        extracted sources.
+        Validates and extracts a project archive into a new run folder and returns its
+        canonical project ID (``runs/run_<32hex>``).
+
+        Raises:
+            ProjectUploadError: If the archive is corrupted, empty or has no Verilog sources.
         """
-        # Create a unique run directory name inside /verilog_code/runs
-        temp_folder_name = f"run_{uuid.uuid4().hex}"
-        temp_folder_path = os.path.join(str(settings.VERILOG_RUNS_DIR), temp_folder_name)
-        os.makedirs(temp_folder_path, exist_ok=True)
-        
         try:
-            # Extract the zip file safely
-            with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_ref:
-                # 1. Zip Bomb Prevention: Limit decompressed size to 50MB
-                total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
-                MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
-                if total_uncompressed_size > MAX_UNCOMPRESSED_SIZE:
-                    raise ValueError("Security limit exceeded: ZIP archive decompressed size is too large.")
-
-                # 2. Zip Slip Prevention: Verify all paths resolve inside the target directory
-                temp_folder_abs = os.path.abspath(temp_folder_path)
-                for member in zip_ref.namelist():
-                    member_abs = os.path.abspath(os.path.join(temp_folder_abs, member))
-                    if not member_abs.startswith(temp_folder_abs):
-                        raise ValueError(f"Security violation: ZIP entry '{member}' attempts directory traversal.")
-                
-                # Perform safe extraction
-                zip_ref.extractall(temp_folder_path)
-                
-            # Handle possible nested directories (if zip was created by archiving the root folder itself)
-            target_path = temp_folder_path
-            v_files_root = [f for f in os.listdir(target_path) if f.endswith((".v", ".sv"))]
-            if not v_files_root:
-                subdirs = [d for d in os.listdir(target_path) if os.path.isdir(os.path.join(target_path, d))]
-                subdirs = [d for d in subdirs if not d.startswith(".")]
-                if len(subdirs) == 1:
-                    target_path = os.path.join(target_path, subdirs[0])
-
-            # Return the safe project ID (relative path from /verilog_code)
-            project_id = os.path.relpath(target_path, str(settings.VERILOG_RUNS_DIR.parent)).replace("\\", "/")
-            return project_id
-        except Exception:
-            # In case of validation or extraction error, clean up the created run folder
-            if os.path.exists(temp_folder_path):
-                shutil.rmtree(temp_folder_path, ignore_errors=True)
-            raise
+            archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
+        except (zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+            raise ProjectUploadError(
+                "O arquivo enviado não é um ZIP válido ou está corrompido."
+            ) from exc
+        with archive:
+            return extract_project_zip(archive, settings.VERILOG_RUNS_DIR)
 
     def delete_project(self, project_id: str) -> bool:
         """
