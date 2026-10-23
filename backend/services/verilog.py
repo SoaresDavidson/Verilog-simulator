@@ -53,7 +53,8 @@ class VerilogService:
             raise ValueError("Unauthorized access: project ID must reside inside 'runs/run_'.")
 
         # 1. Resolve path locally in the backend container
-        local_path = os.path.abspath(os.path.join("/verilog_code", normalized_path))
+        base_dir = str(settings.VERILOG_RUNS_DIR.parent)
+        local_path = os.path.abspath(os.path.join(base_dir, normalized_path))
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"Project path '{normalized_path}' not found at '{local_path}'.")
 
@@ -61,7 +62,6 @@ class VerilogService:
             raise NotADirectoryError(f"Path '{local_path}' is not a directory.")
 
         # 2. Get relative path from /verilog_code to map it to the container's /verilog_code
-        base_dir = "/verilog_code"
         rel_path = os.path.relpath(local_path, base_dir)
         container_path = os.path.join("/verilog_code", rel_path).replace("\\", "/")
         return local_path, container_path
@@ -139,7 +139,7 @@ class VerilogService:
         """
         # Create a unique run directory name inside /verilog_code/runs
         temp_folder_name = f"run_{uuid.uuid4().hex}"
-        temp_folder_path = os.path.join("/verilog_code", "runs", temp_folder_name)
+        temp_folder_path = os.path.join(str(settings.VERILOG_RUNS_DIR), temp_folder_name)
         os.makedirs(temp_folder_path, exist_ok=True)
         
         try:
@@ -171,7 +171,7 @@ class VerilogService:
                     target_path = os.path.join(target_path, subdirs[0])
 
             # Return the safe project ID (relative path from /verilog_code)
-            project_id = os.path.relpath(target_path, "/verilog_code").replace("\\", "/")
+            project_id = os.path.relpath(target_path, str(settings.VERILOG_RUNS_DIR.parent)).replace("\\", "/")
             return project_id
         except Exception:
             # In case of validation or extraction error, clean up the created run folder
@@ -190,7 +190,7 @@ class VerilogService:
         # Verify it starts with runs/run_
         if len(parts) >= 2 and parts[0] == "runs" and parts[1].startswith("run_"):
             root_folder_name = parts[1]
-            root_folder_path = os.path.join("/verilog_code", "runs", root_folder_name)
+            root_folder_path = os.path.join(str(settings.VERILOG_RUNS_DIR), root_folder_name)
             if os.path.exists(root_folder_path):
                 shutil.rmtree(root_folder_path, ignore_errors=True)
                 return True
@@ -201,7 +201,7 @@ class VerilogService:
         Deletes all directories and files inside the shared /verilog_code/runs directory
         to clean up leftover session data.
         """
-        runs_dir = "/verilog_code/runs"
+        runs_dir = str(settings.VERILOG_RUNS_DIR)
         if not os.path.exists(runs_dir):
             return {"deleted_count": 0, "status": "Directory does not exist", "deleted_folders": [], "errors": []}
 
