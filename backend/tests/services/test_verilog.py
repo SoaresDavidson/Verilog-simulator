@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from integrations.docker import DockerCommandResult
+from integrations.icarus import IcarusCompilationError, IcarusResult, VcdParseError
 from integrations.yosys import YosysResult, YosysSynthesisError
 from services.verilog import VerilogService
 
@@ -48,38 +48,51 @@ def test_mapear_processador_preserves_failed_response() -> None:
     }
 
 
-def test_simulation_uses_reusable_docker_integration(mocker: MagicMock) -> None:
-    """Icarus execution delegates generic container access to integration."""
-    yosys = MagicMock()
-    docker = MagicMock()
-    docker.execute.return_value = DockerCommandResult(
+def test_simular_execucao_preserves_success_response() -> None:
+    """Service maps Icarus result to existing API dictionary."""
+    icarus = MagicMock()
+    icarus.simulate.return_value = IcarusResult(
         success=True,
         exit_code=0,
         stdout="simulation complete",
         stderr="",
+        simulation_log={"metadata": {}, "modules": {}, "timeline": {}},
     )
-    service = VerilogService(
-        yosys_integration=yosys,
-        docker_integration=docker,
-    )
-    mocker.patch.object(
-        service,
-        "_resolve_paths",
-        return_value=("/verilog_code/runs/run_test", "/verilog_code/runs/run_test"),
-    )
-    mocker.patch("services.verilog.os.path.exists", return_value=True)
-    mocker.patch(
-        "services.verilog.os.walk",
-        return_value=[("/verilog_code/runs/run_test", [], ["top.v"])],
-    )
-    mocker.patch("services.verilog.os.listdir", return_value=[])
+    service = VerilogService(yosys_integration=MagicMock(), icarus_integration=icarus)
+
+    assert service.simular_execucao("runs/run_test") == {
+        "success": True,
+        "stdout": "simulation complete",
+        "stderr": "",
+        "simulation_log": {"metadata": {}, "modules": {}, "timeline": {}},
+    }
+    icarus.simulate.assert_called_once_with("runs/run_test")
+
+
+def test_simular_execucao_compilation_error_is_success_false() -> None:
+    """Compilation errors remain success-false responses for API compatibility."""
+    icarus = MagicMock()
+    failed = IcarusResult(success=False, exit_code=10, stdout="", stderr="syntax error")
+    icarus.simulate.side_effect = IcarusCompilationError("failed", failed)
+    service = VerilogService(yosys_integration=MagicMock(), icarus_integration=icarus)
+
+    assert service.simular_execucao("runs/run_test") == {
+        "success": False,
+        "stdout": "",
+        "stderr": "syntax error",
+        "simulation_log": None,
+    }
+
+
+def test_simular_execucao_unparsable_vcd_is_non_fatal() -> None:
+    """Invalid VCD keeps run success, drops log and explains it in stderr."""
+    icarus = MagicMock()
+    run = IcarusResult(success=True, exit_code=0, stdout="ok", stderr="")
+    icarus.simulate.side_effect = VcdParseError("bad vcd", run)
+    service = VerilogService(yosys_integration=MagicMock(), icarus_integration=icarus)
 
     result = service.simular_execucao("runs/run_test")
 
-    docker.execute.assert_called_once_with(
-        container_name="icarus-verilog",
-        command=["bash", "/scripts/simular.sh", "top.v"],
-        workdir="/verilog_code/runs/run_test",
-    )
     assert result["success"] is True
-    assert result["stdout"] == "simulation complete"
+    assert result["simulation_log"] is None
+    assert "VCD" in result["stderr"]

@@ -3,8 +3,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from integrations.docker import DockerIntegrationError
-from integrations.yosys import YosysError
+from integrations.icarus import IcarusContainerNotFoundError, IcarusError
+from integrations.yosys import YosysContainerNotFoundError, YosysError
 from schemas.verilog import (
     MapearProcessadorRequest,
     MapearProcessadorResponse,
@@ -46,6 +46,8 @@ def mapear_processador(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except YosysContainerNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except YosysError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -68,7 +70,9 @@ def simular_execucao(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except DockerIntegrationError as e:
+    except IcarusContainerNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except IcarusError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post("/upload-projeto-zip", response_model=UploadZipResponse)

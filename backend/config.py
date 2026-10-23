@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     YOSYS_CONTAINER_NAME: str = "yosys"
     YOSYS_TIMEOUT_SECONDS: int = 30
     ICARUS_CONTAINER_NAME: str = "icarus-verilog"
+    ICARUS_TIMEOUT_SECONDS: int = 30
+    # Simulation script path inside the Icarus container
+    ICARUS_SCRIPT_PATH: str = "/scripts/simular.sh"
 
     # Shared volume where every project run is extracted and executed
     VERILOG_RUNS_DIR: Path = Path("/verilog_code/runs")

@@ -15,6 +15,7 @@ from .docker import (
     DockerIntegration,
     DockerTimeoutError,
 )
+from .projects import resolve_project_dir
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,27 +217,7 @@ class YosysIntegration:
         )
 
     def _resolve_project(self, project_id: str) -> tuple[Path, str]:
-        normalized = PurePosixPath(project_id.replace("\\", "/"))
-        if (
-            normalized.is_absolute()
-            or ".." in normalized.parts
-            or len(normalized.parts) < 2
-            or normalized.parts[0] != "runs"
-            or not normalized.parts[1].startswith("run_")
-        ):
-            raise ValueError("Project ID must reside inside 'runs/run_'.")
-
-        base_dir = self.config.verilog_base_dir.resolve()
-        project_dir = base_dir.joinpath(*normalized.parts).resolve()
-        if not project_dir.is_relative_to(base_dir):
-            raise ValueError("Invalid project ID: directory traversal detected.")
-        if not project_dir.exists():
-            raise FileNotFoundError(f"Project path '{project_id}' was not found.")
-        if not project_dir.is_dir():
-            raise NotADirectoryError(f"Project path '{project_id}' is not a directory.")
-
-        container_dir = PurePosixPath("/verilog_code").joinpath(*normalized.parts)
-        return project_dir, container_dir.as_posix()
+        return resolve_project_dir(self.config.verilog_base_dir, project_id)
 
     @staticmethod
     def _find_verilog_sources(project_dir: Path) -> list[Path]:

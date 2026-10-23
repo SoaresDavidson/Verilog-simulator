@@ -1,18 +1,26 @@
 import io
-import json
+import logging
 import os
 import shutil
 import uuid
 import zipfile
-from decimal import Decimal
 
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
+from integrations.icarus import (
+    IcarusCompilationError,
+    IcarusConfig,
+    IcarusIntegration,
+    IcarusSimulationError,
+    VcdParseError,
+)
 from integrations.yosys import (
     YosysConfig,
     YosysIntegration,
     YosysSynthesisError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class VerilogService:
@@ -20,6 +28,7 @@ class VerilogService:
         self,
         yosys_integration: YosysIntegration | None = None,
         docker_integration: DockerIntegration | None = None,
+        icarus_integration: IcarusIntegration | None = None,
     ):
         self.docker_integration = docker_integration or DockerIntegration(
             DockerConfig(
@@ -36,35 +45,16 @@ class VerilogService:
             ),
             docker_integration=self.docker_integration,
         )
-
-    def _resolve_paths(self, folder_path: str) -> tuple[str, str]:
-        """
-        Resolves the local path for reading files, and the corresponding /verilog_code path
-        inside the yosys and icarus-verilog containers.
-        Returns: (local_dir_path, container_dir_path)
-        """
-        # Safety Check: The folder_path (which represents our project_id) must be a safe relative path
-        # starting with "runs/run_" to prevent path traversal and restrict access to dedicated run folders.
-        normalized_path = os.path.normpath(folder_path).replace("\\", "/")
-        if ".." in normalized_path.split("/") or normalized_path.startswith(("/", "./")):
-            raise ValueError("Invalid project ID: directory traversal detected.")
-            
-        if not normalized_path.startswith("runs/run_"):
-            raise ValueError("Unauthorized access: project ID must reside inside 'runs/run_'.")
-
-        # 1. Resolve path locally in the backend container
-        base_dir = str(settings.VERILOG_RUNS_DIR.parent)
-        local_path = os.path.abspath(os.path.join(base_dir, normalized_path))
-        if not os.path.exists(local_path):
-            raise FileNotFoundError(f"Project path '{normalized_path}' not found at '{local_path}'.")
-
-        if not os.path.isdir(local_path):
-            raise NotADirectoryError(f"Path '{local_path}' is not a directory.")
-
-        # 2. Get relative path from /verilog_code to map it to the container's /verilog_code
-        rel_path = os.path.relpath(local_path, base_dir)
-        container_path = os.path.join("/verilog_code", rel_path).replace("\\", "/")
-        return local_path, container_path
+        self.icarus_integration = icarus_integration or IcarusIntegration(
+            IcarusConfig(
+                container_name=settings.ICARUS_CONTAINER_NAME,
+                timeout_seconds=settings.ICARUS_TIMEOUT_SECONDS,
+                verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
+                script_path=settings.ICARUS_SCRIPT_PATH,
+                docker_host=settings.DOCKER_HOST,
+            ),
+            docker_integration=self.docker_integration,
+        )
 
     def mapear_processador(self, project_id: str) -> dict:
         """
@@ -83,52 +73,31 @@ class VerilogService:
 
     def simular_execucao(self, project_id: str) -> dict:
         """
-        Executes the global simulation script `/scripts/simular.sh`
-        inside the 'icarus-verilog' container, using the student's project folder as the working directory.
+        Delegates Icarus simulation and preserves the API response contract.
+
+        Compilation and simulation failures are reported as ``success: false``.
+        An unparsable VCD is non-fatal: the run result is kept, ``simulation_log``
+        is ``None`` and the parse failure is appended to ``stderr``.
         """
-        local_dir, container_dir = self._resolve_paths(project_id)
-
-        # Verify global script exists on the backend host mount
-        global_script = "/scripts/simular.sh"
-        if not os.path.exists(global_script):
-            raise FileNotFoundError("Global simulation script not found at '/scripts/simular.sh'")
-
-        # Find all .v and .sv files in the local student folder recursively to pass as arguments
-        v_files = []
-        for root, dirs, files in os.walk(local_dir):
-            for file in files:
-                if file.endswith((".v", ".sv")):
-                    rel_path = os.path.relpath(os.path.join(root, file), local_dir).replace("\\", "/")
-                    v_files.append(rel_path)
-
-        if not v_files:
-            raise FileNotFoundError(f"No Verilog (.v or .sv) files found in '{local_dir}' for simulation.")
-
-        # Run simulation using the global script with Verilog files as arguments
-        cmd = ["bash", "/scripts/simular.sh"] + v_files
-        run_res = self.docker_integration.execute(
-            container_name="icarus-verilog",
-            command=cmd,
-            workdir=container_dir
-        )
-
-        # Read the simulation log (either standard JSON or NDJSON/JSON Lines)
-        simulation_log = None
-        
-        # 1. Try to find and parse VCD files first
         try:
-            vcd_files = [f for f in os.listdir(local_dir) if f.endswith(".vcd")]
-            if vcd_files:
-                vcd_path = os.path.join(local_dir, vcd_files[0])
-                # print(f"Found VCD file for parsing: {vcd_path}")
-                simulation_log = self._parse_vcd(vcd_path)
-        except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
-            print(f"Error listing or parsing VCD: {e}")
+            result = self.icarus_integration.simulate(project_id)
+        except (IcarusCompilationError, IcarusSimulationError) as exc:
+            result = exc.result
+        except VcdParseError as exc:
+            logger.warning("Simulation of %s produced an unparsable VCD: %s", project_id, exc)
+            result = exc.result
+            message = "Aviso: o arquivo VCD gerado pela simulação não pôde ser interpretado."
+            return {
+                "success": result.success,
+                "stdout": result.stdout,
+                "stderr": "\n".join(part for part in (result.stderr, message) if part),
+                "simulation_log": None,
+            }
         return {
-            "success": run_res.success,
-            "stdout": run_res.stdout,
-            "stderr": run_res.stderr,
-            "simulation_log": simulation_log
+            "success": result.success,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "simulation_log": result.simulation_log,
         }
 
     def upload_zip_project(self, zip_bytes: bytes) -> str:
@@ -222,56 +191,3 @@ class VerilogService:
             "deleted_folders": deleted_folders,
             "errors": errors
         }
-
-    def _parse_vcd(self, vcd_path: str, output_path: str | None = None, debug: bool = False) -> dict | None:
-        from vcdvcd import VCDVCD
-        vcd = VCDVCD(vcd_path, store_scopes=True)
-        
-        modules = {}
-        for scope_name, scope in vcd.scopes.items():
-            scope_vars = {}
-            child_scopes = []
-            for name, val in scope.subElements.items():
-                if isinstance(val, str):
-                    sig = vcd[val]
-                    scope_vars[name] = {
-                        "size": sig.size,
-                        "var_type": sig.var_type,
-                        "references": sig.references
-                    }
-                else:
-                    child_scopes.append(val.name)
-            
-            modules[scope_name] = {
-                "name": scope.name,
-                "variables": scope_vars,
-                "child_scopes": child_scopes
-            }
-
-        timeline = {}
-        for signal_name in vcd.signals:
-            signal = vcd[signal_name]
-            for timestamp, value in signal.tv:
-                timeline.setdefault(str(timestamp), {})[signal_name] = value
-
-        data = {
-            "metadata": {
-                "timescale": vcd.timescale,
-                "begintime": vcd.begintime,
-                "endtime": vcd.endtime,
-            },
-            "modules": modules,
-            "timeline": timeline,
-        }
-        class DecimalEncoder(json.JSONEncoder):
-                def default(self, obj):
-                    if isinstance(obj, Decimal):
-                        return float(obj)
-                    return super().default(obj)
-
-        json_str = json.dumps(data, indent=2, cls=DecimalEncoder)
-        if debug:
-            output_path = output_path or "ciclos.json"
-            with open(output_path, "w") as f:
-                f.write(json_str)
-        return json.loads(json_str)

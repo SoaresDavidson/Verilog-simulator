@@ -11,6 +11,17 @@ from .docker import (
     DockerIntegrationError,
     DockerTimeoutError,
 )
+from .icarus import (
+    IcarusCompilationError,
+    IcarusConfig,
+    IcarusContainerNotFoundError,
+    IcarusError,
+    IcarusIntegration,
+    IcarusResult,
+    IcarusSimulationError,
+    IcarusTimeoutError,
+    VcdParseError,
+)
 from .yosys import (
     YosysConfig,
     YosysContainerNotFoundError,
@@ -31,6 +42,15 @@ __all__ = [
     "DockerIntegration",
     "DockerIntegrationError",
     "DockerTimeoutError",
+    "IcarusCompilationError",
+    "IcarusConfig",
+    "IcarusContainerNotFoundError",
+    "IcarusError",
+    "IcarusIntegration",
+    "IcarusResult",
+    "IcarusSimulationError",
+    "IcarusTimeoutError",
+    "VcdParseError",
     "YosysConfig",
     "YosysContainerNotFoundError",
     "YosysError",
