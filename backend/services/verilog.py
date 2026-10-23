@@ -14,6 +14,7 @@ from integrations.icarus import (
     IcarusSimulationError,
     VcdParseError,
 )
+from integrations.vcd import VcdLimits, VcdSelection
 from integrations.yosys import (
     YosysConfig,
     YosysIntegration,
@@ -52,6 +53,11 @@ class VerilogService:
                 verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 script_path=settings.ICARUS_SCRIPT_PATH,
                 docker_host=settings.DOCKER_HOST,
+                vcd_limits=VcdLimits(
+                    max_timestamps=settings.VCD_MAX_TIMESTAMPS,
+                    max_signals=settings.VCD_MAX_SIGNALS,
+                    max_file_bytes=settings.VCD_MAX_FILE_BYTES,
+                ),
             ),
             docker_integration=self.docker_integration,
         )
@@ -72,7 +78,9 @@ class VerilogService:
             "stat_report": result.stat_report,
         }
 
-    def simular_execucao(self, project_id: str) -> dict:
+    def simular_execucao(
+        self, project_id: str, selection: VcdSelection | None = None
+    ) -> dict:
         """
         Delegates Icarus simulation and preserves the API response contract.
 
@@ -81,7 +89,7 @@ class VerilogService:
         is ``None`` and the parse failure is appended to ``stderr``.
         """
         try:
-            result = self.icarus_integration.simulate(project_id)
+            result = self.icarus_integration.simulate(project_id, selection)
         except (IcarusCompilationError, IcarusSimulationError) as exc:
             result = exc.result
         except VcdParseError as exc:

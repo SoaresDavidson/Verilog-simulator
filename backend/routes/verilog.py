@@ -8,6 +8,7 @@ from integrations.icarus import (
     IcarusError,
     IcarusTimeoutError,
 )
+from integrations.vcd import VcdSelection
 from integrations.yosys import (
     YosysContainerNotFoundError,
     YosysError,
@@ -81,7 +82,13 @@ def simular_execucao(
     service: ServiceDependency,
 ):
     try:
-        result = service.simular_execucao(payload.project_id)
+        selection = VcdSelection(
+            begin_time=payload.begin_time,
+            end_time=payload.end_time,
+            signals=tuple(payload.signals) if payload.signals is not None else None,
+            decimation=payload.decimation,
+        )
+        result = service.simular_execucao(payload.project_id, selection)
         return SimularExecucaoResponse(
             success=result["success"],
             stdout=result["stdout"],

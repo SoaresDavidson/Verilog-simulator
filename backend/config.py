@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # Simulation script path inside the Icarus container
     ICARUS_SCRIPT_PATH: str = "/scripts/simular.sh"
 
+    # Upper bounds for the parsed VCD returned by /simular-execucao
+    VCD_MAX_TIMESTAMPS: int = 50_000
+    VCD_MAX_SIGNALS: int = 500
+    VCD_MAX_FILE_BYTES: int = 100 * 1024 * 1024
+
     # Shared volume where every project run is extracted and executed
     VERILOG_RUNS_DIR: Path = Path("/verilog_code/runs")
 

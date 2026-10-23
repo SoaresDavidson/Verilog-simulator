@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class MapearProcessadorRequest(BaseModel):
@@ -18,6 +18,32 @@ class MapearProcessadorResponse(BaseModel):
 
 class SimularExecucaoRequest(BaseModel):
     project_id: str = Field(..., description="The unique project ID/folder path returned from the ZIP upload endpoint")
+    begin_time: int | None = Field(
+        None,
+        ge=0,
+        description="Optional first VCD timestamp to return. The value each signal holds at this instant is emitted under `begin_time`.",
+    )
+    end_time: int | None = Field(None, ge=0, description="Optional last VCD timestamp to return")
+    signals: list[str] | None = Field(
+        None,
+        max_length=10_000,
+        description="Optional signal references to return (e.g. `tb.dut.clk`). Unknown references are listed in `metadata.ignored_signals`.",
+    )
+    decimation: int = Field(
+        1,
+        ge=1,
+        description="Keep one of every N timestamps (plus the last). Changes from skipped timestamps are folded into the next kept one.",
+    )
+
+    @model_validator(mode="after")
+    def _check_window(self) -> "SimularExecucaoRequest":
+        if (
+            self.begin_time is not None
+            and self.end_time is not None
+            and self.begin_time > self.end_time
+        ):
+            raise ValueError("begin_time must not be greater than end_time")
+        return self
 
 class SimularExecucaoResponse(BaseModel):
     success: bool = Field(..., description="Whether the simulation script succeeded")
@@ -26,7 +52,9 @@ class SimularExecucaoResponse(BaseModel):
     simulation_log: Any = Field(
         None,
         description="The parsed VCD simulation log object containing:\n\n"
-                    "- **metadata**: Details about the simulation run, including `timescale` (with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`.\n"
+                    "- **metadata**: Details about the simulation run, including `timescale` (with timescale in seconds, magnitude, unit, factor), `begintime`, and `endtime`. "
+                    "When a size limit (VCD_MAX_TIMESTAMPS, VCD_MAX_SIGNALS, VCD_MAX_FILE_BYTES) cuts the result, `truncated` is true and "
+                    "`truncation_reason` lists `max_timestamps`, `max_signals` and/or `max_file_bytes` (comma-separated), with `total_timestamps` / `total_signals` / `file_bytes`.\n"
                     "- **modules**: The design's hierarchical scopes tree. Each module contains `variables` (signals with size, type, and references in that scope) and `child_scopes` (nested child modules/scopes).\n"
                     "- **timeline**: A temporal log mapping each timestamp string to a dictionary of signal name/value changes at that instant."
     )

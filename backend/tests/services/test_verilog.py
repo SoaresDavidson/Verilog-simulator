@@ -69,7 +69,7 @@ def test_simular_execucao_preserves_success_response() -> None:
         "stderr": "",
         "simulation_log": {"metadata": {}, "modules": {}, "timeline": {}},
     }
-    icarus.simulate.assert_called_once_with("runs/run_test")
+    icarus.simulate.assert_called_once_with("runs/run_test", None)
 
 
 def test_simular_execucao_compilation_error_is_success_false() -> None:

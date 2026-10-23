@@ -50,12 +50,35 @@ O nome do VCD é escolhido pelo testbench (`$dumpfile`), então a integração s
 
 Sem candidatos, `vcd_file` e `simulation_log` ficam `None`, mesmo que exista um VCD antigo na pasta.
 
+## Limites e recorte do VCD
+
+O parse (`integrations/vcd.py`) converte `Decimal` direto para `float`, sem passar por `json.dumps`/`json.loads`, e registra no log duração, bytes, sinais e timestamps de cada VCD.
+
+Limites (`VcdLimits`, configuráveis por ambiente):
+
+| Variável | Padrão | Ao exceder |
+|---|---|---|
+| `VCD_MAX_FILE_BYTES` | `104857600` | só a hierarquia (`modules`) é devolvida; `timeline` vazia |
+| `VCD_MAX_SIGNALS` | `500` | só as primeiras referências entram na `timeline` |
+| `VCD_MAX_TIMESTAMPS` | `50000` | só os primeiros instantes entram na `timeline` |
+
+A truncagem é sempre sinalizada em `metadata`: `truncated: true`, `truncation_reason` (motivos separados por vírgula: `max_file_bytes`, `max_signals`, `max_timestamps`) e o total original (`file_bytes`, `total_signals`, `total_timestamps`). Dentro dos limites, a resposta é idêntica à anterior; a `timeline` sai ordenada por tempo.
+
+Recorte pedido pelo cliente (`VcdSelection`, campos opcionais do body de `/simular-execucao`):
+
+- `begin_time` / `end_time`: janela temporal inclusiva. Em `begin_time` sai o valor vigente de cada sinal, para a janela começar de um estado conhecido;
+- `signals`: lista de referências (`"tb.dut.clk"`). Referências desconhecidas aparecem em `metadata.ignored_signals`;
+- `decimation`: mantém um a cada N instantes, mais o último. Mudanças dos instantes pulados são incorporadas ao próximo instante mantido.
+
+O recorte é aplicado antes de `VCD_MAX_TIMESTAMPS`. `modules` sempre traz a hierarquia completa.
+
 ## Exemplo de uso
 
 ```python
 from pathlib import Path
 
 from integrations.icarus import IcarusConfig, IcarusIntegration
+from integrations.vcd import VcdSelection
 
 integration = IcarusIntegration(
     IcarusConfig(
@@ -65,7 +88,10 @@ integration = IcarusIntegration(
     )
 )
 
-result = integration.simulate("runs/run_0123456789abcdef0123456789abcdef")
+result = integration.simulate(
+    "runs/run_0123456789abcdef0123456789abcdef",
+    VcdSelection(begin_time=0, end_time=1000, signals=("tb.clk",)),
+)
 print(result.exit_code, result.vcd_file)
 print(result.simulation_log["metadata"])
 ```

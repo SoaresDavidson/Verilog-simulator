@@ -2,7 +2,7 @@
 
 import logging
 import time
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -21,7 +21,7 @@ from .projects import (
     resolve_project_dir,
     validate_relative_source,
 )
-from .vcd import VcdFormatError, parse_vcd
+from .vcd import VcdFormatError, VcdLimits, VcdSelection, parse_vcd
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ class IcarusConfig:
     verilog_base_dir: Path = Path("/verilog_code")
     script_path: str = "/scripts/simular.sh"
     docker_host: str | None = None
+    vcd_limits: VcdLimits = field(default_factory=VcdLimits)
 
     def __post_init__(self) -> None:
         """Validate configuration values."""
@@ -143,11 +144,14 @@ class IcarusIntegration:
         sources = [validate_relative_source(source) for source in verilog_files]
         return ["bash", PurePosixPath(self.config.script_path).as_posix(), *sources]
 
-    def simulate(self, project_id: str) -> IcarusResult:
+    def simulate(
+        self, project_id: str, selection: VcdSelection | None = None
+    ) -> IcarusResult:
         """Compile and simulate a project, returning its parsed waveform.
 
         Args:
             project_id: Safe project path below ``runs/run_<id>``.
+            selection: Optional waveform slice (time window, signals, decimation).
 
         Returns:
             Successful execution result. ``simulation_log`` is ``None`` when the
@@ -205,7 +209,7 @@ class IcarusIntegration:
         result = replace(result, vcd_file=vcd_file)
 
         try:
-            simulation_log = parse_vcd(vcd_file)
+            simulation_log = parse_vcd(vcd_file, selection, self.config.vcd_limits)
         except VcdFormatError as exc:
             logger.warning("Failed to parse VCD for %s: %s", project_id, exc)
             raise VcdParseError(

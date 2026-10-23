@@ -81,9 +81,17 @@ Dispara a simulação de hardware no container `icarus-verilog` e analisa o arqu
 **Request Payload:**
 ```json
 {
-  "project_id": "runs/run_<uuid>"
+  "project_id": "runs/run_<uuid>",
+  "begin_time": 0,
+  "end_time": 100000,
+  "signals": ["tb_processador.clk"],
+  "decimation": 1
 }
 ```
+
+* Só `project_id` é obrigatório. `begin_time`/`end_time` (janela inclusiva), `signals` (referências a incluir) e `decimation` (um a cada N instantes) recortam a `timeline`. Detalhes em `docs/integrations/icarus.md`.
+* A `timeline` é limitada por `VCD_MAX_TIMESTAMPS`, `VCD_MAX_SIGNALS` e `VCD_MAX_FILE_BYTES`. Quando algum limite corta o resultado, `metadata` traz `truncated: true`, `truncation_reason` e o total original.
+* A simulação é interrompida após `ICARUS_TIMEOUT_SECONDS` e a rota responde `408`.
 
 **Response Payload (`simulation_log`):**
 Retorna um objeto JSON estruturado contendo a simulação completa:

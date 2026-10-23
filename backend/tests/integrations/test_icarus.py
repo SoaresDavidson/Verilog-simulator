@@ -25,6 +25,7 @@ from integrations.icarus import (
     IcarusTimeoutError,
     VcdParseError,
 )
+from integrations.vcd import VcdLimits, VcdSelection
 
 
 @pytest.fixture
@@ -484,3 +485,32 @@ def test_infinite_testbench_is_killed_within_timeout() -> None:
         assert survivors.output.decode().strip() == ""
     finally:
         shutil.rmtree(project, ignore_errors=True)
+
+
+def test_vcd_limits_and_selection_are_applied(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    fixtures_dir: Path,
+) -> None:
+    """Limites da configuração e recorte do cliente chegam ao parse do VCD."""
+    fake_exec(
+        docker_client,
+        side_effect=lambda **_: shutil.copy(
+            fixtures_dir / "counter.vcd", project_dir / "wave.vcd"
+        ),
+    )
+    integration = IcarusIntegration(
+        config=IcarusConfig(
+            verilog_base_dir=tmp_path, vcd_limits=VcdLimits(max_timestamps=2)
+        ),
+        docker_integration=DockerIntegration(docker_client=docker_client),
+    )
+
+    result = integration.simulate("runs/run_test", VcdSelection(signals=("tb.clk",)))
+
+    log = result.simulation_log
+    assert log is not None
+    assert list(log["timeline"]) == ["0", "5000"]
+    assert log["metadata"]["truncation_reason"] == "max_timestamps"
