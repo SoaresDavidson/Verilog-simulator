@@ -79,6 +79,10 @@ class IcarusContainerNotFoundError(IcarusError):
 class IcarusTimeoutError(IcarusError):
     """Raised when the simulation exceeds the configured timeout."""
 
+    def __init__(self, message: str, timeout_seconds: float) -> None:
+        super().__init__(message)
+        self.timeout_seconds = timeout_seconds
+
 
 class _IcarusResultError(IcarusError):
     """Icarus error that preserves the execution result."""
@@ -181,7 +185,8 @@ class IcarusIntegration:
             raise IcarusContainerNotFoundError(str(exc)) from exc
         except DockerTimeoutError as exc:
             raise IcarusTimeoutError(
-                f"Icarus simulation exceeded {self.config.timeout_seconds} seconds."
+                f"Icarus simulation exceeded {self.config.timeout_seconds:g} seconds.",
+                self.config.timeout_seconds,
             ) from exc
         except DockerExecutionError as exc:
             raise IcarusError(f"Icarus Docker execution failed: {exc}") from exc

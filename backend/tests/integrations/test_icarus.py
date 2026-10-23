@@ -232,6 +232,25 @@ def test_timeout_raises_specific_error(
         integration.simulate("runs/run_test")
 
 
+def test_container_timeout_exit_code_raises_timeout(
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
+) -> None:
+    """Exit 124 do `timeout` no container vira IcarusTimeoutError sem ler artefatos."""
+    execution = fake_exec(
+        docker_client,
+        exit_code=124,
+        side_effect=lambda **_: (project_dir / "partial.vcd").write_text("$var"),
+    )
+
+    with pytest.raises(IcarusTimeoutError) as error:
+        make_integration(tmp_path, docker_client, timeout_seconds=3).simulate(
+            "runs/run_test"
+        )
+
+    assert error.value.timeout_seconds == 3
+    assert execution.full_command[:3] == ["timeout", "--signal=KILL", "3s"]
+
+
 def test_compilation_failure_exposes_result(
     tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
@@ -410,3 +429,58 @@ def test_concurrent_simulations_do_not_interfere() -> None:
     finally:
         for project_id in projects.values():
             shutil.rmtree(base_dir / project_id, ignore_errors=True)
+
+
+@pytest.mark.integration
+def test_infinite_testbench_is_killed_within_timeout() -> None:
+    """Testbench sem $finish é interrompido no limite e o vvp não sobrevive."""
+    base_dir = Path(os.getenv("VERILOG_TEST_BASE_DIR", "/verilog_code"))
+    if not base_dir.is_dir():
+        pytest.skip(f"Shared Verilog directory not available: {base_dir}")
+    try:
+        client = docker.from_env()
+        container = client.containers.get("icarus-verilog")
+    except (DockerException, OSError) as exc:
+        pytest.skip(f"Icarus container unavailable: {exc}")
+        return
+    if container.status != "running":
+        pytest.skip(f"Icarus container is {container.status}")
+        return
+
+    project_id = f"runs/run_test_{uuid.uuid4().hex}"
+    project = base_dir / project_id
+    project.mkdir(parents=True)
+    try:
+        (project / "tb_forever.v").write_text(
+            "module tb_forever; reg clk = 0; always #1 clk = ~clk; endmodule\n",
+            encoding="utf-8",
+        )
+        integration = IcarusIntegration(
+            config=IcarusConfig(verilog_base_dir=base_dir, timeout_seconds=3),
+            docker_integration=DockerIntegration(
+                config=DockerConfig(timeout_seconds=3, kill_grace_seconds=2),
+                docker_client=client,
+            ),
+        )
+        started = time.monotonic()
+        with pytest.raises(IcarusTimeoutError):
+            integration.simulate(project_id)
+        assert time.monotonic() - started < 3 + 2 + 1
+
+        # Zombies (state Z) are already dead; they linger only when PID 1
+        # does not reap orphans.
+        survivors = container.exec_run(
+            [
+                "bash",
+                "-c",
+                (
+                    "for p in /proc/[0-9]*; do "
+                    '[ "$(cat $p/comm 2>/dev/null)" = vvp ] && '
+                    "[ \"$(cut -d' ' -f3 $p/stat 2>/dev/null)\" != Z ] && echo $p; "
+                    "done; true"
+                ),
+            ]
+        )
+        assert survivors.output.decode().strip() == ""
+    finally:
+        shutil.rmtree(project, ignore_errors=True)

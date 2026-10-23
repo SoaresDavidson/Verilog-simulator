@@ -72,6 +72,10 @@ class YosysContainerNotFoundError(YosysError):
 class YosysTimeoutError(YosysError):
     """Raised when Yosys execution exceeds configured timeout."""
 
+    def __init__(self, message: str, timeout_seconds: float) -> None:
+        super().__init__(message)
+        self.timeout_seconds = timeout_seconds
+
 
 class YosysSynthesisError(YosysError):
     """Raised when Yosys rejects or cannot synthesize a project."""
@@ -175,7 +179,8 @@ class YosysIntegration:
             raise YosysContainerNotFoundError(str(exc)) from exc
         except DockerTimeoutError as exc:
             raise YosysTimeoutError(
-                f"Yosys execution exceeded {self.config.timeout_seconds} seconds."
+                f"Yosys execution exceeded {self.config.timeout_seconds:g} seconds.",
+                self.config.timeout_seconds,
             ) from exc
         except DockerExecutionError as exc:
             raise YosysError(f"Yosys Docker execution failed: {exc}") from exc

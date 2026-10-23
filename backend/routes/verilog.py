@@ -3,8 +3,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from integrations.icarus import IcarusContainerNotFoundError, IcarusError
-from integrations.yosys import YosysContainerNotFoundError, YosysError
+from integrations.icarus import (
+    IcarusContainerNotFoundError,
+    IcarusError,
+    IcarusTimeoutError,
+)
+from integrations.yosys import (
+    YosysContainerNotFoundError,
+    YosysError,
+    YosysTimeoutError,
+)
 from schemas.verilog import (
     MapearProcessadorRequest,
     MapearProcessadorResponse,
@@ -15,6 +23,16 @@ from schemas.verilog import (
 from services.verilog import VerilogService
 
 router = APIRouter()
+
+SYNTHESIS_TIMEOUT_MESSAGE = (
+    "O mapeamento excedeu o limite de {seconds:g} segundos e foi interrompido. "
+    "Verifique se o projeto não possui hierarquia recursiva ou módulos "
+    "excessivamente grandes."
+)
+SIMULATION_TIMEOUT_MESSAGE = (
+    "A simulação excedeu o limite de {seconds:g} segundos e foi interrompida. "
+    "Verifique se o seu testbench possui `$finish` e se não há laços infinitos."
+)
 
 
 def get_verilog_service() -> VerilogService:
@@ -47,6 +65,11 @@ def mapear_processador(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except YosysTimeoutError as e:
+        raise HTTPException(
+            status_code=408,
+            detail=SYNTHESIS_TIMEOUT_MESSAGE.format(seconds=e.timeout_seconds),
+        ) from e
     except YosysContainerNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except YosysError as e:
@@ -71,6 +94,11 @@ def simular_execucao(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except IcarusTimeoutError as e:
+        raise HTTPException(
+            status_code=408,
+            detail=SIMULATION_TIMEOUT_MESSAGE.format(seconds=e.timeout_seconds),
+        ) from e
     except IcarusContainerNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except IcarusError as e:

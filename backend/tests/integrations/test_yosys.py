@@ -6,7 +6,6 @@ import shutil
 import time
 import uuid
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import docker
@@ -195,20 +194,16 @@ def test_missing_container_raises_specific_error(
 
 
 def test_execution_timeout_raises_specific_error(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
-    """Long-running Docker execution respects configured timeout."""
-    container = docker_client.containers.get.return_value
+    """Exit code 124 do `timeout` no container vira YosysTimeoutError."""
+    fake_exec(docker_client, exit_code=124)
+    integration = make_integration(tmp_path, docker_client, timeout_seconds=3)
 
-    def slow_execution(**_kwargs: object) -> SimpleNamespace:
-        time.sleep(0.05)
-        return SimpleNamespace(exit_code=0, output=(b"", b""))
-
-    container.exec_run.side_effect = slow_execution
-    integration = make_integration(tmp_path, docker_client, timeout_seconds=0.01)
-
-    with pytest.raises(YosysTimeoutError, match="exceeded"):
+    with pytest.raises(YosysTimeoutError, match="exceeded") as error:
         integration.synthesize("runs/run_test")
+
+    assert error.value.timeout_seconds == 3
 
 
 def test_failed_synthesis_exposes_execution_result(
