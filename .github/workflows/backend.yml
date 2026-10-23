@@ -1,0 +1,43 @@
+name: backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - name: requirements.txt em sincronia com pyproject.toml
+        run: |
+          uv pip compile pyproject.toml -o /tmp/requirements.txt
+          diff <(grep -v '^#' requirements.txt) <(grep -v '^#' /tmp/requirements.txt)
+      - run: uv run pytest --cov=. --cov-report=term-missing
+
+  integration:
+    # Opcional: so roda manualmente (workflow_dispatch) ou com o label "integration" no PR
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'integration')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: docker compose up -d --build yosys icarus
+        working-directory: .
+      - run: uv sync --locked
+      - run: uv run pytest -m integration
+      - if: always()
+        run: docker compose down
+        working-directory: .

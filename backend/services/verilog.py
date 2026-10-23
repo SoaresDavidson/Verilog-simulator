@@ -123,7 +123,7 @@ class VerilogService:
                 # print(f"Found VCD file for parsing: {vcd_path}")
                 simulation_log = self._parse_vcd(vcd_path)
         except (OSError, ValueError, KeyError, IndexError, TypeError) as e:
-            print(f"Error listing or parsing VCD: {e}")
+            print(f"Error listing or parsing VCD: {e}")  # noqa: T201
         return {
             "success": run_res.success,
             "stdout": run_res.stdout,

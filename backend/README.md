@@ -6,16 +6,16 @@ Este é o backend em FastAPI para o projeto Verilog Classroom. Ele fornece rotas
 
 ```text
 backend/
-├── main.py            # Ponto de entrada da aplicação
-├── config.py          # Configurações globais e de ambiente (CORS, etc.)
-├── routes/            # Rotas / Endpoints do FastAPI
-│   ├── api.py         # Combinador de roteadores
-│   ├── status.py      # Verificação de status/saúde
-│   └── verilog.py     # Rotas específicas para compilação/simulação Verilog
-├── schemas/           # Modelos Pydantic para validação de requests/responses
-│   └── verilog.py
-└── services/          # Camada de negócios e execução de scripts de terceiros
-    └── verilog.py     # Serviço responsável por interagir com compiladores
+├── main.py              # Ponto de entrada da aplicacao (FastAPI + CORS)
+├── config.py            # Settings: unico lugar que le variaveis de ambiente
+├── pyproject.toml       # Dependencias, pytest e ruff
+├── requirements.txt     # Gerado por `uv pip compile` (usado no Dockerfile)
+├── .env.example         # Todas as variaveis suportadas
+├── integrations/        # Adaptadores para Docker, Yosys, etc.
+├── routes/              # Endpoints (api.py, status.py, verilog.py)
+├── schemas/             # Modelos Pydantic de request/response
+├── services/            # Regras de negocio (verilog.py, health)
+└── tests/               # Testes (unit/integration), conftest.py
 ```
 
 ## Como Executar
@@ -27,9 +27,9 @@ backend/
 
 ### Execução Local
 
-1. Entre no diretório `back`:
+1. Entre no diretório `backend`:
    ```bash
-   cd back
+   cd backend
    ```
 
 2. Crie o ambiente virtual e instale as dependências:
@@ -42,7 +42,7 @@ backend/
      python -m venv .venv
      .venv\Scripts\activate     # No Windows
      source .venv/bin/activate  # No Linux/macOS
-     pip install -r requirements.txt
+     pip install -r requirements.txt  # sem as ferramentas de dev
      ```
 
 3. Execute a API:
@@ -220,24 +220,41 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
 | `VERILOG_RUNS_DIR` | `/verilog_code/runs` | Diretório onde cada run é extraído |
 | `HEALTH_TIMEOUT_SECONDS` | `5` | Timeout dos comandos de verificação de readiness |
 | `HEALTH_CACHE_TTL_SECONDS` | `5` | Validade do cache do `GET /api/v1/status/` |
-| `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON) |
+| `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON, ex.: `["http://localhost:5173"]`) |
+| `PROJECT_NAME` | `Verilog Classroom API` | Titulo da API |
+| `API_V1_STR` | `/api/v1` | Prefixo das rotas |
 
 ## Testes
 
-Testes unitários (não exigem Docker):
+Todos os comandos rodam dentro de `backend/`.
 
 ```bash
-uv run pytest
+uv run pytest                     # unitarios (marker `integration` excluido por padrao)
+uv run pytest --cov=. --cov-report=term-missing   # com cobertura
+uv run pytest -m integration      # exige os containers yosys e icarus-verilog de pe
 ```
 
-Testes de integração (exigem os containers `yosys` e `icarus-verilog` de pé):
+As fixtures de `tests/conftest.py` isolam o diretorio de runs em um `tmp_path`
+(via `settings.VERILOG_RUNS_DIR`), mockam o Docker e fornecem um projeto Verilog minimo.
 
-```bash
-uv run pytest -m integration
-```
-
-Lint e formatação:
+Lint e formatacao (o CI roda os tres):
 
 ```bash
 uv run ruff check .
+uv run ruff format --check .
 ```
+
+## Dependencias
+
+`pyproject.toml` e a fonte da verdade; `uv.lock` e versionado. Depois de alterar
+dependencias de runtime, regenere o `requirements.txt` (o CI falha se estiver defasado):
+
+```bash
+uv lock
+uv pip compile pyproject.toml -o requirements.txt
+```
+
+## CORS
+
+`allow_credentials=False`; metodos `GET, POST, DELETE, OPTIONS`; headers aceitos
+`Content-Type`, `X-Session-Token`, `X-Admin-Token`, `X-Request-ID`; `X-Request-ID` e exposto ao navegador.
