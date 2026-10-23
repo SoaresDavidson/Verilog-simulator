@@ -158,12 +158,30 @@ Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 - Campo `file`: arquivo `.zip`.
 
 **Funcionamento:**
-1. O ZIP é validado e extraído em uma pasta exclusiva `runs/run_<uuid>` dentro de `VERILOG_RUNS_DIR`.
-2. Se todos os arquivos estiverem dentro de uma única pasta raiz (ZIP criado compactando a
+1. O upload é gravado em disco em blocos (nunca inteiro em memória). Requisições cujo
+   `Content-Length` ou volume recebido passem de `MAX_UPLOAD_BYTES` são abortadas com `413`.
+2. Cada nome de entrada é validado antes de qualquer escrita: caminhos absolutos, com `..`,
+   com caracteres inválidos, mais longos que `MAX_ZIP_PATH_LENGTH` ou mais profundos que
+   `MAX_ZIP_DEPTH` são rejeitados; ZIPs com mais de `MAX_ZIP_ENTRIES` entradas também.
+3. Os arquivos são extraídos um a um em `runs/run_<uuid>` (dentro de `VERILOG_RUNS_DIR`),
+   contando os bytes realmente escritos (`MAX_UNCOMPRESSED_BYTES`) e a razão de compressão de
+   cada entrada (`MAX_COMPRESSION_RATIO`, avaliada a partir de 1 MB) para barrar zip bombs. O
+   destino é verificado com `Path.resolve().is_relative_to(...)`.
+4. Só são extraídas as extensões usadas no fluxo; o restante é ignorado em silêncio:
+
+   | Extensão | Motivo |
+   |---|---|
+   | `.v`, `.sv` | Fontes Verilog/SystemVerilog |
+   | `.vh`, `.svh` | Headers incluídos com `` `include `` |
+   | `.mem`, `.hex`, `.txt` | Imagens de memória e estímulos lidos por `$readmemh`/`$readmemb`/`$fopen` |
+
+   Saídas das ferramentas (`estrutura.json`, `relatorio.txt`, `*.vcd`), arquivos ocultos e
+   pastas `__MACOSX` nunca são extraídos, para que um ZIP não traga resultados pré-fabricados.
+5. Se todos os arquivos estiverem dentro de uma única pasta raiz (ZIP criado compactando a
    própria pasta do projeto), essa pasta é removida na extração: a raiz do run é a raiz do projeto.
    Demais subpastas são preservadas e as fontes são procuradas recursivamente.
-3. O projeto precisa conter ao menos um arquivo `.v` ou `.sv` (em qualquer subpasta).
-4. Após concluir o uso, deve-se chamar `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
+6. O projeto precisa conter ao menos um arquivo `.v` ou `.sv` (em qualquer subpasta).
+7. Após concluir o uso, deve-se chamar `DELETE /api/v1/verilog/projeto/{project_id}` para limpar os arquivos temporários.
 
 **Resposta `200`:**
 ```json
@@ -179,9 +197,11 @@ pastas internas do ZIP.
 
 | Código | Quando |
 |---|---|
-| `400` | Arquivo não é `.zip`, ZIP vazio, corrompido ou sem nenhum `.v`/`.sv` |
+| `400` | Arquivo não é `.zip`; ZIP vazio, corrompido ou protegido por senha; sem nenhum `.v`/`.sv`; caminho inseguro, longo ou profundo demais; entradas duplicadas; razão de compressão suspeita |
+| `413` | Upload acima de `MAX_UPLOAD_BYTES`, extração acima de `MAX_UNCOMPRESSED_BYTES` ou mais de `MAX_ZIP_ENTRIES` entradas |
 
-Em qualquer rejeição nenhuma pasta residual permanece em `VERILOG_RUNS_DIR`.
+Em qualquer rejeição nenhuma pasta residual permanece em `VERILOG_RUNS_DIR` e o arquivo
+temporário do upload é apagado.
 
 ### GET `/api/v1/status/live`
 
@@ -227,7 +247,7 @@ comando de versão respeita `HEALTH_TIMEOUT_SECONDS`.
 
 ## Variáveis de Ambiente
 
-Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
+Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.env.example`).
 
 | Variável | Padrão | Descrição |
 |---|---|---|
@@ -239,6 +259,12 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env`.
 | `VERILOG_RUNS_DIR` | `/verilog_code/runs` | Diretório onde cada run é extraído |
 | `HEALTH_TIMEOUT_SECONDS` | `5` | Timeout dos comandos de verificação de readiness |
 | `HEALTH_CACHE_TTL_SECONDS` | `5` | Validade do cache do `GET /api/v1/status/` |
+| `MAX_UPLOAD_BYTES` | `10485760` | Tamanho máximo do ZIP enviado (10 MB) |
+| `MAX_UNCOMPRESSED_BYTES` | `52428800` | Total de bytes escritos na extração (50 MB) |
+| `MAX_ZIP_ENTRIES` | `500` | Número máximo de entradas no ZIP |
+| `MAX_ZIP_DEPTH` | `8` | Profundidade máxima de pastas |
+| `MAX_ZIP_PATH_LENGTH` | `255` | Comprimento máximo de um caminho no ZIP |
+| `MAX_COMPRESSION_RATIO` | `200` | Razão máxima descompactado/compactado por entrada (acima de 1 MB) |
 | `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON) |
 
 ## Testes

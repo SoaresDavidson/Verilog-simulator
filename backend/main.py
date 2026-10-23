@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from body_limit import BodySizeLimitMiddleware
 from config import settings
 from routes.api import api_router
 
@@ -10,6 +11,10 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     swagger_ui_parameters={"syntaxHighlight": False}
 )
+
+# Cap request bodies while they stream in (#9). Registered before CORS so that
+# 413 responses still carry the CORS headers.
+app.add_middleware(BodySizeLimitMiddleware, limit_bytes=lambda: settings.MAX_UPLOAD_BYTES)
 
 # Set all CORS enabled origins
 app.add_middleware(

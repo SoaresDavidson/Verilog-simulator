@@ -19,13 +19,20 @@ def _service() -> VerilogService:
     return VerilogService(yosys_integration=object(), docker_integration=object())
 
 
+def _upload(runs_dir: Path, data: bytes) -> str:
+    """Grava o ZIP fora do diretório de runs e envia ao serviço."""
+    archive_path = runs_dir.parent.parent / "upload.zip"
+    archive_path.write_bytes(data)
+    return _service().upload_zip_project(archive_path)
+
+
 def _run_dir(runs_dir: Path, project_id: str) -> Path:
     return runs_dir.parent / project_id
 
 
 def test_sources_at_root_return_canonical_id(runs_dir: Path) -> None:
     """Fonte na raiz gera project_id canônico apontando para o run."""
-    project_id = _service().upload_zip_project(make_zip({"top.v": "module top; endmodule"}))
+    project_id = _upload(runs_dir, make_zip({"top.v": "module top; endmodule"}))
 
     assert CANONICAL_ID.fullmatch(project_id)
     assert (_run_dir(runs_dir, project_id) / "top.v").is_file()
@@ -40,7 +47,7 @@ def test_single_root_folder_is_not_appended_to_id(runs_dir: Path) -> None:
         }
     )
 
-    project_id = _service().upload_zip_project(archive)
+    project_id = _upload(runs_dir, archive)
 
     assert CANONICAL_ID.fullmatch(project_id)
     run_dir = _run_dir(runs_dir, project_id)
@@ -52,14 +59,14 @@ def test_sources_only_in_subfolders_are_accepted(runs_dir: Path) -> None:
     """Fontes apenas em subpastas (sem pasta raiz única) também são aceitas."""
     archive = make_zip({"rtl/top.v": "module top; endmodule", "doc/leia.txt": "x"})
 
-    project_id = _service().upload_zip_project(archive)
+    project_id = _upload(runs_dir, archive)
 
     assert (_run_dir(runs_dir, project_id) / "rtl" / "top.v").is_file()
 
 
 def test_uppercase_extension_counts_as_source(runs_dir: Path) -> None:
     """A extensão é comparada sem diferenciar maiúsculas."""
-    assert _service().upload_zip_project(make_zip({"TOP.V": "module top; endmodule"}))
+    assert _upload(runs_dir, make_zip({"TOP.V": "module top; endmodule"}))
 
 
 @pytest.mark.parametrize(
@@ -77,7 +84,7 @@ def test_invalid_archives_are_rejected_without_residue(
 ) -> None:
     """ZIP vazio, corrompido ou sem fontes gera erro 400 e nenhum resíduo."""
     with pytest.raises(ProjectUploadError) as excinfo:
-        _service().upload_zip_project(archive)
+        _upload(runs_dir, archive)
 
     assert excinfo.value.status_code == 400
     assert fragment in excinfo.value.message
@@ -94,7 +101,7 @@ def test_corrupted_member_is_rejected_without_residue(runs_dir: Path) -> None:
     data[offset] ^= 0xFF
 
     with pytest.raises(ProjectUploadError):
-        _service().upload_zip_project(bytes(data))
+        _upload(runs_dir, bytes(data))
 
     assert list(runs_dir.iterdir()) == []
 
@@ -102,7 +109,7 @@ def test_corrupted_member_is_rejected_without_residue(runs_dir: Path) -> None:
 def test_yosys_finds_nested_sources_with_canonical_id(runs_dir: Path) -> None:
     """A síntese continua encontrando fontes em subpastas pelo id canônico."""
     archive = make_zip({"rtl/core/top.v": "module top; endmodule", "tb/tb_top.v": "x"})
-    project_id = _service().upload_zip_project(archive)
+    project_id = _upload(runs_dir, archive)
     integration = YosysIntegration(
         YosysConfig(verilog_base_dir=runs_dir.parent), docker_integration=object()
     )
@@ -116,7 +123,7 @@ def test_yosys_finds_nested_sources_with_canonical_id(runs_dir: Path) -> None:
 
 def test_simulation_path_resolution_accepts_canonical_id(runs_dir: Path) -> None:
     """A simulação resolve o id canônico para a raiz do run."""
-    project_id = _service().upload_zip_project(make_zip({"src/top.v": "x"}))
+    project_id = _upload(runs_dir, make_zip({"src/top.v": "x"}))
 
     local_dir, container_dir = _service()._resolve_paths(project_id)
 

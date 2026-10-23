@@ -1,9 +1,8 @@
-import io
 import json
 import os
 import shutil
-import zipfile
 from decimal import Decimal
+from pathlib import Path
 
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
@@ -12,7 +11,11 @@ from integrations.yosys import (
     YosysIntegration,
     YosysSynthesisError,
 )
-from services.project_upload import ProjectUploadError, extract_project_zip
+from services.project_upload import (
+    UploadLimits,
+    extract_project_zip,
+    open_project_zip,
+)
 
 
 class VerilogService:
@@ -131,22 +134,24 @@ class VerilogService:
             "simulation_log": simulation_log
         }
 
-    def upload_zip_project(self, zip_bytes: bytes) -> str:
+    def upload_zip_project(self, archive_path: Path) -> str:
         """
-        Validates and extracts a project archive into a new run folder and returns its
-        canonical project ID (``runs/run_<32hex>``).
+        Validates and extracts the uploaded archive (already streamed to disk) into a new
+        run folder and returns its canonical project ID (``runs/run_<32hex>``).
 
         Raises:
-            ProjectUploadError: If the archive is corrupted, empty or has no Verilog sources.
+            ProjectUploadError: If the archive is invalid, unsafe, too large or has no
+                Verilog sources (400/413). Nothing is left in the runs folder.
         """
-        try:
-            archive = zipfile.ZipFile(io.BytesIO(zip_bytes))
-        except (zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
-            raise ProjectUploadError(
-                "O arquivo enviado não é um ZIP válido ou está corrompido."
-            ) from exc
-        with archive:
-            return extract_project_zip(archive, settings.VERILOG_RUNS_DIR)
+        limits = UploadLimits(
+            max_uncompressed_bytes=settings.MAX_UNCOMPRESSED_BYTES,
+            max_entries=settings.MAX_ZIP_ENTRIES,
+            max_depth=settings.MAX_ZIP_DEPTH,
+            max_path_length=settings.MAX_ZIP_PATH_LENGTH,
+            max_compression_ratio=settings.MAX_COMPRESSION_RATIO,
+        )
+        with open_project_zip(archive_path) as archive:
+            return extract_project_zip(archive, settings.VERILOG_RUNS_DIR, limits)
 
     def delete_project(self, project_id: str) -> bool:
         """

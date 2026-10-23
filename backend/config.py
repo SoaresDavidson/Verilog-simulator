@@ -32,5 +32,13 @@ class Settings(BaseSettings):
     HEALTH_TIMEOUT_SECONDS: float = 5
     HEALTH_CACHE_TTL_SECONDS: float = 5
 
+    # Upload hardening (#9): limits applied while receiving and extracting the ZIP
+    MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    MAX_UNCOMPRESSED_BYTES: int = 50 * 1024 * 1024
+    MAX_ZIP_ENTRIES: int = 500
+    MAX_ZIP_DEPTH: int = 8
+    MAX_ZIP_PATH_LENGTH: int = 255
+    MAX_COMPRESSION_RATIO: int = 200
+
 
 settings = Settings()
