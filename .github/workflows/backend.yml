@@ -25,7 +25,7 @@ jobs:
         run: |
           cp requirements.txt /tmp/requirements.txt  # preserva as versoes ja fixadas
           uv pip compile pyproject.toml -o /tmp/requirements.txt
-          diff requirements.txt /tmp/requirements.txt
+          diff <(grep -v '^#' requirements.txt) <(grep -v '^#' /tmp/requirements.txt)
       - run: uv run pytest --cov=. --cov-report=term-missing
 
   integration:
