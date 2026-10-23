@@ -27,7 +27,7 @@ describe('navegação em etapas', () => {
     const user = userEvent.setup()
     renderApp({ initialState: uploadedState() })
 
-    expect(screen.getByText(/runs\/run_0123/)).toBeInTheDocument()
+    expect(screen.getByTitle('Sessão ativa')).toHaveTextContent(/runs\/run_0123/)
     await user.click(stepButton(/seleção/i))
     const heading = screen.getByRole('heading', { level: 1, name: 'Seleção e Síntese' })
     expect(heading).toHaveFocus()
