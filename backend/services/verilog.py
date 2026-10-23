@@ -1,9 +1,11 @@
 import json
 import os
 import shutil
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 
+from auth import create_session
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
 from integrations.yosys import (
@@ -16,6 +18,14 @@ from services.project_upload import (
     extract_project_zip,
     open_project_zip,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class UploadedProject:
+    """Run created by an accepted upload."""
+
+    project_id: str
+    session_token: str
 
 
 class VerilogService:
@@ -134,10 +144,11 @@ class VerilogService:
             "simulation_log": simulation_log
         }
 
-    def upload_zip_project(self, archive_path: Path) -> str:
+    def upload_zip_project(self, archive_path: Path) -> UploadedProject:
         """
         Validates and extracts the uploaded archive (already streamed to disk) into a new
-        run folder and returns its canonical project ID (``runs/run_<32hex>``).
+        run folder, creates its session and returns the canonical project ID
+        (``runs/run_<32hex>``) together with the session token.
 
         Raises:
             ProjectUploadError: If the archive is invalid, unsafe, too large or has no
@@ -151,7 +162,15 @@ class VerilogService:
             max_compression_ratio=settings.MAX_COMPRESSION_RATIO,
         )
         with open_project_zip(archive_path) as archive:
-            return extract_project_zip(archive, settings.VERILOG_RUNS_DIR, limits)
+            project_id = extract_project_zip(archive, settings.VERILOG_RUNS_DIR, limits)
+
+        run_dir = settings.VERILOG_RUNS_DIR.parent / project_id
+        try:
+            session_token = create_session(run_dir)
+        except BaseException:
+            shutil.rmtree(run_dir, ignore_errors=True)
+            raise
+        return UploadedProject(project_id=project_id, session_token=session_token)
 
     def delete_project(self, project_id: str) -> bool:
         """

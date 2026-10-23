@@ -13,7 +13,9 @@ def _upload(client: TestClient, data: bytes, filename: str = "projeto.zip"):
     return client.post(UPLOAD_URL, files={"file": (filename, data, "application/zip")})
 
 
-def test_upload_returns_canonical_project_id(api_client: TestClient, runs_dir: Path) -> None:
+def test_upload_returns_canonical_project_id(
+    api_client: TestClient, runs_dir: Path
+) -> None:
     """Upload válido com pasta raiz responde 200 e id canônico."""
     response = _upload(api_client, make_zip({"proj/top.v": "module top; endmodule"}))
 
@@ -23,7 +25,9 @@ def test_upload_returns_canonical_project_id(api_client: TestClient, runs_dir: P
     assert (runs_dir.parent / project_id / "top.v").is_file()
 
 
-def test_upload_without_sources_returns_400(api_client: TestClient, runs_dir: Path) -> None:
+def test_upload_without_sources_returns_400(
+    api_client: TestClient, runs_dir: Path
+) -> None:
     """ZIP sem .v/.sv responde 400 com mensagem clara e sem resíduo."""
     response = _upload(api_client, make_zip({"leia.txt": "nada"}))
 
@@ -48,7 +52,9 @@ def test_upload_empty_zip_returns_400(api_client: TestClient, runs_dir: Path) ->
     assert list(runs_dir.iterdir()) == []
 
 
-def test_upload_rejects_non_zip_filename(api_client: TestClient, runs_dir: Path) -> None:
+def test_upload_rejects_non_zip_filename(
+    api_client: TestClient, runs_dir: Path
+) -> None:
     """Somente arquivos .zip são aceitos."""
     response = _upload(api_client, b"module top; endmodule", filename="top.v")
 

@@ -12,10 +12,7 @@ MULTIPART_OVERHEAD_BYTES = 64 * 1024
 
 def too_large_message(limit_bytes: int) -> str:
     """Return the pt-BR message used for every oversized upload."""
-    return (
-        "O arquivo enviado excede o limite de "
-        f"{limit_bytes / (1024 * 1024):.1f} MB."
-    )
+    return f"O arquivo enviado excede o limite de {limit_bytes / (1024 * 1024):.1f} MB."
 
 
 class RequestBodyTooLargeError(HTTPException):

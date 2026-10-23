@@ -30,7 +30,10 @@ def _upload(client: TestClient, data: bytes):
 
 
 def test_content_length_above_limit_returns_413(
-    api_client: TestClient, runs_dir: Path, temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+    api_client: TestClient,
+    runs_dir: Path,
+    temp_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Content-Length acima do limite é rejeitado antes de ler o corpo."""
     monkeypatch.setattr(settings, "MAX_UPLOAD_BYTES", 1000)
@@ -44,7 +47,10 @@ def test_content_length_above_limit_returns_413(
 
 
 def test_file_above_limit_is_aborted_while_copying(
-    api_client: TestClient, runs_dir: Path, temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+    api_client: TestClient,
+    runs_dir: Path,
+    temp_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Arquivo acima do limite, mesmo com corpo aceito, aborta a cópia com 413."""
     monkeypatch.setattr(settings, "MAX_UPLOAD_BYTES", 1000)

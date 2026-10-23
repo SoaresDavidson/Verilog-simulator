@@ -59,6 +59,43 @@ backend/
    - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
    - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
+## Autenticação e sessão
+
+Não há contas de usuário: cada upload cria uma **sessão** vinculada ao run.
+
+1. `POST /api/v1/verilog/upload-projeto-zip` devolve `project_id` e `session_token`. O token
+   é exibido só nessa resposta; o backend guarda apenas o hash SHA-256 dele em
+   `runs/run_<uuid>/.session` (arquivo oculto, nunca lido como fonte nem extraído de ZIPs).
+2. O cliente guarda o token e o envia no header `X-Session-Token` em toda rota que opera
+   sobre o run.
+3. `POST /api/v1/verilog/limpar` é administrativa e exige `X-Admin-Token` igual à variável
+   `ADMIN_TOKEN`. Sem `ADMIN_TOKEN` configurado a rota fica desabilitada (`404`). Cada
+   execução é registrada em log (`warning`) com a origem da requisição e a quantidade de runs
+   removidos.
+
+| Rota | Header obrigatório |
+|---|---|
+| `POST /verilog/upload-projeto-zip` | — |
+| `POST /verilog/mapear-processador` | `X-Session-Token` |
+| `POST /verilog/simular-execucao` | `X-Session-Token` |
+| `DELETE /verilog/projeto/{project_id}` | `X-Session-Token` |
+| `POST /verilog/limpar` | `X-Admin-Token` |
+
+Respostas de autorização: `401` header ausente, `403` token que não pertence ao run (nada é
+apagado nem devolvido), `404` run inexistente (ou `/limpar` desabilitada), `400` `project_id`
+fora do formato `runs/run_<32 hex>`.
+
+Exemplo:
+
+```bash
+resp=$(curl -s -F file=@projeto.zip http://localhost:8000/api/v1/verilog/upload-projeto-zip)
+id=$(echo "$resp" | jq -r .project_id); token=$(echo "$resp" | jq -r .session_token)
+curl -X POST http://localhost:8000/api/v1/verilog/mapear-processador \
+  -H "X-Session-Token: $token" -H 'Content-Type: application/json' \
+  -d "{\"project_id\": \"$id\"}"
+curl -X DELETE "http://localhost:8000/api/v1/verilog/projeto/$id" -H "X-Session-Token: $token"
+```
+
 ## Endpoints Principais
 
 ### POST `/api/v1/verilog/mapear-processador`
@@ -187,7 +224,8 @@ Recebe um arquivo compactado `.zip` contendo os arquivos fonte Verilog.
 ```json
 {
   "project_id": "runs/run_0123456789abcdef0123456789abcdef",
-  "message": "Projeto enviado com sucesso. Use o project_id para mapear e simular."
+  "session_token": "<token opaco>",
+  "message": "Projeto enviado com sucesso. ..."
 }
 ```
 O `project_id` segue sempre o formato `^runs/run_[0-9a-f]{32}$`, nunca inclui o nome de
@@ -265,6 +303,7 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.e
 | `MAX_ZIP_DEPTH` | `8` | Profundidade máxima de pastas |
 | `MAX_ZIP_PATH_LENGTH` | `255` | Comprimento máximo de um caminho no ZIP |
 | `MAX_COMPRESSION_RATIO` | `200` | Razão máxima descompactado/compactado por entrada (acima de 1 MB) |
+| `ADMIN_TOKEN` | `None` | Token exigido em `POST /verilog/limpar` (`X-Admin-Token`); sem ele a rota fica desabilitada |
 | `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON) |
 
 ## Testes

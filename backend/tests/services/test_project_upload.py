@@ -23,7 +23,7 @@ def _upload(runs_dir: Path, data: bytes) -> str:
     """Grava o ZIP fora do diretório de runs e envia ao serviço."""
     archive_path = runs_dir.parent.parent / "upload.zip"
     archive_path.write_bytes(data)
-    return _service().upload_zip_project(archive_path)
+    return _service().upload_zip_project(archive_path).project_id
 
 
 def _run_dir(runs_dir: Path, project_id: str) -> Path:

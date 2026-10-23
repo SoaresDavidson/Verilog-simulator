@@ -34,7 +34,9 @@ def _zip_with_raw_names(names: list[str]) -> bytes:
     return buffer.getvalue()
 
 
-def _assert_rejected(runs_dir: Path, data: bytes, status: int = 400, **limits: int) -> str:
+def _assert_rejected(
+    runs_dir: Path, data: bytes, status: int = 400, **limits: int
+) -> str:
     with pytest.raises(ProjectUploadError) as excinfo:
         _extract(runs_dir, data, **limits)
     assert excinfo.value.status_code == status

@@ -40,5 +40,9 @@ class Settings(BaseSettings):
     MAX_ZIP_PATH_LENGTH: int = 255
     MAX_COMPRESSION_RATIO: int = 200
 
+    # Authorization (#8): token required by POST /verilog/limpar (header
+    # X-Admin-Token). When unset, the route is disabled (404).
+    ADMIN_TOKEN: str | None = None
+
 
 settings = Settings()

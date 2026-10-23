@@ -190,8 +190,7 @@ def _plan_members(
     ]
     if not planned:
         raise ProjectUploadError(
-            "O projeto não contém nenhum arquivo Verilog (.v) ou "
-            "SystemVerilog (.sv)."
+            "O projeto não contém nenhum arquivo Verilog (.v) ou SystemVerilog (.sv)."
         )
     return planned
 
@@ -233,9 +232,7 @@ def _strip_wrapper_folder(
     top_levels = {relative.parts[0] for _, relative in planned}
     if len(top_levels) != 1:
         return planned
-    return [
-        (info, PurePosixPath(*relative.parts[1:])) for info, relative in planned
-    ]
+    return [(info, PurePosixPath(*relative.parts[1:])) for info, relative in planned]
 
 
 def _extract_members(

@@ -38,3 +38,10 @@ class UploadZipResponse(BaseModel):
         examples=["runs/run_0123456789abcdef0123456789abcdef"],
     )
     message: str = Field(..., description="Success message and instructions")
+    session_token: str = Field(
+        ...,
+        description=(
+            "Opaque session token, returned only here. Send it in the "
+            "`X-Session-Token` header of every route that operates on this run"
+        ),
+    )
