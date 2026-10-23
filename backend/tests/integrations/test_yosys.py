@@ -74,16 +74,20 @@ def test_build_command_from_verilog_files() -> None:
 
 
 def test_successful_synthesis_parses_generated_json(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
-    """Successful Docker execution returns logs and parsed netlist."""
+    """Successful Docker execution returns logs, parsed netlist and stat report."""
     netlist = {"modules": {"counter": {}}}
-    (project_dir / "estrutura.json").write_text(json.dumps(netlist), encoding="utf-8")
-    (project_dir / "relatorio.txt").write_text("1 module\n", encoding="utf-8")
-    container = docker_client.containers.get.return_value
-    container.exec_run.return_value = SimpleNamespace(
-        exit_code=0,
-        output=(b"synthesis complete", b"warning"),
+
+    def synthesize(**_kwargs: object) -> None:
+        (project_dir / "estrutura.json").write_text(json.dumps(netlist))
+        (project_dir / "relatorio.txt").write_text("1 module\n")
+
+    execution = fake_exec(
+        docker_client,
+        stdout=b"synthesis complete",
+        stderr=b"warning",
+        side_effect=synthesize,
     )
     integration = make_integration(tmp_path, docker_client)
 
@@ -96,23 +100,88 @@ def test_successful_synthesis_parses_generated_json(
     assert result.netlist_content == netlist
     assert result.structure_file == project_dir / "estrutura.json"
     assert result.stat_report_file == project_dir / "relatorio.txt"
-    container.exec_run.assert_called_once()
+    assert result.stat_report == "1 module\n"
+    assert execution.called
 
 
 def test_testbench_files_are_excluded_from_synthesis(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
     """Yosys command excludes files identified as testbenches."""
     (project_dir / "tb_counter.v").write_text("module tb_counter; endmodule\n")
-    (project_dir / "estrutura.json").write_text('{"modules": {}}')
-    container = docker_client.containers.get.return_value
-    container.exec_run.return_value = SimpleNamespace(exit_code=0, output=(b"", b""))
+    execution = fake_exec(
+        docker_client,
+        side_effect=lambda **_: (project_dir / "estrutura.json").write_text("{}"),
+    )
 
     make_integration(tmp_path, docker_client).synthesize("runs/run_test")
 
-    command = container.exec_run.call_args.kwargs["cmd"][2]
+    command = execution.command[-1]
     assert "counter.v" in command
     assert "tb_counter.v" not in command
+
+
+def test_stale_netlist_is_not_returned_when_synthesis_fails(
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
+) -> None:
+    """estrutura.json from a previous run (or the ZIP) never becomes the result."""
+    (project_dir / "estrutura.json").write_text('{"modules": {"old": {}}}')
+    (project_dir / "relatorio.txt").write_text("old report")
+    fake_exec(docker_client, exit_code=1, stderr=b"syntax error")
+
+    with pytest.raises(YosysSynthesisError) as error:
+        make_integration(tmp_path, docker_client).synthesize("runs/run_test")
+
+    assert error.value.result.netlist_content is None
+    assert error.value.result.structure_file is None
+    assert error.value.result.stat_report is None
+    assert not (project_dir / "estrutura.json").exists()
+
+
+def test_stale_netlist_rejected_by_mtime_when_cleanup_fails(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    mocker: MagicMock,
+) -> None:
+    """If cleanup cannot remove the old file, its mtime still disqualifies it."""
+    stale = project_dir / "estrutura.json"
+    stale.write_text('{"modules": {"old": {}}}')
+    old = time.time() - 3600
+    os.utime(stale, (old, old))
+    mocker.patch("integrations.yosys.remove_artifacts")
+    fake_exec(docker_client, stdout=b"done")
+
+    with pytest.raises(YosysSynthesisError) as error:
+        make_integration(tmp_path, docker_client).synthesize("runs/run_test")
+
+    assert error.value.result.netlist_content is None
+    assert "estrutura.json" in error.value.result.stderr
+
+
+def test_invalid_netlist_is_logged_and_reported(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Corrupted JSON is logged and turned into a failed synthesis result."""
+    fake_exec(
+        docker_client,
+        side_effect=lambda **_: (project_dir / "estrutura.json").write_text("{oops"),
+    )
+
+    with (
+        caplog.at_level("WARNING", logger="integrations.yosys"),
+        pytest.raises(YosysSynthesisError) as error,
+    ):
+        make_integration(tmp_path, docker_client).synthesize("runs/run_test")
+
+    assert error.value.result.success is False
+    assert error.value.result.netlist_content is None
+    assert "invalid estrutura.json" in caplog.text
 
 
 def test_missing_container_raises_specific_error(
@@ -143,14 +212,10 @@ def test_execution_timeout_raises_specific_error(
 
 
 def test_failed_synthesis_exposes_execution_result(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
     """Nonzero Yosys exit code raises error carrying process details."""
-    container = docker_client.containers.get.return_value
-    container.exec_run.return_value = SimpleNamespace(
-        exit_code=1,
-        output=(b"", b"syntax error"),
-    )
+    fake_exec(docker_client, exit_code=1, stderr=b"syntax error")
 
     with pytest.raises(YosysSynthesisError) as error:
         make_integration(tmp_path, docker_client).synthesize("runs/run_test")
@@ -161,13 +226,10 @@ def test_failed_synthesis_exposes_execution_result(
 
 
 def test_missing_netlist_is_reported_as_failed_synthesis(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
+    tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:
     """Successful process without expected artifact is treated as failure."""
-    container = docker_client.containers.get.return_value
-    container.exec_run.return_value = SimpleNamespace(
-        exit_code=0, output=(b"done", b"")
-    )
+    fake_exec(docker_client, stdout=b"done")
 
     with pytest.raises(YosysSynthesisError) as error:
         make_integration(tmp_path, docker_client).synthesize("runs/run_test")

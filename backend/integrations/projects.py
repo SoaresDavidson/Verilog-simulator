@@ -1,6 +1,10 @@
 """Resolution of project run directories shared by tool integrations."""
 
+import logging
+from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
+
+logger = logging.getLogger(__name__)
 
 CONTAINER_VERILOG_ROOT = PurePosixPath("/verilog_code")
 """Mount point of the shared Verilog volume inside the tool containers."""
@@ -54,3 +58,35 @@ def validate_relative_source(source: Path) -> str:
     if posix_source.is_absolute() or ".." in posix_source.parts:
         raise ValueError(f"Invalid Verilog source path: '{source}'.")
     return posix_source.as_posix()
+
+
+ARTIFACT_MTIME_TOLERANCE_SECONDS = 1.0
+"""Clock slack accepted between the backend and the shared volume."""
+
+
+def remove_artifacts(paths: Iterable[Path]) -> None:
+    """Delete artifacts a tool is about to regenerate.
+
+    Removing them first means a missing file after the run unambiguously
+    indicates the tool did not produce it. A failed removal is logged and
+    tolerated: :func:`is_fresh_artifact` still rejects the stale file.
+    """
+    for path in paths:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError as exc:
+            logger.warning("Could not remove stale artifact %s: %s", path, exc)
+
+
+def is_fresh_artifact(path: Path, started_at: float) -> bool:
+    """Return whether ``path`` exists and was written after ``started_at``.
+
+    Args:
+        path: Artifact path.
+        started_at: ``time.time()`` captured right before the tool ran.
+    """
+    try:
+        mtime = path.stat().st_mtime
+    except FileNotFoundError:
+        return False
+    return path.is_file() and mtime >= started_at - ARTIFACT_MTIME_TOLERANCE_SECONDS

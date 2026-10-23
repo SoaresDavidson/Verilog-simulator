@@ -1,6 +1,7 @@
 """Icarus Verilog simulation integration executed through Docker."""
 
 import logging
+import time
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -14,7 +15,12 @@ from .docker import (
     DockerIntegration,
     DockerTimeoutError,
 )
-from .projects import resolve_project_dir, validate_relative_source
+from .projects import (
+    is_fresh_artifact,
+    remove_artifacts,
+    resolve_project_dir,
+    validate_relative_source,
+)
 from .vcd import VcdFormatError, parse_vcd
 
 logger = logging.getLogger(__name__)
@@ -157,6 +163,8 @@ class IcarusIntegration:
             self.config.verilog_base_dir, project_id
         )
         command = self.build_command(self._find_verilog_sources(project_dir))
+        remove_artifacts(list(project_dir.rglob("*.vcd")))
+        started_at = time.time()
 
         try:
             execution = self.docker.execute(
@@ -186,7 +194,7 @@ class IcarusIntegration:
         )
         self._raise_for_exit_code(result)
 
-        vcd_file = self._find_vcd(project_dir)
+        vcd_file = self._find_vcd(project_dir, started_at)
         if vcd_file is None:
             return result
         result = replace(result, vcd_file=vcd_file)
@@ -232,6 +240,26 @@ class IcarusIntegration:
         return sources
 
     @staticmethod
-    def _find_vcd(project_dir: Path) -> Path | None:
-        candidates = sorted(project_dir.glob("*.vcd"))
-        return candidates[0] if candidates else None
+    def _find_vcd(project_dir: Path, started_at: float) -> Path | None:
+        """Pick the VCD produced by this run.
+
+        Only files written after ``started_at`` are candidates (old dumps were
+        removed before the run; the mtime check covers a failed removal). With
+        several candidates the most recently modified wins, ties broken by path.
+        """
+        candidates = [
+            path
+            for path in project_dir.rglob("*.vcd")
+            if is_fresh_artifact(path, started_at)
+        ]
+        if not candidates:
+            return None
+        candidates.sort(key=lambda path: (path.stat().st_mtime, path.as_posix()))
+        chosen = candidates[-1]
+        if len(candidates) > 1:
+            logger.warning(
+                "Simulation produced %d VCD files; using most recent '%s'.",
+                len(candidates),
+                chosen.relative_to(project_dir).as_posix(),
+            )
+        return chosen

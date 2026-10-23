@@ -69,6 +69,7 @@ class VerilogService:
             "stdout": result.stdout,
             "stderr": result.stderr,
             "netlist_content": result.netlist_content,
+            "stat_report": result.stat_report,
         }
 
     def simular_execucao(self, project_id: str) -> dict:

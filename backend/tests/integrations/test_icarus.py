@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -122,6 +124,77 @@ def test_simulation_without_vcd_returns_no_log(
     assert result.success is True
     assert result.vcd_file is None
     assert result.simulation_log is None
+
+
+def test_old_vcd_is_removed_and_not_returned(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    fixtures_dir: Path,
+) -> None:
+    """VCD de execução anterior é apagado antes e nunca vira resultado."""
+    shutil.copy(fixtures_dir / "counter.vcd", project_dir / "old.vcd")
+    fake_exec(docker_client, stdout=b"no dump")
+
+    result = make_integration(tmp_path, docker_client).simulate("runs/run_test")
+
+    assert result.simulation_log is None
+    assert result.vcd_file is None
+    assert not (project_dir / "old.vcd").exists()
+
+
+def test_old_vcd_rejected_by_mtime_when_cleanup_fails(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    fixtures_dir: Path,
+    mocker: MagicMock,
+) -> None:
+    """Se a limpeza falhar, o mtime antigo ainda desqualifica o arquivo."""
+    old_vcd = project_dir / "old.vcd"
+    shutil.copy(fixtures_dir / "counter.vcd", old_vcd)
+    old = time.time() - 3600
+    os.utime(old_vcd, (old, old))
+    mocker.patch("integrations.icarus.remove_artifacts")
+
+    def produce_vcd(**_kwargs: object) -> None:
+        shutil.copy(fixtures_dir / "counter.vcd", project_dir / "zz_new.vcd")
+
+    fake_exec(docker_client, side_effect=produce_vcd)
+
+    result = make_integration(tmp_path, docker_client).simulate("runs/run_test")
+
+    assert result.vcd_file == project_dir / "zz_new.vcd"
+
+
+def test_most_recent_generated_vcd_is_chosen(
+    tmp_path: Path,
+    project_dir: Path,
+    docker_client: MagicMock,
+    fake_exec,
+    fixtures_dir: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Com dois VCDs gerados, o mais recente é escolhido e um aviso é logado."""
+
+    def produce_two(**_kwargs: object) -> None:
+        now = time.time()
+        first = project_dir / "b_first.vcd"
+        second = project_dir / "rtl" / "a_second.vcd"
+        shutil.copy(fixtures_dir / "counter.vcd", first)
+        shutil.copy(fixtures_dir / "counter.vcd", second)
+        os.utime(first, (now, now))
+        os.utime(second, (now + 0.5, now + 0.5))
+
+    fake_exec(docker_client, side_effect=produce_two)
+
+    with caplog.at_level("WARNING", logger="integrations.icarus"):
+        result = make_integration(tmp_path, docker_client).simulate("runs/run_test")
+
+    assert result.vcd_file == project_dir / "rtl" / "a_second.vcd"
+    assert "2 VCD files" in caplog.text
 
 
 def test_missing_container_raises_specific_error(
@@ -283,3 +356,57 @@ def test_real_icarus_simulation() -> None:
         assert {"metadata", "modules", "timeline"} <= set(result.simulation_log)
     finally:
         shutil.rmtree(project, ignore_errors=True)
+
+
+@pytest.mark.integration
+def test_concurrent_simulations_do_not_interfere() -> None:
+    """Duas simulações simultâneas devolvem cada uma o seu próprio resultado."""
+    base_dir = Path(os.getenv("VERILOG_TEST_BASE_DIR", "/verilog_code"))
+    if not base_dir.is_dir():
+        pytest.skip(f"Shared Verilog directory not available: {base_dir}")
+    try:
+        client = docker.from_env()
+        container = client.containers.get("icarus-verilog")
+    except (DockerException, OSError) as exc:
+        pytest.skip(f"Icarus container unavailable: {exc}")
+        return
+    if container.status != "running":
+        pytest.skip(f"Icarus container is {container.status}")
+        return
+
+    projects: dict[str, str] = {}
+    for marker in ("alpha", "beta"):
+        project_id = f"runs/run_test_{uuid.uuid4().hex}"
+        project = base_dir / project_id
+        project.mkdir(parents=True)
+        (project / "tb.v").write_text(
+            "module tb; reg [7:0] v;\n"
+            f'initial begin $dumpfile("{marker}.vcd"); $dumpvars(0, tb);\n'
+            f'$display("{marker}"); v = 0; repeat (200) #1 v = v + 1;\n'
+            "$finish; end\nendmodule\n",
+            encoding="utf-8",
+        )
+        projects[marker] = project_id
+
+    integration = IcarusIntegration(
+        config=IcarusConfig(verilog_base_dir=base_dir),
+        docker_integration=DockerIntegration(docker_client=client),
+    )
+    try:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = {
+                marker: pool.submit(integration.simulate, project_id)
+                for marker, project_id in projects.items()
+            }
+            results = {marker: future.result() for marker, future in futures.items()}
+
+        for marker, result in results.items():
+            other = "beta" if marker == "alpha" else "alpha"
+            assert result.success is True
+            assert marker in result.stdout
+            assert other not in result.stdout
+            assert result.vcd_file is not None
+            assert result.vcd_file.name == f"{marker}.vcd"
+    finally:
+        for project_id in projects.values():
+            shutil.rmtree(base_dir / project_id, ignore_errors=True)

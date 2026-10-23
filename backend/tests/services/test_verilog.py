@@ -16,6 +16,7 @@ def test_mapear_processador_preserves_success_response() -> None:
         stdout="ok",
         stderr="",
         netlist_content={"modules": {}},
+        stat_report="Number of cells: 1",
     )
     service = VerilogService(yosys_integration=integration)
 
@@ -24,6 +25,7 @@ def test_mapear_processador_preserves_success_response() -> None:
         "stdout": "ok",
         "stderr": "",
         "netlist_content": {"modules": {}},
+        "stat_report": "Number of cells: 1",
     }
     integration.synthesize.assert_called_once_with("runs/run_test")
 
@@ -45,6 +47,7 @@ def test_mapear_processador_preserves_failed_response() -> None:
         "stdout": "",
         "stderr": "syntax error",
         "netlist_content": None,
+        "stat_report": None,
     }
 
 

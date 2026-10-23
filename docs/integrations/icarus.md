@@ -38,6 +38,18 @@ VERILOG_RUNS_DIR=/verilog_code/runs
 | `126`/`127` | script ausente ou sem permissão | `IcarusError` |
 | outro ≠ 0 | falha genérica da simulação | `IcarusSimulationError` |
 
+`simular.sh` compila para um binário temporário único (`mktemp /tmp/sim.XXXXXXXX.vvp`), removido ao sair. Simulações concorrentes no mesmo container não compartilham o `.vvp`.
+
+## Seleção do VCD
+
+O nome do VCD é escolhido pelo testbench (`$dumpfile`), então a integração segue esta regra:
+
+1. antes de executar, todos os `*.vcd` do diretório do run (recursivo) são apagados;
+2. depois, só são candidatos arquivos `*.vcd` com `mtime` posterior ao início da execução (tolerância de 1 s), o que cobre falha na limpeza;
+3. com mais de um candidato, vence o de `mtime` mais recente (empate decidido pelo caminho) e um aviso é registrado no log.
+
+Sem candidatos, `vcd_file` e `simulation_log` ficam `None`, mesmo que exista um VCD antigo na pasta.
+
 ## Exemplo de uso
 
 ```python

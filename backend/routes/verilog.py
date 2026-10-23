@@ -38,7 +38,8 @@ def mapear_processador(
             success=result["success"],
             stdout=result["stdout"],
             stderr=result["stderr"],
-            netlist_content=result["netlist_content"]
+            netlist_content=result["netlist_content"],
+            stat_report=result["stat_report"],
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
