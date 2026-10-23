@@ -27,3 +27,36 @@
 .sim-tl__time { font-family: var(--fd); font-size: 11px; color: var(--accent); font-weight: 600; white-space: nowrap; }
 .sim-tl__opts { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
 .sim-tl__opts select { background: var(--surface); color: var(--fg); border: 1px solid var(--ov); border-radius: var(--r); padding: 2px 4px; }
+
+/* Área principal: sinais | diagrama + waveform */
+.sim-main { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); gap: 8px; min-width: 0; }
+.sim-h { margin: 0; }
+@media (max-width: 768px) {
+  .sim-main { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Lista de sinais (#31) */
+.sim-sigs { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-height: 640px; }
+.sim-sigs__count { font-size: 11px; }
+.sim-sigs__filters { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; font-size: 11px; color: var(--muted); }
+.sim-sigs__filters select, .sim-sigs__filters input[type="search"] {
+  min-width: 0; width: 100%; background: var(--surface); color: var(--fg); border: 1px solid var(--ov); border-radius: var(--r); padding: 3px 6px;
+}
+.sim-sigs__only { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+.sim-sigs__list { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; flex: 1; }
+.sim-sigs__empty, .sim-sigs__more { font-size: 11px; }
+.sim-sig {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 6px; align-items: center;
+  padding: 4px 6px; border-radius: var(--r); font-size: 12px;
+}
+.sim-sig:hover { background: var(--hover); }
+.sim-sig.sel { background: var(--accent-lt); }
+.sim-sig__main { display: flex; align-items: center; gap: 6px; min-width: 0; cursor: pointer; }
+.sim-sig__main input { accent-color: var(--accent); }
+.sim-sig__name { font-family: var(--fd); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-sig.sel .sim-sig__name { color: var(--accent); }
+.sim-sig__mark { color: var(--accent); font-size: 10px; }
+.sim-sig__meta { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); padding-left: 22px; min-width: 0; }
+.sim-sig__path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--fd); }
+.sim-sig__val { font-family: var(--fd); font-size: 10px; font-weight: 700; }
+.sim-sig__nosample { font-size: 10px; font-style: italic; color: var(--muted); border: 1px dashed var(--ov); border-radius: var(--r); padding: 0 4px; }

@@ -17,3 +17,15 @@ export {
   type SimIndex,
   type Timescale,
 } from './simlog'
+export {
+  baseName,
+  defaultVisibleIds,
+  extendValue,
+  formatValue,
+  listScopes,
+  listSignals,
+  logicState,
+  selectionMatcher,
+  type LogicState,
+  type SignalInfo,
+} from './signals'

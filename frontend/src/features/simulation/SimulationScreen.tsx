@@ -1,8 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import type { SimLog } from '../../api/types'
 import { useStepNavigation } from '../../app/useStepNavigation'
 import { Screen } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
 import { RunPanel } from './RunPanel'
+import { SignalList } from './SignalList'
+import { defaultVisibleIds, listSignals } from './signals'
 import { indexSimLog } from './simlog'
 import { TimelineControls } from './TimelineControls'
 import { usePlayback } from './usePlayback'
@@ -19,6 +22,19 @@ export function SimulationScreen() {
   const simLog = result?.simulation_log ?? null
   const sim = useMemo(() => (simLog ? indexSimLog(simLog) : null), [simLog])
   const playback = usePlayback(sim, state.timelineCursor)
+  const signals = useMemo(() => (simLog && sim?.usable ? listSignals(simLog) : []), [simLog, sim])
+
+  // Visibilidade pertence ao log atual: novo log => volta ao padrão.
+  const [visibility, setVisibility] = useState<{ log: SimLog | null; ids: Set<string> }>({ log: null, ids: new Set() })
+  const defaultIds = useMemo(() => defaultVisibleIds(signals, state.selectedSignals), [signals, state.selectedSignals])
+  const visibleIds = visibility.log === simLog && simLog !== null ? visibility.ids : defaultIds
+  const toggleSignal = (id: string) => {
+    const next = new Set(visibleIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setVisibility({ log: simLog, ids: next })
+  }
+
   const lastTime = sim?.usable ? sim.timestamps[sim.timestamps.length - 1] : null
 
   return (
@@ -30,6 +46,19 @@ export function SimulationScreen() {
         onRun={run.start}
         onCancel={run.cancel}
       />
+
+      {sim?.usable && (
+        <div className="sim-main">
+          <SignalList
+            signals={signals}
+            sim={sim}
+            time={playback.time}
+            visibleIds={visibleIds}
+            onToggle={toggleSignal}
+            selectedSignals={state.selectedSignals}
+          />
+        </div>
+      )}
 
       <TimelineControls playback={playback} timescale={sim?.timescale ?? { magnitude: 1, unit: '' }} lastTime={lastTime} />
 
