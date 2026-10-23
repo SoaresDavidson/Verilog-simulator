@@ -83,6 +83,7 @@ class VerilogService:
                 timeout_seconds=settings.YOSYS_TIMEOUT_SECONDS,
                 verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 docker_host=settings.DOCKER_HOST,
+                run_owner=(settings.EXECUTION_UID, settings.EXECUTION_GID),
             ),
             docker_integration=self.docker_integration,
         )
@@ -93,6 +94,7 @@ class VerilogService:
                 verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 script_path=settings.ICARUS_SCRIPT_PATH,
                 docker_host=settings.DOCKER_HOST,
+                run_owner=(settings.EXECUTION_UID, settings.EXECUTION_GID),
                 vcd_limits=VcdLimits(
                     max_timestamps=settings.VCD_MAX_TIMESTAMPS,
                     max_signals=settings.VCD_MAX_SIGNALS,

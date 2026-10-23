@@ -380,6 +380,7 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.e
 | `YOSYS_CONTAINER_NAME` | `yosys` | Nome do container de síntese |
 | `YOSYS_TIMEOUT_SECONDS` | `30` | Timeout da execução do Yosys |
 | `ICARUS_CONTAINER_NAME` | `icarus-verilog` | Nome do container de simulação |
+| `EXECUTION_UID` / `EXECUTION_GID` | `1000` | Usuário não-root das imagens de execução; cada run é entregue a ele (`chown`) antes de rodar Yosys/Icarus |
 | `VERILOG_RUNS_DIR` | `/verilog_code/runs` | Diretório onde cada run é extraído |
 | `HEALTH_TIMEOUT_SECONDS` | `5` | Timeout dos comandos de verificação de readiness |
 | `HEALTH_CACHE_TTL_SECONDS` | `5` | Validade do cache do `GET /api/v1/status/` |

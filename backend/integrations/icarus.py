@@ -16,6 +16,7 @@ from .docker import (
     DockerTimeoutError,
 )
 from .projects import (
+    grant_run_access,
     is_fresh_artifact,
     remove_artifacts,
     resolve_project_dir,
@@ -43,6 +44,8 @@ class IcarusConfig:
     verilog_base_dir: Path = Path("/verilog_code")
     script_path: str = "/scripts/simular.sh"
     docker_host: str | None = None
+    run_owner: tuple[int, int] | None = None
+    """``(uid, gid)`` that receives the run before execution; ``None`` keeps it."""
     vcd_limits: VcdLimits = field(default_factory=VcdLimits)
 
     def __post_init__(self) -> None:
@@ -172,6 +175,8 @@ class IcarusIntegration:
         )
         command = self.build_command(self._find_verilog_sources(project_dir))
         remove_artifacts(list(project_dir.rglob("*.vcd")))
+        if self.config.run_owner is not None:
+            grant_run_access(project_dir, *self.config.run_owner)
         started_at = time.time()
 
         try:

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     YOSYS_TIMEOUT_SECONDS: int = 30
     ICARUS_CONTAINER_NAME: str = "icarus-verilog"
     ICARUS_TIMEOUT_SECONDS: int = 30
+    # Unprivileged user (#7) that runs Yosys/Icarus. Must match the UID/GID build
+    # args of yosys.dockerfile/icarus.dockerfile: each run is chowned to it before
+    # execution so the tools can write their artifacts.
+    EXECUTION_UID: int = 1000
+    EXECUTION_GID: int = 1000
     # Simulation script path inside the Icarus container
     ICARUS_SCRIPT_PATH: str = "/scripts/simular.sh"
 

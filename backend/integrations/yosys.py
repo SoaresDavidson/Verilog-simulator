@@ -17,7 +17,12 @@ from .docker import (
     DockerIntegration,
     DockerTimeoutError,
 )
-from .projects import is_fresh_artifact, remove_artifacts, resolve_project_dir
+from .projects import (
+    grant_run_access,
+    is_fresh_artifact,
+    remove_artifacts,
+    resolve_project_dir,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +41,8 @@ class YosysConfig:
     timeout_seconds: float = 30
     verilog_base_dir: Path = Path("/verilog_code")
     docker_host: str | None = None
+    run_owner: tuple[int, int] | None = None
+    """``(uid, gid)`` that receives the run before execution; ``None`` keeps it."""
 
     def __post_init__(self) -> None:
         """Validate configuration values."""
@@ -164,6 +171,8 @@ class YosysIntegration:
         structure_file = project_dir / STRUCTURE_FILE_NAME
         stat_report_file = project_dir / STAT_REPORT_FILE_NAME
         remove_artifacts((structure_file, stat_report_file))
+        if self.config.run_owner is not None:
+            grant_run_access(project_dir, *self.config.run_owner)
         started_at = time.time()
 
         try:

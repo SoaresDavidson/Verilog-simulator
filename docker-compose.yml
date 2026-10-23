@@ -1,27 +1,44 @@
+# Restrições aplicadas aos containers que executam código Verilog enviado por
+# alunos (#7). Os valores podem ser sobrescritos por variáveis no .env da raiz.
+# Ver docs/seguranca/modelo-de-isolamento.md.
+x-execution-hardening: &execution-hardening
+  init: true                      # PID 1 (tini) recolhe processos órfãos após timeout
+  mem_limit: ${EXECUTION_MEM_LIMIT:-512m}
+  memswap_limit: ${EXECUTION_MEM_LIMIT:-512m}   # igual a mem_limit = sem swap extra
+  cpus: ${EXECUTION_CPUS:-1.0}
+  pids_limit: ${EXECUTION_PIDS_LIMIT:-256}
+  network_mode: none
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  working_dir: /verilog_code
+  volumes:
+    - ./verilog_code:/verilog_code
+    - ./scripts:/scripts:ro
+  stdin_open: true
+  tty: true
+
 services:
   icarus:
+    <<: *execution-hardening
     build:
       context: .
       dockerfile: icarus.dockerfile
+      args:
+        UID: ${EXECUTION_UID:-1000}
+        GID: ${EXECUTION_GID:-1000}
     container_name: icarus-verilog
-    working_dir: /verilog_code
-    volumes:
-      - ./verilog_code:/verilog_code
-      - ./scripts:/scripts
-    stdin_open: true
-    tty: true
 
   yosys:
+    <<: *execution-hardening
     build:
       context: .
       dockerfile: yosys.dockerfile
+      args:
+        UID: ${EXECUTION_UID:-1000}
+        GID: ${EXECUTION_GID:-1000}
     container_name: yosys
-    working_dir: /verilog_code
-    volumes:
-      - ./verilog_code:/verilog_code
-      - ./scripts:/scripts
-    stdin_open: true
-    tty: true
 
   react-vite:
     build:
@@ -48,10 +65,13 @@ services:
       - /app/.venv
       - ./verilog_code:/verilog_code
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./scripts:/scripts
+      - ./scripts:/scripts:ro
     environment:
       - PYTHONUNBUFFERED=1
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # Dono entregue a cada run antes da execução; igual ao usuário das imagens.
+      - EXECUTION_UID=${EXECUTION_UID:-1000}
+      - EXECUTION_GID=${EXECUTION_GID:-1000}
     healthcheck:
       test:
         - CMD
