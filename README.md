@@ -12,3 +12,8 @@ Atualmente, ferramentas de simulação de hardware utilizam as ondas geradas pel
 - `POST /api/v1/verilog/limpar` exige `X-Admin-Token` igual à variável `ADMIN_TOKEN` do backend;
   sem `ADMIN_TOKEN` configurado a rota fica desabilitada.
 - Detalhes e variáveis em [`backend/README.md`](backend/README.md) e `backend/.env.example`.
+
+# Retenção
+Os projetos enviados são temporários: runs sem uso por mais de `RUN_TTL_HOURS` (padrão 6 h) são
+apagados automaticamente, e um teto opcional de espaço (`RUNS_MAX_TOTAL_BYTES`) remove os mais
+antigos primeiro. Veja [`backend/README.md`](backend/README.md#retenção-dos-projetos-enviados).

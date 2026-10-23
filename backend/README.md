@@ -96,6 +96,27 @@ curl -X POST http://localhost:8000/api/v1/verilog/mapear-processador \
 curl -X DELETE "http://localhost:8000/api/v1/verilog/projeto/$id" -H "X-Session-Token: $token"
 ```
 
+## Retenção dos projetos enviados
+
+Os projetos enviados são **temporários**. Um coletor automático apaga os runs:
+
+- **por inatividade:** runs sem nenhuma modificação há mais de `RUN_TTL_HOURS` horas (padrão
+  6 h). O "último uso" é o `mtime` mais recente de qualquer arquivo dentro do run, então
+  sintetizar ou simular renova o prazo;
+- **por espaço:** se `RUNS_MAX_TOTAL_BYTES` > 0 e o total ultrapassar o teto, os runs mais antigos
+  são removidos primeiro até voltar abaixo dele.
+
+Regras de segurança do coletor:
+
+- só considera diretórios `run_*` dentro de `VERILOG_RUNS_DIR`;
+- nunca remove um run em uso (upload, mapeamento ou simulação em andamento), seja qual for a idade;
+- falha ao remover um run entra no relatório e não interrompe a coleta dos demais.
+
+A coleta roda ao subir a API e depois a cada `GC_INTERVAL_MINUTES` minutos (task no `lifespan`
+do FastAPI); como reforço, cada upload dispara uma coleta oportunista (no máximo uma a cada 5
+minutos). Cada coleta é registrada em log com runs removidos, bytes liberados e erros. O
+`GET /api/v1/status/` mostra a quantidade de runs, o espaço ocupado e o horário da última coleta.
+
 ## Endpoints Principais
 
 ### POST `/api/v1/verilog/mapear-processador`
@@ -258,6 +279,17 @@ Readiness. Verifica de fato cada dependência antes de responder:
 | `icarus` | Container em execução e `iverilog -V` respondendo |
 | `storage` | Diretório de runs existe e é gravável |
 
+Além dos checks, a resposta traz o bloco `runs` (informativo, não altera o status):
+
+```json
+"runs": {
+  "count": 12,
+  "total_bytes": 3456789,
+  "last_collection_at": "2026-10-23T12:00:00Z",
+  "last_collection_removed": 3
+}
+```
+
 **Status agregado e código HTTP:**
 
 - `ok` → `200`: todas as dependências saudáveis.
@@ -304,6 +336,9 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.e
 | `MAX_ZIP_PATH_LENGTH` | `255` | Comprimento máximo de um caminho no ZIP |
 | `MAX_COMPRESSION_RATIO` | `200` | Razão máxima descompactado/compactado por entrada (acima de 1 MB) |
 | `ADMIN_TOKEN` | `None` | Token exigido em `POST /verilog/limpar` (`X-Admin-Token`); sem ele a rota fica desabilitada |
+| `RUN_TTL_HOURS` | `6` | Horas sem uso até um run ser coletado (`0` desliga a expiração por idade) |
+| `RUNS_MAX_TOTAL_BYTES` | `0` | Teto de espaço dos runs; acima dele os mais antigos saem primeiro (`0` = sem teto) |
+| `GC_INTERVAL_MINUTES` | `30` | Intervalo da coleta periódica (`0` desliga a task; a coleta no upload continua) |
 | `ALLOWED_ORIGINS` | localhost:3000/5173 | Origens liberadas no CORS (lista JSON) |
 
 ## Testes

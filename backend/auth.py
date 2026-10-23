@@ -10,13 +10,15 @@ import hashlib
 import os
 import re
 import secrets
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Header, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 
 from config import settings
+from services.runs_gc import run_registry
 
 #: Session metadata file kept inside every run. Hidden (dot) files are never
 #: extracted from uploads nor read as Verilog sources.
@@ -125,6 +127,25 @@ async def require_run_session_from_body(
     if not isinstance(project_id, str):
         return None
     return authorize_run(project_id, x_session_token)
+
+
+async def require_run_in_use_from_body(
+    run: Annotated[AuthorizedRun | None, Depends(require_run_session_from_body)],
+) -> AsyncIterator[AuthorizedRun | None]:
+    """Authorize the run and keep it marked as in use while the request runs.
+
+    Marked runs are never removed by the automatic collection (#10).
+    """
+    if run is None:
+        yield None
+        return
+    with run_registry.in_use(run.run_name):
+        # The collector may have removed the run between authorization and marking.
+        if not run.run_dir.is_dir():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado."
+            )
+        yield run
 
 
 def require_run_session_from_path(

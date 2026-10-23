@@ -44,5 +44,11 @@ class Settings(BaseSettings):
     # X-Admin-Token). When unset, the route is disabled (404).
     ADMIN_TOKEN: str | None = None
 
+    # Run retention (#10): runs idle longer than the TTL are removed; if the
+    # total exceeds the cap (0 = no cap) the oldest go first. 0 disables TTL/loop.
+    RUN_TTL_HOURS: float = 6
+    RUNS_MAX_TOTAL_BYTES: int = 0
+    GC_INTERVAL_MINUTES: float = 30
+
 
 settings = Settings()

@@ -1,3 +1,8 @@
+import asyncio
+import contextlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,9 +10,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from body_limit import BodySizeLimitMiddleware
 from config import settings
 from routes.api import api_router
+from services.runs_gc import RetentionPolicy, periodic_collection
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Run the periodic collection of expired runs while the API is up (#10)."""
+    task: asyncio.Task[None] | None = None
+    if settings.GC_INTERVAL_MINUTES > 0:
+        task = asyncio.create_task(
+            periodic_collection(
+                lambda: settings.VERILOG_RUNS_DIR,
+                lambda: RetentionPolicy.from_settings(settings),
+                settings.GC_INTERVAL_MINUTES * 60,
+            )
+        )
+    yield
+    if task is not None:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    lifespan=lifespan,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     swagger_ui_parameters={"syntaxHighlight": False}
 )

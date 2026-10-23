@@ -16,8 +16,13 @@ from integrations.yosys import (
 from services.project_upload import (
     UploadLimits,
     extract_project_zip,
+    new_run_name,
     open_project_zip,
 )
+from services.runs_gc import RetentionPolicy, collect_if_due, run_registry
+
+#: Minimum spacing between the collections triggered by uploads.
+_OPPORTUNISTIC_GC_INTERVAL_SECONDS = 5 * 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,15 +166,24 @@ class VerilogService:
             max_path_length=settings.MAX_ZIP_PATH_LENGTH,
             max_compression_ratio=settings.MAX_COMPRESSION_RATIO,
         )
-        with open_project_zip(archive_path) as archive:
-            project_id = extract_project_zip(archive, settings.VERILOG_RUNS_DIR, limits)
+        # Best-effort housekeeping, in case the periodic task is not running (#10).
+        collect_if_due(
+            settings.VERILOG_RUNS_DIR,
+            RetentionPolicy.from_settings(settings),
+            min_interval_seconds=_OPPORTUNISTIC_GC_INTERVAL_SECONDS,
+        )
 
-        run_dir = settings.VERILOG_RUNS_DIR.parent / project_id
-        try:
-            session_token = create_session(run_dir)
-        except BaseException:
-            shutil.rmtree(run_dir, ignore_errors=True)
-            raise
+        run_name = new_run_name()
+        with run_registry.in_use(run_name), open_project_zip(archive_path) as archive:
+            project_id = extract_project_zip(
+                archive, settings.VERILOG_RUNS_DIR, limits, run_name=run_name
+            )
+            run_dir = settings.VERILOG_RUNS_DIR / run_name
+            try:
+                session_token = create_session(run_dir)
+            except BaseException:
+                shutil.rmtree(run_dir, ignore_errors=True)
+                raise
         return UploadedProject(project_id=project_id, session_token=session_token)
 
     def delete_project(self, project_id: str) -> bool:

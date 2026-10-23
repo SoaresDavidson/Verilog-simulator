@@ -10,7 +10,7 @@ from auth import (
     AuthorizedRun,
     request_origin,
     require_admin,
-    require_run_session_from_body,
+    require_run_in_use_from_body,
     require_run_session_from_path,
 )
 from body_limit import too_large_message
@@ -54,7 +54,7 @@ _RUN_AUTH_RESPONSES = {
 @router.post(
     "/mapear-processador",
     response_model=MapearProcessadorResponse,
-    dependencies=[Depends(require_run_session_from_body)],
+    dependencies=[Depends(require_run_in_use_from_body)],
     responses=_RUN_AUTH_RESPONSES,
 )
 def mapear_processador(
@@ -81,7 +81,7 @@ def mapear_processador(
 @router.post(
     "/simular-execucao",
     response_model=SimularExecucaoResponse,
-    dependencies=[Depends(require_run_session_from_body)],
+    dependencies=[Depends(require_run_in_use_from_body)],
     responses=_RUN_AUTH_RESPONSES,
 )
 def simular_execucao(
