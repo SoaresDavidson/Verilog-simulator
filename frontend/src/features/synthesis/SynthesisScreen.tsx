@@ -9,7 +9,10 @@ import { TopModulePanel } from './TopModulePanel'
 import './synthesis.css'
 
 /**
- * Tela 2 (#s2) — árvore de arquivos, síntese Yosys, módulo top e seleção de sinais.
+ * Tela 2 (#s2, #37) — árvore de arquivos (#26), síntese Yosys (#22, #28),
+ * módulo top (#27) e seleção de sinais (#29). O avanço para a etapa 3 exige
+ * `project_id` válido, síntese confirmada, top da netlist e ao menos 1 sinal
+ * (`advanceBlockReason`); a navegação passa pela guarda global `goTo`.
  */
 export function SynthesisScreen() {
   const nav = useStepNavigation()
