@@ -5,6 +5,8 @@ import shutil
 import uuid
 import zipfile
 
+from pydantic import ValidationError
+
 from config import settings
 from integrations.docker import DockerConfig, DockerIntegration
 from integrations.icarus import (
@@ -20,8 +22,27 @@ from integrations.yosys import (
     YosysIntegration,
     YosysSynthesisError,
 )
+from schemas.netlist import Netlist
 
 logger = logging.getLogger(__name__)
+
+_MAX_REPORTED_NETLIST_ERRORS = 5
+
+
+def _describe_netlist_error(exc: ValidationError) -> str:
+    """Build an actionable pt-BR message from netlist validation errors."""
+    errors = exc.errors(include_url=False, include_input=False)
+    details = [
+        f"- {'.'.join(str(part) for part in error['loc']) or 'netlist'}: {error['msg']}"
+        for error in errors[:_MAX_REPORTED_NETLIST_ERRORS]
+    ]
+    if len(errors) > _MAX_REPORTED_NETLIST_ERRORS:
+        details.append(f"- ... e mais {len(errors) - _MAX_REPORTED_NETLIST_ERRORS} erro(s)")
+    return (
+        "A netlist gerada pelo Yosys (estrutura.json) não segue o formato esperado "
+        "e foi descartada. Isso costuma indicar uma versão incompatível do Yosys "
+        "no servidor; avise o professor. Detalhes:\n" + "\n".join(details)
+    )
 
 
 class VerilogService:
@@ -64,19 +85,43 @@ class VerilogService:
 
     def mapear_processador(self, project_id: str) -> dict:
         """
-        Delegates Yosys synthesis and preserves the API response contract.
+        Delegates Yosys synthesis and validates the netlist contract.
+
+        A netlist that does not match ``schemas.netlist.Netlist`` is never
+        returned as success: the response becomes ``success: false`` with an
+        explanation appended to ``stderr``.
         """
         try:
             result = self.yosys_integration.synthesize(project_id)
         except YosysSynthesisError as exc:
             result = exc.result
-        return {
+        response = {
             "success": result.success,
             "stdout": result.stdout,
             "stderr": result.stderr,
-            "netlist_content": result.netlist_content,
+            "top_module": None,
+            "netlist_content": None,
             "stat_report": result.stat_report,
         }
+        if not result.success or result.netlist_content is None:
+            response["success"] = False
+            return response
+
+        try:
+            netlist = Netlist.model_validate(result.netlist_content)
+        except ValidationError as exc:
+            logger.warning(
+                "Netlist of %s does not match the contract: %s", project_id, exc
+            )
+            response["success"] = False
+            response["stderr"] = "\n".join(
+                part for part in (result.stderr, _describe_netlist_error(exc)) if part
+            )
+            return response
+
+        response["netlist_content"] = netlist
+        response["top_module"] = netlist.top_module
+        return response
 
     def simular_execucao(
         self, project_id: str, selection: VcdSelection | None = None

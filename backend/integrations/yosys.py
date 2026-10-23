@@ -187,7 +187,9 @@ class YosysIntegration:
 
         stdout, stderr = execution.stdout, execution.stderr
         stat_report_file = (
-            stat_report_file if is_fresh_artifact(stat_report_file, started_at) else None
+            stat_report_file
+            if is_fresh_artifact(stat_report_file, started_at)
+            else None
         )
         stat_report = self._read_stat_report(stat_report_file)
         has_structure = is_fresh_artifact(structure_file, started_at)
@@ -208,8 +210,14 @@ class YosysIntegration:
             )
 
         if not has_structure:
-            message = "Yosys completed without generating estrutura.json."
-            logger.warning("%s Project: %s", message, project_id)
+            logger.warning(
+                "Yosys completed without generating estrutura.json. Project: %s",
+                project_id,
+            )
+            message = (
+                "O Yosys terminou sem gerar estrutura.json. Verifique se o projeto "
+                "tem um módulo de topo sintetizável e consulte os avisos acima."
+            )
             raise YosysSynthesisError(
                 message,
                 replace(
@@ -222,8 +230,15 @@ class YosysIntegration:
         try:
             netlist_content = json.loads(structure_file.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            message = "Yosys generated an invalid estrutura.json."
-            logger.warning("%s Project: %s. Cause: %s", message, project_id, exc)
+            logger.warning(
+                "Yosys generated an invalid estrutura.json. Project: %s. Cause: %s",
+                project_id,
+                exc,
+            )
+            message = (
+                "O Yosys gerou um estrutura.json ilegível (JSON malformado). "
+                "Execute o mapeamento novamente; se persistir, avise o professor."
+            )
             raise YosysSynthesisError(
                 message,
                 replace(

@@ -57,6 +57,7 @@ def mapear_processador(
             success=result["success"],
             stdout=result["stdout"],
             stderr=result["stderr"],
+            top_module=result["top_module"],
             netlist_content=result["netlist_content"],
             stat_report=result["stat_report"],
         )
