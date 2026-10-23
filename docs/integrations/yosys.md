@@ -42,7 +42,7 @@ result = integration.synthesize(
     command=[
         "yosys",
         "-p",
-        "read_verilog -sv cpu.v; hierarchy -auto-top; write_json estrutura.json",
+        "read_verilog -sv cpu.v; hierarchy -auto-top; proc; write_json estrutura.json",
     ],
 )
 print(result.netlist_content)

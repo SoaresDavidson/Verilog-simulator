@@ -133,6 +133,8 @@ class YosysIntegration:
         commands.extend(
             (
                 "hierarchy -auto-top",
+                # write_json rejeita módulos com processos (blocos always) sem proc.
+                "proc",
                 f"tee -o {STAT_REPORT_FILE_NAME} stat",
                 f"write_json {STRUCTURE_FILE_NAME}",
             )
