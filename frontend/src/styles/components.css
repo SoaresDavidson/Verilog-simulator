@@ -110,9 +110,37 @@
 .uz__hint { color: var(--muted); font-size: 12px; }
 .uz svg { color: var(--muted); }
 .uz:hover svg, .uz.dg svg { color: var(--accent); }
-.file-preview__title { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--fg); overflow-wrap: anywhere; }
+.ch .file-preview__title { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--fg); overflow-wrap: anywhere; }
 .file-preview__meta { font-size: 11px; }
 .file-preview__list { max-height: 260px; overflow-y: auto; }
 .file-preview__list .f { padding-left: 4px; }
 .file-preview__list .f--source .nm { color: var(--fg); }
 .file-preview__note { font-size: 11px; margin-top: 8px; }
+
+/* Indicador de saúde (GET /status/) */
+.health { position: relative; }
+.health__pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; min-height: 28px;
+  border-radius: 999px; border: 1px solid var(--ov); background: var(--surface); font-size: 11px; color: var(--muted);
+}
+.health__pill:hover { background: var(--surface-highest); }
+.health__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.health--ok .health__dot { background: var(--s1); }
+.health--degraded .health__dot { background: var(--sx); }
+.health--degraded .health__pill { color: var(--sx); border-color: var(--sx); }
+.health--error .health__dot { background: var(--danger); }
+.health--error .health__pill { color: var(--danger); border-color: var(--danger); }
+.health--checking .health__dot { animation: pu 1.2s infinite; }
+.health__panel {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(320px, calc(100vw - 24px));
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start; box-shadow: var(--shadow); font-size: 12px;
+}
+.health__panel[hidden] { display: none; }
+.health__issues { list-style: none; display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.health__issues .state-warn { border: 1px solid var(--sx); background: var(--sxb); border-radius: var(--r); padding: 8px 10px; }
+
+@media (max-width: 768px) {
+  /* Esconde só visualmente: o rótulo continua sendo o nome acessível do botão. */
+  .health__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .health__pill { padding: 4px 8px; }
+}

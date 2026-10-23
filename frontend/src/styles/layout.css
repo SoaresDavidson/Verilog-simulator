@@ -58,8 +58,8 @@ main:focus { outline: none; }
 .sp { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-width: 0; }
 
 @media (max-width: 768px) {
-  .step__label { display: none; }
-  .step { padding: 6px 8px; }
+  .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .step { padding: 6px 8px; position: relative; }
   .split, .splitw { grid-template-columns: minmax(0, 1fr); }
   .sp { max-height: none; }
 }
