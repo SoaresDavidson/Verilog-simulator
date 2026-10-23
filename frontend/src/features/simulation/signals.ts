@@ -155,32 +155,36 @@ export function listScopes(signals: readonly SignalInfo[]): string[] {
 /**
  * Casa um sinal do VCD com os sinais escolhidos na tela 2 (`selectedSignals`).
  *
- * Heurística: os nomes da tela 2 vêm do netlist do Yosys (porta/netname,
- * opcionalmente com prefixo `modulo.` ou `/`, escape `\\` e faixa `[n:m]`),
- * enquanto o VCD usa caminhos de INSTÂNCIA (`tb.uut.clk`). Normalizamos ambos
- * (sem escape, sem faixa de bits) e:
- * 1. se o nome escolhido tem caminho (`a.b`), casa quando ele é sufixo do
- *    caminho do sinal no VCD (`tb.a.b`);
- * 2. senão — ou se o caminho não casar com NENHUM sinal — casa pelo nome base
- *    (`clk` casa com `tb.clk` e `tb.uut.clk`).
+ * Heurística (sufixo de caminho hierárquico): a tela 2 grava referências da
+ * netlist no formato `<top>.<instância>….<sinal>` (ex.: `cpu.u_alu.y`), enquanto
+ * o VCD usa caminhos de INSTÂNCIA prefixados pelo testbench, onde o top vira a
+ * instância do DUT (ex.: `tb_cpu.uut.u_alu.y`). Normalizamos ambos (sem escape
+ * `\`, sem faixa `[n:m]`, `/` como `.`) e, para cada referência escolhida,
+ * tentamos sufixos cada vez mais curtos, parando no primeiro que casa com
+ * algum sinal:
+ * 1. caminho inteiro como sufixo (`cpu.u_alu.y` casa `x.cpu.u_alu.y`);
+ * 2. sem o 1º segmento — o nome do módulo top, que no VCD é a instância do
+ *    DUT (`u_alu.y` casa `tb_cpu.uut.u_alu.y`); e assim por diante;
+ * 3. por último o nome base (`y`), que casa em qualquer escopo.
+ * "Sufixo" = igual ao caminho do sinal ou terminando em `.` + sufixo.
  */
 export function selectionMatcher(selected: readonly string[], signals: readonly SignalInfo[]): (signal: SignalInfo) => boolean {
-  const names = new Set<string>()
-  const paths: string[] = []
+  const endsWith = (path: string, suffix: string) => path === suffix || path.endsWith(`.${suffix}`)
+  const suffixes: string[] = []
   for (const raw of selected) {
-    const normalized = raw
+    const parts = raw
       .split(/[./]/)
       .map(baseName)
       .filter((part) => part !== '')
-      .join('.')
-    if (!normalized) continue
-    if (normalized.includes('.') && signals.some((s) => s.path === normalized || s.path.endsWith(`.${normalized}`))) {
-      paths.push(normalized)
-    } else {
-      names.add(normalized.slice(normalized.lastIndexOf('.') + 1))
+    for (let i = 0; i < parts.length; i++) {
+      const suffix = parts.slice(i).join('.')
+      if (i === parts.length - 1 || signals.some((s) => endsWith(s.path, suffix))) {
+        suffixes.push(suffix)
+        break
+      }
     }
   }
-  return (signal) => names.has(signal.name) || paths.some((p) => signal.path === p || signal.path.endsWith(`.${p}`))
+  return (signal) => suffixes.some((suffix) => endsWith(signal.path, suffix))
 }
 
 /** Estende o valor comprimido do VCD até `width` (MSB `x`/`z` replica; senão `0`). */

@@ -45,6 +45,25 @@ describe('selectionMatcher (#31) — seleção da tela 2', () => {
     expect(ids([])).toEqual([])
   })
 
+  it('referências <top>.<instância>.<sinal> da tela 2 casam ignorando prefixo do testbench/DUT', () => {
+    const log: SimLog = {
+      metadata: { timescale: '1ns', begintime: 0, endtime: 1 },
+      modules: {
+        tb_cpu: { name: 'tb_cpu', variables: { clk: { size: 1, var_type: 'reg', references: ['tb_cpu.clk'] } }, child_scopes: ['tb_cpu.uut'] },
+        'tb_cpu.uut': { name: 'uut', variables: { clk: { size: 1, var_type: 'wire', references: ['tb_cpu.uut.clk'] }, y: { size: 1, var_type: 'wire', references: ['tb_cpu.uut.y'] } }, child_scopes: ['tb_cpu.uut.u_alu'] },
+        'tb_cpu.uut.u_alu': { name: 'u_alu', variables: { y: { size: 8, var_type: 'wire', references: ['tb_cpu.uut.u_alu.y'] } }, child_scopes: [] },
+      },
+      timeline: { '0': { 'tb_cpu.clk': '0' } },
+    }
+    const sigs = listSignals(log)
+    const match = (selected: string[]) => sigs.filter(selectionMatcher(selected, sigs)).map((s) => s.id)
+    expect(match(['cpu.u_alu.y'])).toEqual(['tb_cpu.uut.u_alu.y'])
+    expect(match(['cpu.y'])).toEqual(['tb_cpu.uut.y', 'tb_cpu.uut.u_alu.y'])
+    expect(match(['cpu.clk'])).toEqual(['tb_cpu.clk', 'tb_cpu.uut.clk'])
+    expect(match(['uut.u_alu.y'])).toEqual(['tb_cpu.uut.u_alu.y'])
+    expect(match(['cpu.u_inexistente.y'])).toEqual(['tb_cpu.uut.y', 'tb_cpu.uut.u_alu.y'])
+  })
+
   it('visibilidade padrão: seleção da tela 2, senão primeiros sinais com amostra', () => {
     expect([...defaultVisibleIds(signals, ['rst'])]).toEqual(['tb.rst'])
     expect([...defaultVisibleIds(signals, ['nada'])]).toEqual(['tb.clk', 'tb.rst', 'tb.uut.clk', 'tb.uut.data[7:0]'])
