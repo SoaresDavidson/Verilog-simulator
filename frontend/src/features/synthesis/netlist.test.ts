@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { Netlist } from '../../api/types'
-import { checkNetlist, NETLIST_MESSAGES, netlistStats, signalWidth } from './netlist'
+import {
+  checkNetlist,
+  checkTopModule,
+  isAttributeSet,
+  moduleCandidates,
+  NETLIST_MESSAGES,
+  netlistStats,
+  signalWidth,
+  TOP_MESSAGES,
+} from './netlist'
 
 const statMap = (netlist: Netlist) => Object.fromEntries(netlistStats(netlist).map((s) => [s.key, s.value]))
 
@@ -64,5 +73,34 @@ describe('signalWidth', () => {
     expect(signalWidth({ bits: [1, 2, 3, 4] })).toBe(4)
     expect(signalWidth({ width: -1 })).toBe(1)
     expect(signalWidth(null)).toBe(1)
+  })
+})
+
+describe('moduleCandidates / checkTopModule (#27)', () => {
+  const mod = (attributes: Record<string, string | number> = {}) => ({ attributes, ports: {}, cells: {}, netnames: {} })
+  const netlist: Netlist = {
+    creator: 'Yosys',
+    modules: { zeta: mod(), alpha: mod({ top: '00000000000000000000000000000001' }), bb: mod({ blackbox: 1 }), Beta: mod() },
+  }
+
+  it('lista só módulos presentes, sem caixas-pretas, em ordem determinística', () => {
+    expect(moduleCandidates(netlist)).toEqual(['Beta', 'alpha', 'zeta'])
+    expect(moduleCandidates({ creator: '', modules: {} })).toEqual([])
+  })
+
+  it('aceita o top do backend somente se estiver na netlist', () => {
+    expect(checkTopModule(netlist, 'zeta')).toEqual({ ok: true, top: 'zeta' })
+    expect(checkTopModule(netlist, null)).toEqual({ ok: false, message: TOP_MESSAGES.missing })
+    expect(checkTopModule(netlist, '')).toEqual({ ok: false, message: TOP_MESSAGES.missing })
+    expect(checkTopModule(netlist, 'cpu')).toEqual({ ok: false, message: TOP_MESSAGES.invalid })
+    expect(checkTopModule(netlist, 'bb')).toEqual({ ok: false, message: TOP_MESSAGES.invalid })
+  })
+
+  it('isAttributeSet interpreta formatos do Yosys', () => {
+    expect(isAttributeSet('00000000000000000000000000000001')).toBe(true)
+    expect(isAttributeSet('00000000000000000000000000000000')).toBe(false)
+    expect(isAttributeSet(1)).toBe(true)
+    expect(isAttributeSet(0)).toBe(false)
+    expect(isAttributeSet(undefined)).toBe(false)
   })
 })

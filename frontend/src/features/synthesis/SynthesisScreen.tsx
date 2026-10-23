@@ -1,10 +1,10 @@
-import { PROJECT_ID_PATTERN } from '../../api/types'
 import { useStepNavigation } from '../../app/useStepNavigation'
 import { Screen } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
-import { stepBlockReason } from '../../state/session'
+import { advanceBlockReason } from './advance'
 import { FileTree } from './FileTree'
 import { SynthesisPanel } from './SynthesisPanel'
+import { TopModulePanel } from './TopModulePanel'
 import './synthesis.css'
 
 /**
@@ -13,8 +13,7 @@ import './synthesis.css'
 export function SynthesisScreen() {
   const nav = useStepNavigation()
   const state = useSessionState()
-  const projectValid = state.session !== null && PROJECT_ID_PATTERN.test(state.session.projectId)
-  const blockReason = projectValid ? stepBlockReason(state, 3) : 'Sessão sem projeto válido. Envie o projeto novamente.'
+  const blockReason = advanceBlockReason(state)
 
   return (
     <Screen title="Seleção e Síntese" description="Confira os arquivos, execute a síntese e selecione os sinais.">
@@ -24,6 +23,7 @@ export function SynthesisScreen() {
         </div>
         <div className="sp">
           <SynthesisPanel />
+          <TopModulePanel />
           <div className="scr__actions">
             {blockReason && (
               <span id="syn-advance-reason" className="syn-block-reason">

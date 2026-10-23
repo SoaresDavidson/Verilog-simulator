@@ -81,3 +81,35 @@ export function netlistStats(netlist: Netlist): NetlistStat[] {
   if (cellTypes.size > 0) stats.push({ key: 'cellTypes', label: 'Tipos de célula', value: cellTypes.size })
   return stats
 }
+
+/** Valor de atributo do Yosys ligado (`1`, `"1"`, `"000…01"`). */
+export function isAttributeSet(value: unknown): boolean {
+  if (typeof value === 'number') return value !== 0
+  if (typeof value === 'string') return /^[01]+$/.test(value) ? /1/.test(value) : value !== ''
+  return false
+}
+
+/** Módulos da netlist que podem ser top (exclui caixas-pretas), em ordem determinística. */
+export function moduleCandidates(netlist: Netlist): string[] {
+  return Object.entries(recordOf(netlist.modules))
+    .filter(([, mod]) => !isAttributeSet(recordOf(recordOf(mod).attributes).blackbox))
+    .map(([name]) => name)
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+}
+
+export const TOP_MESSAGES = {
+  missing: 'O backend não informou o módulo top da síntese. Verifique o log e tente novamente.',
+  invalid: 'O módulo top informado pelo backend não existe na netlist recebida. Tente sintetizar novamente.',
+} as const
+
+export type TopCheck = { ok: true; top: string } | { ok: false; message: string }
+
+/**
+ * Valida o `top_module` devolvido pelo backend (`hierarchy -auto-top`) contra
+ * os candidatos da netlist. O cliente nunca escolhe um top por conta própria.
+ */
+export function checkTopModule(netlist: Netlist, topModule: string | null | undefined): TopCheck {
+  if (typeof topModule !== 'string' || topModule === '') return { ok: false, message: TOP_MESSAGES.missing }
+  if (!moduleCandidates(netlist).includes(topModule)) return { ok: false, message: TOP_MESSAGES.invalid }
+  return { ok: true, top: topModule }
+}

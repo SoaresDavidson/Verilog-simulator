@@ -9,7 +9,7 @@ import { isAbortError, isApiError, MESSAGES, type ApiErrorKind } from '../../api
 import { PROJECT_ID_PATTERN, type SynthesisResponse } from '../../api/types'
 import { useSession } from '../../state/hooks'
 import type { SessionState } from '../../state/session'
-import { checkNetlist } from './netlist'
+import { checkNetlist, checkTopModule } from './netlist'
 
 /** Maior que o timeout padrão das ferramentas no backend, para receber o 408 dele. */
 export const SYNTHESIS_TIMEOUT_MS = 180_000
@@ -19,6 +19,8 @@ export type SynthesisFailureKind =
   | 'synthesis'
   /** Sucesso sem netlist utilizável. */
   | 'netlist'
+  /** `top_module` ausente ou fora da netlist. */
+  | 'top'
   /** Requisição interrompida ao sair da tela. */
   | 'interrupted'
   | Exclude<ApiErrorKind, 'aborted'>
@@ -92,7 +94,13 @@ export function useSynthesis(): UseSynthesis {
         fail('netlist', check.message, { ...response, netlist_content: null })
         return
       }
+      const top = checkTopModule(check.netlist, response.top_module)
+      if (!top.ok) {
+        fail('top', top.message, { ...response, netlist_content: null })
+        return
+      }
       dispatch({ type: 'SYNTHESIS_SUCCEEDED', result: { ...response, netlist_content: check.netlist } })
+      dispatch({ type: 'TOP_MODULE_SELECTED', topModule: top.top })
     } catch (error) {
       if (!stillCurrent()) return
       if (isAbortError(error)) {

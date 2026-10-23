@@ -53,6 +53,7 @@ function Logs({ result, open }: { result: SynthesisResponse; open: boolean }) {
 const FAILURE_TITLE: Partial<Record<SynthesisFailureKind, string>> = {
   synthesis: 'Erro de síntese',
   netlist: 'Netlist ausente ou inválida',
+  top: 'Módulo top inválido',
   timeout: 'Tempo limite excedido',
   unavailable: 'Serviço indisponível',
   network: 'Falha de conexão',
