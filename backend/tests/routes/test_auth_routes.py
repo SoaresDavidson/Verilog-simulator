@@ -44,7 +44,9 @@ def fake_tools() -> VerilogService:
             "success": True,
             "stdout": "",
             "stderr": "",
+            "top_module": None,
             "netlist_content": None,
+            "stat_report": None,
         }
     )
     service.simular_execucao = MagicMock(
@@ -112,7 +114,8 @@ def test_run_routes_require_session_token(
         if route == "mapear-processador"
         else fake_tools.simular_execucao
     )
-    tool.assert_called_once_with(mine["project_id"])
+    assert tool.call_args.args[0] == mine["project_id"]
+    tool.assert_called_once()
 
 
 def test_run_routes_reject_unknown_or_malformed_ids(

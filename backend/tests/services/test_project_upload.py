@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from conftest import make_zip
 
+from integrations.projects import resolve_project_dir
 from integrations.yosys import YosysConfig, YosysIntegration
 from services.project_upload import ProjectUploadError
 from services.verilog import VerilogService
@@ -125,7 +126,7 @@ def test_simulation_path_resolution_accepts_canonical_id(runs_dir: Path) -> None
     """A simulação resolve o id canônico para a raiz do run."""
     project_id = _upload(runs_dir, make_zip({"src/top.v": "x"}))
 
-    local_dir, container_dir = _service()._resolve_paths(project_id)
+    local_dir, container_dir = resolve_project_dir(runs_dir.parent, project_id)
 
-    assert Path(local_dir) == _run_dir(runs_dir, project_id)
+    assert local_dir == _run_dir(runs_dir, project_id).resolve()
     assert container_dir == f"/verilog_code/{project_id}"

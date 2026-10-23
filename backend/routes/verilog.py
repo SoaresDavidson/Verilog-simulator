@@ -15,8 +15,17 @@ from auth import (
 )
 from body_limit import too_large_message
 from config import settings
-from integrations.docker import DockerIntegrationError
-from integrations.yosys import YosysError
+from integrations.icarus import (
+    IcarusContainerNotFoundError,
+    IcarusError,
+    IcarusTimeoutError,
+)
+from integrations.vcd import VcdSelection
+from integrations.yosys import (
+    YosysContainerNotFoundError,
+    YosysError,
+    YosysTimeoutError,
+)
 from schemas.verilog import (
     MapearProcessadorRequest,
     MapearProcessadorResponse,
@@ -32,6 +41,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _UPLOAD_CHUNK_SIZE = 64 * 1024
+
+SYNTHESIS_TIMEOUT_MESSAGE = (
+    "O mapeamento excedeu o limite de {seconds:g} segundos e foi interrompido. "
+    "Verifique se o projeto não possui hierarquia recursiva ou módulos "
+    "excessivamente grandes."
+)
+SIMULATION_TIMEOUT_MESSAGE = (
+    "A simulação excedeu o limite de {seconds:g} segundos e foi interrompida. "
+    "Verifique se o seu testbench possui `$finish` e se não há laços infinitos."
+)
 
 
 def get_verilog_service() -> VerilogService:
@@ -67,7 +86,9 @@ def mapear_processador(
             success=result["success"],
             stdout=result["stdout"],
             stderr=result["stderr"],
-            netlist_content=result["netlist_content"]
+            top_module=result["top_module"],
+            netlist_content=result["netlist_content"],
+            stat_report=result["stat_report"],
         )
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -75,6 +96,13 @@ def mapear_processador(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except YosysTimeoutError as e:
+        raise HTTPException(
+            status_code=408,
+            detail=SYNTHESIS_TIMEOUT_MESSAGE.format(seconds=e.timeout_seconds),
+        ) from e
+    except YosysContainerNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
     except YosysError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -89,7 +117,13 @@ def simular_execucao(
     service: ServiceDependency,
 ):
     try:
-        result = service.simular_execucao(payload.project_id)
+        selection = VcdSelection(
+            begin_time=payload.begin_time,
+            end_time=payload.end_time,
+            signals=tuple(payload.signals) if payload.signals is not None else None,
+            decimation=payload.decimation,
+        )
+        result = service.simular_execucao(payload.project_id, selection)
         return SimularExecucaoResponse(
             success=result["success"],
             stdout=result["stdout"],
@@ -102,7 +136,14 @@ def simular_execucao(
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except DockerIntegrationError as e:
+    except IcarusTimeoutError as e:
+        raise HTTPException(
+            status_code=408,
+            detail=SIMULATION_TIMEOUT_MESSAGE.format(seconds=e.timeout_seconds),
+        ) from e
+    except IcarusContainerNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except IcarusError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 @router.post(

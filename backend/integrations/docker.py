@@ -1,12 +1,19 @@
 """Reusable Docker container command integration."""
 
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FutureTimeoutError
+import threading
+import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
 import docker as docker_sdk
 from docker.errors import DockerException, NotFound
+
+TIMEOUT_EXIT_CODE = 124
+"""Exit code of coreutils ``timeout`` when the limit is reached."""
+
+KILLED_EXIT_CODE = 137
+"""Exit code (128 + SIGKILL) reported when ``timeout --signal=KILL`` fires."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,10 +22,16 @@ class DockerConfig:
 
     docker_host: str | None = None
     timeout_seconds: float = 30
+    kill_grace_seconds: float = 5
+    max_output_bytes: int = 1024 * 1024
 
     def __post_init__(self) -> None:
         if self.timeout_seconds <= 0:
             raise ValueError("Docker timeout must be greater than zero.")
+        if self.kill_grace_seconds < 0:
+            raise ValueError("Docker kill grace period cannot be negative.")
+        if self.max_output_bytes <= 0:
+            raise ValueError("Docker output limit must be greater than zero.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +66,17 @@ class DockerExecutionError(DockerIntegrationError):
 
 class DockerTimeoutError(DockerIntegrationError):
     """Raised when command execution exceeds configured timeout."""
+
+
+def wrap_with_timeout(command: list[str], timeout_seconds: float) -> list[str]:
+    """Prefix ``command`` with coreutils ``timeout`` so it is killed in place.
+
+    On expiry ``timeout`` exits with :data:`TIMEOUT_EXIT_CODE`, or with
+    :data:`KILLED_EXIT_CODE` when the KILL signal status is propagated.
+    """
+    if timeout_seconds <= 0:
+        raise ValueError("Docker timeout must be greater than zero.")
+    return ["timeout", "--signal=KILL", f"{timeout_seconds:g}s", *command]
 
 
 class DockerIntegration:
@@ -115,7 +139,21 @@ class DockerIntegration:
         workdir: str,
         timeout_seconds: float | None = None,
     ) -> DockerCommandResult:
-        """Execute a command and return decoded process output."""
+        """Execute a command with a hard time limit and return decoded output.
+
+        The limit is enforced twice: inside the container the command runs
+        under ``timeout --signal=KILL`` (the process dies even if the backend
+        loses the daemon connection), and the backend stops waiting for the
+        output stream after the limit plus ``kill_grace_seconds``.
+
+        Raises:
+            ValueError: If arguments or timeout are invalid.
+            DockerConnectionError: If Docker daemon cannot be reached.
+            DockerContainerNotFoundError: If container does not exist.
+            DockerContainerUnavailableError: If container is not running.
+            DockerTimeoutError: If the command exceeds the time limit.
+            DockerExecutionError: If Docker cannot run the command.
+        """
         if not command:
             raise ValueError("Docker command cannot be empty.")
         if not workdir.strip():
@@ -128,34 +166,49 @@ class DockerIntegration:
             raise ValueError("Docker timeout must be greater than zero.")
 
         container = self.get_container(container_name)
-        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="docker-exec")
-        future = executor.submit(
-            container.exec_run,
-            cmd=command,
-            workdir=workdir,
-            demux=True,
-        )
+        api = self.get_client().api
+        started_at = time.monotonic()
         try:
-            execution = future.result(timeout=timeout)
-        except FutureTimeoutError as exc:
-            raise DockerTimeoutError(
-                f"Command in container '{container_name}' exceeded {timeout} seconds."
-            ) from exc
-        except (DockerException, OSError) as exc:
+            exec_id = api.exec_create(
+                container.id,
+                cmd=wrap_with_timeout(command, timeout),
+                workdir=workdir,
+                stdout=True,
+                stderr=True,
+            )["Id"]
+            stream = api.exec_start(exec_id, stream=True, demux=True)
+        except (DockerException, OSError, KeyError, TypeError) as exc:
             raise DockerExecutionError(
                 f"Failed to execute command in container '{container_name}': {exc}"
             ) from exc
-        finally:
-            executor.shutdown(wait=False, cancel_futures=True)
+
+        output = _StreamReader(stream, self.config.max_output_bytes)
+        if not output.wait(timeout + self.config.kill_grace_seconds):
+            raise DockerTimeoutError(
+                f"Command in container '{container_name}' exceeded {timeout:g} seconds."
+            )
+        if output.error is not None:
+            raise DockerExecutionError(
+                f"Failed to read output from container '{container_name}': "
+                f"{output.error}"
+            ) from output.error
 
         try:
-            stdout, stderr = self._decode_output(execution.output)
-            exit_code = int(execution.exit_code)
-        except (AttributeError, TypeError, ValueError) as exc:
+            exit_code = int(api.exec_inspect(exec_id)["ExitCode"])
+        except (DockerException, OSError, KeyError, TypeError, ValueError) as exc:
             raise DockerExecutionError(
                 f"Container '{container_name}' returned an invalid execution result."
             ) from exc
 
+        elapsed = time.monotonic() - started_at
+        if exit_code == TIMEOUT_EXIT_CODE or (
+            exit_code == KILLED_EXIT_CODE and elapsed >= timeout
+        ):
+            raise DockerTimeoutError(
+                f"Command in container '{container_name}' exceeded {timeout:g} seconds."
+            )
+
+        stdout, stderr = output.decoded()
         return DockerCommandResult(
             success=exit_code == 0,
             exit_code=exit_code,
@@ -163,11 +216,56 @@ class DockerIntegration:
             stderr=stderr,
         )
 
-    @staticmethod
-    def _decode_output(output: Any) -> tuple[str, str]:
-        if not output:
-            return "", ""
-        stdout_bytes, stderr_bytes = output
-        stdout = stdout_bytes.decode("utf-8", errors="replace") if stdout_bytes else ""
-        stderr = stderr_bytes.decode("utf-8", errors="replace") if stderr_bytes else ""
-        return stdout, stderr
+
+class _StreamReader:
+    """Drain a demultiplexed exec stream in a background thread.
+
+    The thread only blocks on the Docker socket; the in-container ``timeout``
+    closes the stream shortly after the deadline, so it does not leak.
+    """
+
+    _TRUNCATED_NOTICE = b"\n[output truncated]\n"
+
+    def __init__(self, stream: Iterable[Any], max_bytes: int) -> None:
+        self._stream = stream
+        self._max_bytes = max_bytes
+        self._buffers = {"stdout": bytearray(), "stderr": bytearray()}
+        self._truncated = {"stdout": False, "stderr": False}
+        self.error: BaseException | None = None
+        self._thread = threading.Thread(
+            target=self._run, name="docker-exec-stream", daemon=True
+        )
+        self._thread.start()
+
+    def wait(self, seconds: float) -> bool:
+        """Wait until the stream ends; return ``False`` on deadline."""
+        self._thread.join(seconds)
+        return not self._thread.is_alive()
+
+    def decoded(self) -> tuple[str, str]:
+        """Return stdout and stderr decoded as UTF-8."""
+        return self._decode("stdout"), self._decode("stderr")
+
+    def _run(self) -> None:
+        try:
+            for chunk in self._stream:
+                stdout, stderr = chunk if isinstance(chunk, tuple) else (chunk, None)
+                self._append("stdout", stdout)
+                self._append("stderr", stderr)
+        except (DockerException, OSError, ValueError) as exc:
+            self.error = exc
+
+    def _append(self, name: str, data: bytes | None) -> None:
+        if not data:
+            return
+        buffer = self._buffers[name]
+        room = self._max_bytes - len(buffer)
+        if len(data) > room:
+            self._truncated[name] = True
+        buffer.extend(data[: max(room, 0)])
+
+    def _decode(self, name: str) -> str:
+        data = bytes(self._buffers[name])
+        if self._truncated[name]:
+            data += self._TRUNCATED_NOTICE
+        return data.decode("utf-8", errors="replace")

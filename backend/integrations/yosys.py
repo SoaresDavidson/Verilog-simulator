@@ -1,7 +1,9 @@
 """Yosys synthesis integration executed through Docker."""
 
 import json
+import logging
 import shlex
+import time
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -15,6 +17,15 @@ from .docker import (
     DockerIntegration,
     DockerTimeoutError,
 )
+from .projects import is_fresh_artifact, remove_artifacts, resolve_project_dir
+
+logger = logging.getLogger(__name__)
+
+STRUCTURE_FILE_NAME = "estrutura.json"
+"""Netlist written by ``write_json`` in the synthesis command."""
+
+STAT_REPORT_FILE_NAME = "relatorio.txt"
+"""Statistics report written by ``tee -o ... stat``."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +58,7 @@ class YosysResult:
     netlist_content: dict[str, Any] | None = None
     structure_file: Path | None = None
     stat_report_file: Path | None = None
+    stat_report: str | None = None
 
 
 class YosysError(Exception):
@@ -59,6 +71,10 @@ class YosysContainerNotFoundError(YosysError):
 
 class YosysTimeoutError(YosysError):
     """Raised when Yosys execution exceeds configured timeout."""
+
+    def __init__(self, message: str, timeout_seconds: float) -> None:
+        super().__init__(message)
+        self.timeout_seconds = timeout_seconds
 
 
 class YosysSynthesisError(YosysError):
@@ -117,8 +133,8 @@ class YosysIntegration:
         commands.extend(
             (
                 "hierarchy -auto-top",
-                "tee -o relatorio.txt stat",
-                "write_json estrutura.json",
+                f"tee -o {STAT_REPORT_FILE_NAME} stat",
+                f"write_json {STRUCTURE_FILE_NAME}",
             )
         )
         return ["yosys", "-p", "; ".join(commands)]
@@ -143,6 +159,10 @@ class YosysIntegration:
         project_dir, container_dir = self._resolve_project(project_id)
         verilog_files = self._find_verilog_sources(project_dir)
         command = self.build_command(verilog_files)
+        structure_file = project_dir / STRUCTURE_FILE_NAME
+        stat_report_file = project_dir / STAT_REPORT_FILE_NAME
+        remove_artifacts((structure_file, stat_report_file))
+        started_at = time.time()
 
         try:
             execution = self.docker.execute(
@@ -159,21 +179,28 @@ class YosysIntegration:
             raise YosysContainerNotFoundError(str(exc)) from exc
         except DockerTimeoutError as exc:
             raise YosysTimeoutError(
-                f"Yosys execution exceeded {self.config.timeout_seconds} seconds."
+                f"Yosys execution exceeded {self.config.timeout_seconds:g} seconds.",
+                self.config.timeout_seconds,
             ) from exc
         except DockerExecutionError as exc:
             raise YosysError(f"Yosys Docker execution failed: {exc}") from exc
 
         stdout, stderr = execution.stdout, execution.stderr
-        structure_file = project_dir / "estrutura.json"
-        stat_report_file = project_dir / "relatorio.txt"
+        stat_report_file = (
+            stat_report_file
+            if is_fresh_artifact(stat_report_file, started_at)
+            else None
+        )
+        stat_report = self._read_stat_report(stat_report_file)
+        has_structure = is_fresh_artifact(structure_file, started_at)
         base_result = YosysResult(
             success=execution.exit_code == 0,
             exit_code=execution.exit_code,
             stdout=stdout,
             stderr=stderr,
-            structure_file=structure_file if structure_file.exists() else None,
-            stat_report_file=stat_report_file if stat_report_file.exists() else None,
+            structure_file=structure_file if has_structure else None,
+            stat_report_file=stat_report_file,
+            stat_report=stat_report,
         )
 
         if execution.exit_code != 0:
@@ -182,20 +209,36 @@ class YosysIntegration:
                 base_result,
             )
 
+        if not has_structure:
+            logger.warning(
+                "Yosys completed without generating estrutura.json. Project: %s",
+                project_id,
+            )
+            message = (
+                "O Yosys terminou sem gerar estrutura.json. Verifique se o projeto "
+                "tem um módulo de topo sintetizável e consulte os avisos acima."
+            )
+            raise YosysSynthesisError(
+                message,
+                replace(
+                    base_result,
+                    success=False,
+                    stderr=self._append_error(stderr, message),
+                ),
+            )
+
         try:
             netlist_content = json.loads(structure_file.read_text(encoding="utf-8"))
-        except FileNotFoundError as exc:
-            message = "Yosys completed without generating estrutura.json."
-            raise YosysSynthesisError(
-                message,
-                replace(
-                    base_result,
-                    success=False,
-                    stderr=self._append_error(stderr, message),
-                ),
-            ) from exc
-        except json.JSONDecodeError as exc:
-            message = "Yosys generated an invalid estrutura.json."
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "Yosys generated an invalid estrutura.json. Project: %s. Cause: %s",
+                project_id,
+                exc,
+            )
+            message = (
+                "O Yosys gerou um estrutura.json ilegível (JSON malformado). "
+                "Execute o mapeamento novamente; se persistir, avise o professor."
+            )
             raise YosysSynthesisError(
                 message,
                 replace(
@@ -205,38 +248,20 @@ class YosysIntegration:
                 ),
             ) from exc
 
-        return YosysResult(
-            success=True,
-            exit_code=execution.exit_code,
-            stdout=stdout,
-            stderr=stderr,
-            netlist_content=netlist_content,
-            structure_file=structure_file,
-            stat_report_file=stat_report_file if stat_report_file.exists() else None,
-        )
+        return replace(base_result, success=True, netlist_content=netlist_content)
+
+    @staticmethod
+    def _read_stat_report(path: Path | None) -> str | None:
+        if path is None:
+            return None
+        try:
+            return path.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            logger.warning("Could not read Yosys stat report %s: %s", path, exc)
+            return None
 
     def _resolve_project(self, project_id: str) -> tuple[Path, str]:
-        normalized = PurePosixPath(project_id.replace("\\", "/"))
-        if (
-            normalized.is_absolute()
-            or ".." in normalized.parts
-            or len(normalized.parts) < 2
-            or normalized.parts[0] != "runs"
-            or not normalized.parts[1].startswith("run_")
-        ):
-            raise ValueError("Project ID must reside inside 'runs/run_'.")
-
-        base_dir = self.config.verilog_base_dir.resolve()
-        project_dir = base_dir.joinpath(*normalized.parts).resolve()
-        if not project_dir.is_relative_to(base_dir):
-            raise ValueError("Invalid project ID: directory traversal detected.")
-        if not project_dir.exists():
-            raise FileNotFoundError(f"Project path '{project_id}' was not found.")
-        if not project_dir.is_dir():
-            raise NotADirectoryError(f"Project path '{project_id}' is not a directory.")
-
-        container_dir = PurePosixPath("/verilog_code").joinpath(*normalized.parts)
-        return project_dir, container_dir.as_posix()
+        return resolve_project_dir(self.config.verilog_base_dir, project_id)
 
     @staticmethod
     def _find_verilog_sources(project_dir: Path) -> list[Path]:

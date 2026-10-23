@@ -131,6 +131,52 @@ Dispara o mapeamento de hardware no container `yosys`.
 ```
 * O `project_id` é o identificador único da pasta do projeto retornado pelo endpoint de upload. Ele deve residir sob `/verilog_code/runs/`.
 * **Funcionamento:** Executa comandos do Yosys no container `yosys` para ler os arquivos `.v` e `.sv`, gerando e retornando o netlist estrutural (`estrutura.json`).
+* O Yosys é interrompido após `YOSYS_TIMEOUT_SECONDS`; nesse caso a rota responde `408`. Container indisponível responde `503`.
+
+**Response Payload:**
+```json
+{
+  "success": true,
+  "stdout": "...log do Yosys...",
+  "stderr": "",
+  "top_module": "cpu",
+  "netlist_content": {
+    "creator": "Yosys 0.9",
+    "modules": {
+      "cpu": {
+        "attributes": { "top": "00000000000000000000000000000001", "src": "cpu.v:1.1-15.10" },
+        "ports": {
+          "a":     { "direction": "input",  "bits": [3, 4, 5, 6],         "width": 4 },
+          "konst": { "direction": "output", "bits": ["0", "x", "0", "1"], "width": 4 },
+          "bus_z": { "direction": "inout",  "bits": ["z"],                "width": 1 }
+        },
+        "cells": {
+          "u_inc": {
+            "hide_name": 0,
+            "type": "inc4",
+            "parameters": {},
+            "attributes": { "src": "cpu.v:12.8-12.38" },
+            "port_directions": { "d": "input", "q": "output" },
+            "connections": { "d": [16, 17, 18, 19], "q": [11, 12, 13, 14] }
+          }
+        },
+        "netnames": {
+          "a": { "hide_name": 0, "bits": [3, 4, 5, 6], "attributes": { "src": "cpu.v:3.16-3.17" }, "width": 4 }
+        }
+      }
+    }
+  },
+  "stat_report": "=== cpu ===\n ..."
+}
+```
+
+* **netlist_content** segue a forma do `write_json` do Yosys, validada pelo schema `Netlist` (`backend/schemas/netlist.py`). O backend acrescenta `width` (= `len(bits)`) em portas e `netnames`.
+  * `bits`: inteiros são identificadores de fio; as strings `"0"`, `"1"`, `"x"` e `"z"` são constantes lógicas. Portas, conexões de células e `netnames` usam os mesmos identificadores, então dá para cruzar fios e conexões pelo número do bit.
+  * `cells`: primitivas (`$add`, `$mux`, ...) e instâncias de submódulos (o `type` é o nome do módulo). `port_directions` pode faltar em caixas-pretas.
+  * `parameter_default_values` só aparece em módulos parametrizados. Campos extras de outras versões do Yosys são preservados.
+* **top_module**: módulo com o atributo `top`, escolhido por `hierarchy -auto-top`.
+* **stat_report**: conteúdo de `relatorio.txt` (`stat` do Yosys) gerado nesta execução, ou `null`.
+* Quando a síntese falha, ou `estrutura.json` está ausente, ilegível ou fora do contrato, a resposta tem `success: false`, `netlist_content: null`, `top_module: null` e a explicação no fim de `stderr`. Uma netlist parcial nunca é marcada como sucesso, nem uma netlist de execução anterior.
 
 ### POST `/api/v1/verilog/simular-execucao`
 
@@ -139,9 +185,17 @@ Dispara a simulação de hardware no container `icarus-verilog` e analisa o arqu
 **Request Payload:**
 ```json
 {
-  "project_id": "runs/run_<uuid>"
+  "project_id": "runs/run_<uuid>",
+  "begin_time": 0,
+  "end_time": 100000,
+  "signals": ["tb_processador.clk"],
+  "decimation": 1
 }
 ```
+
+* Só `project_id` é obrigatório. `begin_time`/`end_time` (janela inclusiva), `signals` (referências a incluir) e `decimation` (um a cada N instantes) recortam a `timeline`. Detalhes em `docs/integrations/icarus.md`.
+* A `timeline` é limitada por `VCD_MAX_TIMESTAMPS`, `VCD_MAX_SIGNALS` e `VCD_MAX_FILE_BYTES`. Quando algum limite corta o resultado, `metadata` traz `truncated: true`, `truncation_reason` e o total original.
+* A simulação é interrompida após `ICARUS_TIMEOUT_SECONDS` e a rota responde `408`.
 
 **Response Payload (`simulation_log`):**
 Retorna um objeto JSON estruturado contendo a simulação completa:

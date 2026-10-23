@@ -52,7 +52,8 @@ def test_run_is_marked_in_use_during_synthesis(api_client: TestClient) -> None:
 
     def fake_map(project_id: str) -> dict:
         seen.append(run_registry.is_in_use(run_name))
-        return {"success": True, "stdout": "", "stderr": "", "netlist_content": None}
+        return {"success": True, "stdout": "", "stderr": "", "top_module": None,
+                "netlist_content": None, "stat_report": None}
 
     service.mapear_processador = fake_map
     app.dependency_overrides[get_verilog_service] = lambda: service
