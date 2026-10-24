@@ -27,11 +27,22 @@ from integrations.docker import (
     DockerContainerNotFoundError,
     DockerContainerUnavailableError,
     DockerIntegrationError,
+    DockerResourceLimitError,
     DockerTimeoutError,
 )
-from integrations.icarus import IcarusContainerNotFoundError, IcarusError, IcarusTimeoutError
+from integrations.icarus import (
+    IcarusContainerNotFoundError,
+    IcarusError,
+    IcarusResourceLimitError,
+    IcarusTimeoutError,
+)
 from integrations.projects import NoVerilogSourcesError
-from integrations.yosys import YosysContainerNotFoundError, YosysError, YosysTimeoutError
+from integrations.yosys import (
+    YosysContainerNotFoundError,
+    YosysError,
+    YosysResourceLimitError,
+    YosysTimeoutError,
+)
 from logging_config import request_id_var
 from services.project_upload import ProjectUploadError
 
@@ -117,6 +128,12 @@ def _fixed(text: str) -> Callable[[Exception], str]:
 
 #: Most specific types first: the first ``isinstance`` match wins.
 _DOMAIN_ERRORS: tuple[tuple[type[Exception], _DomainError], ...] = (
+    (
+        # Estouro do limite de memória do container (#7): problema do projeto do
+        # aluno, não da infraestrutura; a mensagem pt-BR já vem da integração.
+        YosysResourceLimitError | IcarusResourceLimitError | DockerResourceLimitError,
+        _DomainError(422, "RESOURCE_LIMIT_EXCEEDED", str),
+    ),
     (
         YosysTimeoutError,
         _DomainError(
@@ -232,6 +249,7 @@ DOMAIN_EXCEPTION_TYPES: tuple[type[Exception], ...] = (
     YosysError,
     IcarusError,
     DockerIntegrationError,
+    DockerResourceLimitError,
     FileNotFoundError,
     NotADirectoryError,
     ValueError,

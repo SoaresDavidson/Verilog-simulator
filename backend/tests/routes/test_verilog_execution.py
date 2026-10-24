@@ -151,3 +151,29 @@ def test_invalid_selection_is_rejected(
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
     service.simular_execucao.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("route", "method", "error"),
+    [
+        ("simular-execucao", "simular_execucao", "icarus"),
+        ("mapear-processador", "mapear_processador", "yosys"),
+    ],
+)
+def test_memory_limit_returns_422_with_guidance(
+    client: TestClient, service: MagicMock, route: str, method: str, error: str
+) -> None:
+    """Execução morta por OOM vira 422 com a mensagem pt-BR da integração."""
+    from integrations.docker import memory_limit_message
+    from integrations.icarus import IcarusResourceLimitError
+    from integrations.yosys import YosysResourceLimitError
+
+    exc_type = IcarusResourceLimitError if error == "icarus" else YosysResourceLimitError
+    getattr(service, method).side_effect = exc_type(memory_limit_message("512m"))
+
+    response = client.post(f"/api/v1/verilog/{route}", json=PROJECT)
+
+    assert response.status_code == 422
+    body = response.json()["error"]
+    assert body["code"] == "RESOURCE_LIMIT_EXCEEDED"
+    assert "limite de memória (512m)" in body["message"]

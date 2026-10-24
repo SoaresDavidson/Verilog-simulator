@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from auth import create_session
 from config import settings
-from integrations.docker import DockerConfig, DockerIntegration
+from integrations.docker import DockerConfig, DockerIntegration, SandboxConfig
 from integrations.icarus import (
     IcarusCompilationError,
     IcarusConfig,
@@ -46,6 +46,10 @@ class UploadedProject:
 
 
 logger = logging.getLogger(__name__)
+
+#: Repository ``scripts/`` folder, used as HOST_SCRIPTS_DIR when the backend
+#: runs directly on the Docker host.
+_LOCAL_SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "scripts"
 
 _MAX_REPORTED_NETLIST_ERRORS = 5
 
@@ -90,6 +94,13 @@ class VerilogService:
             DockerConfig(
                 docker_host=settings.DOCKER_HOST,
                 timeout_seconds=settings.DOCKER_TIMEOUT_SECONDS,
+                sandbox=SandboxConfig(
+                    user=f"{settings.EXECUTION_UID}:{settings.EXECUTION_GID}",
+                    mem_limit=settings.EXECUTION_MEM_LIMIT,
+                    cpus=settings.EXECUTION_CPUS,
+                    pids_limit=settings.EXECUTION_PIDS_LIMIT,
+                    tmpfs_size=settings.EXECUTION_TMPFS_SIZE,
+                ),
             )
         )
         self.yosys_integration = yosys_integration or YosysIntegration(
@@ -98,6 +109,10 @@ class VerilogService:
                 timeout_seconds=settings.YOSYS_TIMEOUT_SECONDS,
                 verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 docker_host=settings.DOCKER_HOST,
+                run_owner=(settings.EXECUTION_UID, settings.EXECUTION_GID),
+                execution_mode=settings.EXECUTION_MODE,
+                image=settings.YOSYS_IMAGE,
+                host_verilog_root=settings.HOST_VERILOG_ROOT,
             ),
             docker_integration=self.docker_integration,
         )
@@ -108,6 +123,11 @@ class VerilogService:
                 verilog_base_dir=settings.VERILOG_RUNS_DIR.parent,
                 script_path=settings.ICARUS_SCRIPT_PATH,
                 docker_host=settings.DOCKER_HOST,
+                run_owner=(settings.EXECUTION_UID, settings.EXECUTION_GID),
+                execution_mode=settings.EXECUTION_MODE,
+                image=settings.ICARUS_IMAGE,
+                host_verilog_root=settings.HOST_VERILOG_ROOT,
+                host_scripts_dir=settings.HOST_SCRIPTS_DIR or str(_LOCAL_SCRIPTS_DIR),
                 vcd_limits=VcdLimits(
                     max_timestamps=settings.VCD_MAX_TIMESTAMPS,
                     max_signals=settings.VCD_MAX_SIGNALS,

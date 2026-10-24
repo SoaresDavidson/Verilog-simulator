@@ -1,6 +1,7 @@
 """Resolution of project run directories shared by tool integrations."""
 
 import logging
+import os
 from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
 
@@ -54,6 +55,64 @@ def resolve_project_dir(base_dir: Path, project_id: str) -> tuple[Path, str]:
 
     container_dir = CONTAINER_VERILOG_ROOT.joinpath(*normalized.parts)
     return project_dir, container_dir.as_posix()
+
+
+def run_mount(
+    base_dir: Path, project_dir: Path, host_root: str | None = None
+) -> tuple[str, str]:
+    """Return the bind mount that exposes only the run holding ``project_dir``.
+
+    Args:
+        base_dir: Local directory mounted as ``/verilog_code`` (as in
+            :func:`resolve_project_dir`).
+        project_dir: Resolved project directory returned by
+            :func:`resolve_project_dir`.
+        host_root: Path of ``base_dir`` on the Docker daemon's host. ``None``
+            when the backend runs directly on that host (the local path is used).
+
+    Returns:
+        ``(host path, container path)`` of the ``runs/run_<id>`` directory.
+    """
+    resolved_base = base_dir.resolve()
+    run_parts = project_dir.relative_to(resolved_base).parts[:2]
+    host_base = PurePosixPath(host_root) if host_root else PurePosixPath(resolved_base.as_posix())
+    return (
+        host_base.joinpath(*run_parts).as_posix(),
+        CONTAINER_VERILOG_ROOT.joinpath(*run_parts).as_posix(),
+    )
+
+
+PRIVATE_RUN_FILES = frozenset({".session"})
+"""Run files the backend keeps to itself (``auth.SESSION_FILE_NAME``)."""
+
+
+def grant_run_access(project_dir: Path, uid: int, gid: int) -> None:
+    """Hand the run over to the unprivileged user that runs the tools.
+
+    The backend (root in its container) extracts each run; the tool containers
+    run as ``uid:gid`` and must write their artifacts (netlist, VCD) inside the
+    run. Everything below ``project_dir`` is re-owned, except
+    :data:`PRIVATE_RUN_FILES`, which stay readable only by the backend.
+    Symlinks are never followed. Without permission to ``chown`` (backend
+    running unprivileged, e.g. locally as the same user) nothing is changed.
+    """
+    paths = [project_dir]
+    for root, dirs, files in os.walk(project_dir, followlinks=False):
+        base = Path(root)
+        paths.extend(base / name for name in dirs)
+        paths.extend(base / name for name in files if name not in PRIVATE_RUN_FILES)
+
+    for path in paths:
+        try:
+            stat = path.lstat()
+            if stat.st_uid == uid and stat.st_gid == gid:
+                continue
+            os.chown(path, uid, gid, follow_symlinks=False)
+        except FileNotFoundError:
+            continue
+        except PermissionError as exc:
+            logger.debug("Cannot hand run %s to %d:%d: %s", project_dir, uid, gid, exc)
+            return
 
 
 def validate_relative_source(source: Path) -> str:
