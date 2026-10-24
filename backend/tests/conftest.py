@@ -15,6 +15,18 @@ from services.verilog import VerilogService
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
+#: Projetos reais da série de aulas do multiplicador 16x16 (librelane/multiplicador-aulas).
+MULTIPLICADORES_DIR = FIXTURES_DIR / "projetos" / "multiplicadores"
+
+#: Projeto -> módulo top esperado após ``hierarchy -auto-top``.
+MULTIPLICADORES = {
+    "shift_add": "mult_shift_add",
+    "shift_add_vetores": "mult_shift_add",
+    "array": "mult_array",
+    "array_pipe": "mult_array_pipe",
+    "array_pipe32": "mult_array_pipe32",
+}
+
 MINIMAL_VERILOG = """module top(input a, output y);
   assign y = ~a;
 endmodule
@@ -28,6 +40,12 @@ def make_zip(files: dict[str, bytes | str]) -> bytes:
         for name, content in files.items():
             archive.writestr(name, content)
     return buffer.getvalue()
+
+
+def zip_project(name: str) -> bytes:
+    """ZIP com os arquivos de um projeto de ``MULTIPLICADORES_DIR``."""
+    project = MULTIPLICADORES_DIR / name
+    return make_zip({path.name: path.read_bytes() for path in sorted(project.iterdir())})
 
 
 @pytest.fixture
