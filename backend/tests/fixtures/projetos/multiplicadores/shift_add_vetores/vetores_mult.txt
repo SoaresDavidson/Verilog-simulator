@@ -1,0 +1,51 @@
+// ---------------------------------------------------------------------------
+// vetores_mult.txt - vetores de teste dirigidos para o mult_shift_add
+//
+// Lido pelo testbench com $readmemh. Um vetor por linha, exatamente 16 digitos
+// hexadecimais, empacotados em 64 bits assim:
+//
+//         a         b          esperado
+//     [63:48]   [47:32]        [31:0]
+//      A A A A   B B B B   P P P P P P P P
+//
+// Linhas em branco e comentarios // sao ignorados pelo $readmemh.
+//
+// Os valores esperados foram escritos A MAO, nao calculados por ferramenta:
+// se viessem do mesmo simulador que roda o circuito, um erro de entendimento
+// passaria despercebido nas duas pontas. O testbench confere cada linha contra
+// um modelo de referencia antes de usa-la - veja a funcao 'referencia'.
+// ---------------------------------------------------------------------------
+
+// --- casos triviais: onde os bugs bobos se escondem ------------------------
+0000000000000000   // 0000 x 0000 = 00000000
+0000FFFF00000000   // 0000 x ffff = 00000000   zero absorve
+FFFF000000000000   // ffff x 0000 = 00000000   zero do outro lado
+0001000100000001   // 0001 x 0001 = 00000001
+0001FFFF0000FFFF   // 0001 x ffff = 0000ffff   identidade
+FFFF00010000FFFF   // ffff x 0001 = 0000ffff   identidade trocada
+
+// --- o pior caso: todos os bits somam, o vai-um atravessa tudo -------------
+FFFFFFFFFFFE0001   // ffff x ffff = fffe0001   65535^2, o maior produto
+FFFEFFFEFFFC0004   // fffe x fffe = fffc0004   65534^2
+
+// --- a fronteira dos 16 bits: onde o resultado deixa de caber --------------
+8000000200010000   // 8000 x 0002 = 00010000   estoura para a parte alta
+0002800000010000   // 0002 x 8000 = 00010000   comutatividade
+8000800040000000   // 8000 x 8000 = 40000000   32768^2
+FFFF00020001FFFE   // ffff x 0002 = 0001fffe
+7FFF00020000FFFE   // 7fff x 0002 = 0000fffe   ainda cabe em 16 bits
+
+// --- potencias de dois: so deslocamento, nenhuma soma ----------------------
+0001800000008000   // 0001 x 8000 = 00008000
+0100010000010000   // 0100 x 0100 = 00010000   256 x 256
+1000001000010000   // 1000 x 0010 = 00010000   4096 x 16
+
+// --- bits alternados: atividade maxima de chaveamento ----------------------
+AAAA555538E31C72   // aaaa x 5555 = 38e31c72
+5555AAAA38E31C72   // 5555 x aaaa = 38e31c72   comutatividade
+
+// --- conferencia em decimal, para o leitor humano --------------------------
+00FF01010000FFFF   //   255 x   257 =    65535
+000300050000000F   //     3 x     5 =       15
+0064006400002710   //   100 x   100 =    10000
+04D2162E006AE9BC   //  1234 x  5678 =  7006652

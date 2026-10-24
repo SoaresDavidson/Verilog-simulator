@@ -16,6 +16,9 @@ _health_service = HealthService(
         runs_dir=settings.VERILOG_RUNS_DIR,
         timeout_seconds=settings.HEALTH_TIMEOUT_SECONDS,
         cache_ttl_seconds=settings.HEALTH_CACHE_TTL_SECONDS,
+        execution_mode=settings.EXECUTION_MODE,
+        yosys_image=settings.YOSYS_IMAGE,
+        icarus_image=settings.ICARUS_IMAGE,
     )
 )
 
@@ -51,4 +54,14 @@ def get_status(response: Response, service: HealthDependency) -> StatusResponse:
             }
             for name, check in report.checks.items()
         },
+        runs=(
+            {
+                "count": report.runs.count,
+                "total_bytes": report.runs.total_bytes,
+                "last_collection_at": report.runs.last_collection_at,
+                "last_collection_removed": report.runs.last_collection_removed,
+            }
+            if report.runs is not None
+            else None
+        ),
     )
