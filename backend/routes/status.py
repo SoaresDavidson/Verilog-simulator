@@ -16,6 +16,9 @@ _health_service = HealthService(
         runs_dir=settings.VERILOG_RUNS_DIR,
         timeout_seconds=settings.HEALTH_TIMEOUT_SECONDS,
         cache_ttl_seconds=settings.HEALTH_CACHE_TTL_SECONDS,
+        execution_mode=settings.EXECUTION_MODE,
+        yosys_image=settings.YOSYS_IMAGE,
+        icarus_image=settings.ICARUS_IMAGE,
     )
 )
 

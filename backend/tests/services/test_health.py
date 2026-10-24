@@ -196,3 +196,25 @@ def test_invalid_configuration_is_rejected(field: str, value: object) -> None:
     """Configuração inválida falha na criação, não durante a requisição."""
     with pytest.raises(ValueError):
         HealthConfig(**{field: value})
+
+
+def test_ephemeral_mode_checks_images_instead_of_containers(runs_dir: Path, docker_integration: MagicMock) -> None:
+    """Sem containers persistentes (modo efêmero), a ferramenta está pronta se a imagem existe."""
+    from docker.errors import ImageNotFound
+
+    config = HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=0, execution_mode="ephemeral")
+    images = docker_integration.get_client.return_value.images
+
+    def get(image: str) -> object:
+        if "icarus" in image:
+            raise ImageNotFound("missing")
+        return object()
+
+    images.get.side_effect = get
+
+    report = HealthService(config, docker_integration).check()
+
+    assert report.checks["yosys"].status == HealthStatus.OK
+    assert report.checks["icarus"].status == HealthStatus.ERROR
+    assert "docker compose build" in report.checks["icarus"].detail
+    docker_integration.execute.assert_not_called()

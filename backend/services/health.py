@@ -9,9 +9,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import ClassVar
 
+from docker.errors import DockerException, ImageNotFound
+
 from integrations.docker import (
     DockerIntegration,
     DockerIntegrationError,
+    ExecutionMode,
 )
 from services.runs_gc import CollectionState, collection_state, measure_runs
 
@@ -33,9 +36,14 @@ class HealthConfig:
     runs_dir: Path = Path("/verilog_code/runs")
     timeout_seconds: float = 5
     cache_ttl_seconds: float = 5
+    execution_mode: ExecutionMode = ExecutionMode.EXEC
+    """``ephemeral``: tools run in per-execution containers, so the images are checked."""
+    yosys_image: str = "verilog-classroom/yosys:latest"
+    icarus_image: str = "verilog-classroom/icarus:latest"
 
     def __post_init__(self) -> None:
         """Validate configuration values."""
+        object.__setattr__(self, "execution_mode", ExecutionMode(self.execution_mode))
         if not self.yosys_container_name.strip():
             raise ValueError("Yosys container name cannot be empty.")
         if not self.icarus_container_name.strip():
@@ -122,7 +130,10 @@ class HealthService:
         daemon_check = self._check_docker_daemon()
         checks["docker_daemon"] = daemon_check
 
-        if daemon_check.status is HealthStatus.OK:
+        if daemon_check.status is HealthStatus.OK and self.config.execution_mode is ExecutionMode.EPHEMERAL:
+            checks["yosys"] = self._check_image(self.config.yosys_image)
+            checks["icarus"] = self._check_image(self.config.icarus_image)
+        elif daemon_check.status is HealthStatus.OK:
             checks["yosys"] = self._check_tool("yosys", self.config.yosys_container_name)
             checks["icarus"] = self._check_tool("icarus", self.config.icarus_container_name)
         else:
@@ -169,6 +180,19 @@ class HealthService:
                 detail=f"Could not reach Docker daemon: {exc}",
             )
         return CheckResult(status=HealthStatus.OK, detail="Docker daemon reachable.")
+
+    def _check_image(self, image: str) -> CheckResult:
+        """In ephemeral mode a tool is available when its image exists locally."""
+        try:
+            self.docker_integration.get_client().images.get(image)
+        except ImageNotFound:
+            return CheckResult(
+                status=HealthStatus.ERROR,
+                detail=f"Image '{image}' was not found; build it with docker compose build.",
+            )
+        except (DockerIntegrationError, DockerException, OSError) as exc:
+            return CheckResult(status=HealthStatus.ERROR, detail=f"Could not inspect image '{image}': {exc}")
+        return CheckResult(status=HealthStatus.OK, detail=f"Image '{image}' available.")
 
     def _check_tool(self, tool: str, container_name: str) -> CheckResult:
         try:
