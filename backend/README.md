@@ -8,6 +8,9 @@ Este é o backend em FastAPI para o projeto Verilog Classroom. Ele fornece rotas
 backend/
 ├── main.py              # Ponto de entrada da aplicacao (FastAPI + CORS)
 ├── config.py            # Settings: unico lugar que le variaveis de ambiente
+├── logging_config.py    # LOG_LEVEL/LOG_FORMAT, formatadores text/json, contexto de log
+├── request_id.py        # Middleware de X-Request-ID e linha de log por requisicao
+├── errors.py            # Schema unico de erro e handlers de excecao
 ├── pyproject.toml       # Dependencias, pytest e ruff
 ├── requirements.txt     # Gerado por `uv pip compile` (usado no Dockerfile)
 ├── .env.example         # Todas as variaveis suportadas
@@ -131,7 +134,7 @@ Dispara o mapeamento de hardware no container `yosys`.
 ```
 * O `project_id` é o identificador único da pasta do projeto retornado pelo endpoint de upload. Ele deve residir sob `/verilog_code/runs/`.
 * **Funcionamento:** Executa comandos do Yosys no container `yosys` para ler os arquivos `.v` e `.sv`, gerando e retornando o netlist estrutural (`estrutura.json`).
-* O Yosys é interrompido após `YOSYS_TIMEOUT_SECONDS`; nesse caso a rota responde `408`. Container indisponível responde `503`.
+* O Yosys é interrompido após `YOSYS_TIMEOUT_SECONDS`; nesse caso a rota responde `408` (`YOSYS_TIMEOUT`). Container indisponível responde `503` (`YOSYS_UNAVAILABLE`). Ver [Erros e logging](#erros-e-logging).
 
 **Response Payload:**
 ```json
@@ -195,7 +198,7 @@ Dispara a simulação de hardware no container `icarus-verilog` e analisa o arqu
 
 * Só `project_id` é obrigatório. `begin_time`/`end_time` (janela inclusiva), `signals` (referências a incluir) e `decimation` (um a cada N instantes) recortam a `timeline`. Detalhes em `docs/integrations/icarus.md`.
 * A `timeline` é limitada por `VCD_MAX_TIMESTAMPS`, `VCD_MAX_SIGNALS` e `VCD_MAX_FILE_BYTES`. Quando algum limite corta o resultado, `metadata` traz `truncated: true`, `truncation_reason` e o total original.
-* A simulação é interrompida após `ICARUS_TIMEOUT_SECONDS` e a rota responde `408`.
+* A simulação é interrompida após `ICARUS_TIMEOUT_SECONDS` e a rota responde `408` (`ICARUS_TIMEOUT`, com orientação sobre `$finish`).
 
 **Response Payload (`simulation_log`):**
 Retorna um objeto JSON estruturado contendo a simulação completa:
@@ -369,6 +372,66 @@ O resultado fica em cache por `HEALTH_CACHE_TTL_SECONDS` para que chamadas
 frequentes do orquestrador não conversem com o daemon a cada requisição, e cada
 comando de versão respeita `HEALTH_TIMEOUT_SECONDS`.
 
+## Erros e logging
+
+### Formato único de erro
+
+Toda resposta de erro (4xx/5xx), inclusive `422` de validação, `413` do limite de upload e
+`500` inesperado, tem o corpo:
+
+```json
+{
+  "error": {
+    "code": "YOSYS_TIMEOUT",
+    "message": "O mapeamento excedeu o limite de 30 segundos e foi interrompido. ...",
+    "request_id": "0f3c9a..."
+  }
+}
+```
+
+`message` é em pt-BR e nunca contém caminhos internos, nomes de container, tracebacks ou
+mensagens da lib `docker`; esses detalhes vão só para o log do servidor. As rotas não traduzem
+exceções: os handlers de `errors.py` mapeiam as exceções de domínio das integrações.
+
+| `code` | HTTP | Quando |
+|---|---|---|
+| `VALIDATION_ERROR` | 422 | Corpo/parâmetros fora do schema |
+| `INVALID_PROJECT_ID` | 400 | `project_id` fora do formato `runs/run_<32 hex>` |
+| `INVALID_REQUEST` | 400 | Parâmetro recusado pelas integrações (`ValueError`) |
+| `INVALID_UPLOAD` | 400 | ZIP rejeitado (não é `.zip`, corrompido, inseguro, sem `.v`/`.sv`) |
+| `SESSION_TOKEN_MISSING` / `ADMIN_TOKEN_MISSING` | 401 | Header de token ausente |
+| `SESSION_TOKEN_INVALID` / `ADMIN_TOKEN_INVALID` | 403 | Token não confere |
+| `PROJECT_NOT_FOUND` | 404 | Run inexistente |
+| `NO_VERILOG_SOURCES` | 404 | Run sem fonte Verilog utilizável pela ferramenta |
+| `NOT_FOUND` / `METHOD_NOT_ALLOWED` | 404 / 405 | Rota inexistente ou desabilitada / método errado |
+| `YOSYS_TIMEOUT` / `ICARUS_TIMEOUT` / `TOOL_TIMEOUT` | 408 | Ferramenta excedeu o tempo limite |
+| `UPLOAD_TOO_LARGE` | 413 | Upload, extração ou número de entradas acima do limite |
+| `YOSYS_UNAVAILABLE` / `ICARUS_UNAVAILABLE` / `DOCKER_UNAVAILABLE` | 503 | Container ou daemon Docker indisponível |
+| `YOSYS_ERROR` / `ICARUS_ERROR` / `TOOL_EXECUTION_ERROR` | 500 | Falha interna ao executar a ferramenta |
+| `UPLOAD_STORAGE_ERROR` / `DELETE_FAILED` / `CLEANUP_FAILED` | 500 | Falha de disco ao gravar/excluir runs |
+| `INTERNAL_ERROR` | 500 | Qualquer exceção não prevista (traceback completo só no log) |
+
+### Request id e logs
+
+Cada requisição recebe um id: o header `X-Request-ID` enviado pelo cliente é reaproveitado
+(se for um token simples `[A-Za-z0-9._-]{1,128}`), senão um novo é gerado. O id volta no header
+`X-Request-ID` de toda resposta, no campo `error.request_id` e em toda linha de log da
+requisição. As rotas que operam sobre um run também anexam o `project_id` às linhas de log.
+
+`LOG_LEVEL` e `LOG_FORMAT` controlam o logging (configurado em `logging_config.py` no startup;
+os loggers do uvicorn passam pelo mesmo handler). Exemplo em `text`:
+
+```
+2026-10-23 17:09:44,654 INFO     [0f3c9a...] [runs/run_0123...] services.verilog: Síntese de runs/run_0123... concluída em 1.42 s.
+2026-10-23 17:09:44,655 INFO     [0f3c9a...] app.request: POST /api/v1/verilog/mapear-processador -> 200 (1450.3 ms)
+```
+
+Com `LOG_FORMAT=json` cada linha é um objeto com `timestamp`, `level`, `logger`, `message`,
+`request_id`, `project_id` (quando houver) e `exception` (traceback, quando houver). A linha de
+acesso do uvicorn fica em `WARNING` porque `app.request` já registra cada requisição com o id.
+Conteúdo dos arquivos do aluno e tokens nunca são logados; `stderr` das ferramentas só aparece
+em `DEBUG`, truncado.
+
 ## Variáveis de Ambiente
 
 Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.env.example`).
@@ -397,6 +460,8 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.e
 | `RUN_TTL_HOURS` | `6` | Horas sem uso até um run ser coletado (`0` desliga a expiração por idade) |
 | `RUNS_MAX_TOTAL_BYTES` | `0` | Teto de espaço dos runs; acima dele os mais antigos saem primeiro (`0` = sem teto) |
 | `GC_INTERVAL_MINUTES` | `30` | Intervalo da coleta periódica (`0` desliga a task; a coleta no upload continua) |
+| `LOG_LEVEL` | `INFO` | Nível de log (`DEBUG`, `INFO`, `WARNING`, `ERROR`); vale também para os loggers do uvicorn |
+| `LOG_FORMAT` | `text` | `text` (legível, para desenvolvimento) ou `json` (uma linha JSON por evento, para produção) |
 
 ## Testes
 

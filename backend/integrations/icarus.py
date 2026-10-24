@@ -19,6 +19,7 @@ from .docker import (
     ExecutionMode,
 )
 from .projects import (
+    NoVerilogSourcesError,
     grant_run_access,
     is_fresh_artifact,
     remove_artifacts,
@@ -302,8 +303,8 @@ class IcarusIntegration:
         ]
         sources.sort(key=lambda path: path.as_posix())
         if not sources:
-            raise FileNotFoundError(
-                f"No Verilog (.v or .sv) files found in '{project_dir.name}' for simulation."
+            raise NoVerilogSourcesError(
+                "Nenhum arquivo Verilog (.v ou .sv) foi encontrado no projeto para simular."
             )
         return sources
 

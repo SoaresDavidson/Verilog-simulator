@@ -323,7 +323,7 @@ def test_project_without_sources_is_rejected(
     """Projeto sem .v/.sv não chega a executar no container."""
     (tmp_path / "runs" / "run_empty").mkdir(parents=True)
 
-    with pytest.raises(FileNotFoundError, match="No Verilog"):
+    with pytest.raises(FileNotFoundError, match="Nenhum arquivo Verilog"):
         make_integration(tmp_path, docker_client).simulate("runs/run_empty")
     docker_client.containers.get.assert_not_called()
 

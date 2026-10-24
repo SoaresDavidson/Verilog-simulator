@@ -21,6 +21,7 @@ from .docker import (
     ExecutionMode,
 )
 from .projects import (
+    NoVerilogSourcesError,
     grant_run_access,
     is_fresh_artifact,
     remove_artifacts,
@@ -333,8 +334,9 @@ class YosysIntegration:
                 sources.append(relative_path)
         sources.sort(key=lambda path: path.as_posix())
         if not sources:
-            raise FileNotFoundError(
-                f"No synthesizable Verilog (.v or .sv) files found in '{project_dir}'."
+            raise NoVerilogSourcesError(
+                "Nenhum arquivo Verilog sintetizável (.v ou .sv fora de testbenches) "
+                "foi encontrado no projeto."
             )
         return sources
 

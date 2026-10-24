@@ -38,13 +38,17 @@ describe('navegação em etapas', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/síntese/i)
   })
 
-  it('após síntese navega até a etapa 3, exige sinais para a 4 e volta a etapas concluídas', async () => {
+  it('após síntese exige sinais para as etapas 3 e 4 e volta a etapas concluídas', async () => {
     const user = userEvent.setup()
     renderApp({ initialState: synthesizedState({ step: 2 }) })
 
-    await user.click(screen.getByRole('button', { name: /ver caminho de dados/i }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Caminho de Dados' })).toBeInTheDocument()
+    // Mesma regra do botão da tela 2 (#29).
+    expect(stepButton(/caminho de dados/i)).toHaveAccessibleDescription(/selecione pelo menos 1 sinal/i)
     expect(stepButton(/simulação/i)).toHaveAccessibleDescription(/selecione pelo menos 1 sinal/i)
+
+    await user.click(screen.getAllByRole('checkbox', { name: /clk/ })[0])
+    await user.click(stepButton(/caminho de dados/i))
+    expect(screen.getByRole('heading', { level: 1, name: 'Caminho de Dados' })).toBeInTheDocument()
 
     const done = stepButton(/seleção.*concluída/i)
     expect(done).not.toHaveAttribute('aria-disabled')

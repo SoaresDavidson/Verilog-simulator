@@ -41,9 +41,11 @@ def test_simulation_timeout_returns_408_with_guidance(
     response = client.post("/api/v1/verilog/simular-execucao", json=PROJECT)
 
     assert response.status_code == 408
-    detail = response.json()["detail"]
-    assert "30 segundos" in detail
-    assert "$finish" in detail
+    error = response.json()["error"]
+    assert error["code"] == "ICARUS_TIMEOUT"
+    assert "30 segundos" in error["message"]
+    assert "$finish" in error["message"]
+    assert error["request_id"] == response.headers["X-Request-ID"]
 
 
 def test_synthesis_timeout_returns_408(client: TestClient, service: MagicMock) -> None:
@@ -53,14 +55,16 @@ def test_synthesis_timeout_returns_408(client: TestClient, service: MagicMock) -
     response = client.post("/api/v1/verilog/mapear-processador", json=PROJECT)
 
     assert response.status_code == 408
-    assert "12.5 segundos" in response.json()["detail"]
+    error = response.json()["error"]
+    assert error["code"] == "YOSYS_TIMEOUT"
+    assert "12.5 segundos" in error["message"]
 
 
 @pytest.mark.parametrize(
     ("route", "method", "error"),
     [
-        ("simular-execucao", "simular_execucao", IcarusContainerNotFoundError("x")),
-        ("mapear-processador", "mapear_processador", YosysContainerNotFoundError("x")),
+        ("simular-execucao", "simular_execucao", IcarusContainerNotFoundError("Container 'icarus-verilog' was not found.")),
+        ("mapear-processador", "mapear_processador", YosysContainerNotFoundError("Container 'yosys' was not found.")),
     ],
 )
 def test_unavailable_container_returns_503(
@@ -76,6 +80,12 @@ def test_unavailable_container_returns_503(
     response = client.post(f"/api/v1/verilog/{route}", json=PROJECT)
 
     assert response.status_code == 503
+    error = response.json()["error"]
+    assert error["code"] in {"YOSYS_UNAVAILABLE", "ICARUS_UNAVAILABLE"}
+    # Container names and Docker messages stay in the server log.
+    assert "yosys'" not in error["message"]
+    assert "icarus-verilog" not in error["message"]
+    assert "was not found" not in error["message"]
 
 
 def test_simulation_forwards_waveform_selection(
@@ -139,4 +149,5 @@ def test_invalid_selection_is_rejected(
     )
 
     assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
     service.simular_execucao.assert_not_called()

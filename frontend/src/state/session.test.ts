@@ -15,11 +15,12 @@ describe('sessionReducer', () => {
     expect(stepBlockReason(state, 3)).not.toBeNull()
     state = sessionReducer(state, { type: 'SYNTHESIS_SUCCEEDED', result: synthesisOk })
     expect(state.topModule).toBe('top')
-    expect(stepBlockReason(state, 3)).toBeNull()
+    expect(stepBlockReason(state, 3)).toMatch(/sinal/i)
     expect(stepBlockReason(state, 4)).toMatch(/sinal/i)
 
     state = sessionReducer(state, { type: 'SIGNALS_SELECTED', signals: ['top.clk', 'top.clk'] })
     expect(state.selectedSignals).toEqual(['top.clk'])
+    expect(stepBlockReason(state, 3)).toBeNull()
     expect(stepBlockReason(state, 4)).toBeNull()
   })
 

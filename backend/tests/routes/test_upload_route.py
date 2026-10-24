@@ -32,7 +32,7 @@ def test_upload_without_sources_returns_400(
     response = _upload(api_client, make_zip({"leia.txt": "nada"}))
 
     assert response.status_code == 400
-    assert "Verilog" in response.json()["detail"]
+    assert "Verilog" in response.json()["error"]["message"]
     assert list(runs_dir.iterdir()) == []
 
 

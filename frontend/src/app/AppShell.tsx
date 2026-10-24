@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { DatapathScreen } from '../features/datapath/DatapathScreen'
+import { LiveDatapath } from '../features/simulation/live/LiveDatapath'
 import { SimulationScreen } from '../features/simulation/SimulationScreen'
 import { SynthesisScreen } from '../features/synthesis/SynthesisScreen'
 import { UploadScreen } from '../features/upload/UploadScreen'
@@ -13,7 +14,7 @@ const SCREENS: Record<StepId, () => ReactNode> = {
   1: () => <UploadScreen />,
   2: () => <SynthesisScreen />,
   3: () => <DatapathScreen />,
-  4: () => <SimulationScreen />,
+  4: () => <SimulationScreen diagramSlot={(context) => <LiveDatapath context={context} />} />,
 }
 
 function stepFromHash(hash: string): StepId | null {

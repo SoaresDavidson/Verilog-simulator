@@ -121,7 +121,7 @@ export function stepBlockReason(state: SessionState, step: StepId): string | nul
   if (!state.session) return 'Faça o upload do projeto primeiro.'
   if (step === 2) return null
   if (!isSynthesisConfirmed(state)) return 'Conclua a síntese primeiro.'
-  if (step === 3) return null
+  // Mesma regra do botão da tela 2 (#29): diagrama e simulação filtram pelos sinais escolhidos.
   if (state.selectedSignals.length === 0) return 'Selecione pelo menos 1 sinal.'
   return null
 }

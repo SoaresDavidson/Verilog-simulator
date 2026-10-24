@@ -11,6 +11,14 @@ CONTAINER_VERILOG_ROOT = PurePosixPath("/verilog_code")
 """Mount point of the shared Verilog volume inside the tool containers."""
 
 
+class NoVerilogSourcesError(FileNotFoundError):
+    """Raised when a run has no Verilog source usable by the tool.
+
+    The message is written in Portuguese and never contains internal paths, so
+    it can be shown to the student as is.
+    """
+
+
 def resolve_project_dir(base_dir: Path, project_id: str) -> tuple[Path, str]:
     """Resolve a project ID into local and container directories.
 

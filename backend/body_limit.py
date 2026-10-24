@@ -2,9 +2,11 @@
 
 from collections.abc import Callable
 
-from fastapi import HTTPException
-from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from errors import ApiError, error_response
+
+UPLOAD_TOO_LARGE_CODE = "UPLOAD_TOO_LARGE"
 
 #: Room left for multipart boundaries and part headers around the uploaded file.
 MULTIPART_OVERHEAD_BYTES = 64 * 1024
@@ -15,7 +17,7 @@ def too_large_message(limit_bytes: int) -> str:
     return f"O arquivo enviado excede o limite de {limit_bytes / (1024 * 1024):.1f} MB."
 
 
-class RequestBodyTooLargeError(HTTPException):
+class RequestBodyTooLargeError(ApiError):
     """Raised from ``receive`` once the streamed body passes the limit.
 
     Subclassing ``HTTPException`` makes FastAPI re-raise it untouched while it
@@ -23,7 +25,7 @@ class RequestBodyTooLargeError(HTTPException):
     """
 
     def __init__(self, limit_bytes: int) -> None:
-        super().__init__(status_code=413, detail=too_large_message(limit_bytes))
+        super().__init__(413, UPLOAD_TOO_LARGE_CODE, too_large_message(limit_bytes))
 
 
 class BodySizeLimitMiddleware:
@@ -47,8 +49,8 @@ class BodySizeLimitMiddleware:
         body_limit = file_limit + MULTIPART_OVERHEAD_BYTES
         declared = dict(scope["headers"]).get(b"content-length")
         if declared is not None and declared.isdigit() and int(declared) > body_limit:
-            response = JSONResponse(
-                {"detail": too_large_message(file_limit)}, status_code=413
+            response = error_response(
+                413, UPLOAD_TOO_LARGE_CODE, too_large_message(file_limit)
             )
             await response(scope, receive, send)
             return
