@@ -444,6 +444,11 @@ Todas são lidas por `config.py` e podem vir de um arquivo `.env` (modelo em `.e
 | `YOSYS_TIMEOUT_SECONDS` | `30` | Timeout da execução do Yosys |
 | `ICARUS_CONTAINER_NAME` | `icarus-verilog` | Nome do container de simulação |
 | `EXECUTION_UID` / `EXECUTION_GID` | `1000` | Usuário não-root das imagens de execução; cada run é entregue a ele (`chown`) antes de rodar Yosys/Icarus |
+| `EXECUTION_MODE` | `ephemeral` | `ephemeral`: um container isolado por execução; `exec`: `docker exec` nos containers de longa duração (ver [modelo de isolamento](../docs/seguranca/modelo-de-isolamento.md)) |
+| `YOSYS_IMAGE` / `ICARUS_IMAGE` | `verilog-classroom/{yosys,icarus}:latest` | Imagens dos containers efêmeros (construídas pelo `docker compose build`) |
+| `EXECUTION_MEM_LIMIT` / `EXECUTION_CPUS` / `EXECUTION_PIDS_LIMIT` | `512m` / `1.0` / `256` | Limites de cada container efêmero |
+| `EXECUTION_TMPFS_SIZE` | `64m` | Tamanho do `/tmp` em memória (rootfs é somente leitura) |
+| `HOST_VERILOG_ROOT` / `HOST_SCRIPTS_DIR` | `None` | Caminhos no host de `/verilog_code` e `scripts`, exigidos quando o backend roda em container |
 | `VERILOG_RUNS_DIR` | `/verilog_code/runs` | Diretório onde cada run é extraído |
 | `HEALTH_TIMEOUT_SECONDS` | `5` | Timeout dos comandos de verificação de readiness |
 | `HEALTH_CACHE_TTL_SECONDS` | `5` | Validade do cache do `GET /api/v1/status/` |
