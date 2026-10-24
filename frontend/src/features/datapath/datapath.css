@@ -82,3 +82,16 @@
   .nx { grid-template-columns: minmax(0, 1fr); }
   .nx-side { position: static; max-height: 260px; }
 }
+
+/* Abas e seletor de módulo da tela 3 (#30). */
+.dp-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.dp-tabs { display: inline-flex; border: 1px solid var(--ov); border-radius: var(--r); overflow: hidden; }
+.dp-tab { padding: 6px 14px; font-size: 12px; font-weight: 600; min-height: 32px; color: var(--muted); }
+.dp-tab:hover { background: var(--hover); }
+.dp-tab--on { background: var(--accent-lt); color: var(--accent); }
+.dp-modsel { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); min-width: 0; }
+.dp-modsel select {
+  background: var(--surface); color: var(--fg); border: 1px solid var(--ov); border-radius: var(--r);
+  padding: 5px 8px; font-family: var(--fd); font-size: 12px; min-height: 32px; max-width: 60vw;
+}
+.dp-panel { display: flex; flex-direction: column; min-width: 0; }

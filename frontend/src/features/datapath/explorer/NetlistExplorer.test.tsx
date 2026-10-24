@@ -110,11 +110,13 @@ describe('NetlistExplorer', () => {
 })
 
 describe('DatapathScreen (estrutura)', () => {
-  it('mostra a estrutura do netlist sintetizado', () => {
+  it('mostra a estrutura do netlist sintetizado', async () => {
+    const user = userEvent.setup()
     renderApp({
       initialState: synthesizedState({ step: 3, synthesis: { status: 'success', result: synthesisWith(hierNetlist, 'cpu'), error: null } }),
     })
     expect(screen.getByRole('heading', { level: 1, name: 'Caminho de Dados' })).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'Estrutura' }))
     expect(screen.getByRole('heading', { level: 2, name: /cpu/ })).toBeInTheDocument()
   })
 })
