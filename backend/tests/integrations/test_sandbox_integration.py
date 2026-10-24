@@ -80,8 +80,7 @@ def run(sandbox: DockerIntegration, run_dir: Path, command: list[str], timeout: 
 def test_valid_project_simulates_under_restrictions(sandbox, runs) -> None:
     mine, _ = runs
     (mine / "tb.v").write_text(
-        "module tb; initial begin $dumpfile(\"o.vcd\"); $dumpvars; "
-        "$display(\"ok\"); $finish; end endmodule\n"
+        'module tb; initial begin $dumpfile("o.vcd"); $dumpvars; $display("ok"); $finish; end endmodule\n'
     )
 
     result = run(sandbox, mine, ["sh", "-c", "iverilog -o /tmp/s.vvp tb.v && vvp /tmp/s.vvp"])
@@ -95,8 +94,8 @@ def test_fopen_outside_run_fails(sandbox, runs) -> None:
     mine, other = runs
     (mine / "tb.v").write_text(
         "module tb; integer fd; initial begin "
-        f"fd = $fopen(\"/verilog_code/runs/{other.name}/segredo.txt\", \"r\"); "
-        "$display(\"fd=%0d\", fd); $finish; end endmodule\n"
+        f'fd = $fopen("/verilog_code/runs/{other.name}/segredo.txt", "r"); '
+        '$display("fd=%0d", fd); $finish; end endmodule\n'
     )
 
     result = run(sandbox, mine, ["sh", "-c", "iverilog -o /tmp/s.vvp tb.v && vvp /tmp/s.vvp"])

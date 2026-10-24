@@ -32,9 +32,7 @@ def client(service: MagicMock) -> TestClient:
         yield test_client
 
 
-def test_simulation_timeout_returns_408_with_guidance(
-    client: TestClient, service: MagicMock
-) -> None:
+def test_simulation_timeout_returns_408_with_guidance(client: TestClient, service: MagicMock) -> None:
     """Timeout do Icarus responde 408 com orientação em português."""
     service.simular_execucao.side_effect = IcarusTimeoutError("exceeded", 30)
 
@@ -63,7 +61,11 @@ def test_synthesis_timeout_returns_408(client: TestClient, service: MagicMock) -
 @pytest.mark.parametrize(
     ("route", "method", "error"),
     [
-        ("simular-execucao", "simular_execucao", IcarusContainerNotFoundError("Container 'icarus-verilog' was not found.")),
+        (
+            "simular-execucao",
+            "simular_execucao",
+            IcarusContainerNotFoundError("Container 'icarus-verilog' was not found."),
+        ),
         ("mapear-processador", "mapear_processador", YosysContainerNotFoundError("Container 'yosys' was not found.")),
     ],
 )
@@ -88,9 +90,7 @@ def test_unavailable_container_returns_503(
     assert "was not found" not in error["message"]
 
 
-def test_simulation_forwards_waveform_selection(
-    client: TestClient, service: MagicMock
-) -> None:
+def test_simulation_forwards_waveform_selection(client: TestClient, service: MagicMock) -> None:
     """Campos opcionais de recorte chegam ao serviço como VcdSelection."""
     service.simular_execucao.return_value = {
         "success": True,
@@ -117,9 +117,7 @@ def test_simulation_forwards_waveform_selection(
     )
 
 
-def test_simulation_without_selection_keeps_old_contract(
-    client: TestClient, service: MagicMock
-) -> None:
+def test_simulation_without_selection_keeps_old_contract(client: TestClient, service: MagicMock) -> None:
     """Body só com project_id continua válido e sem recorte."""
     service.simular_execucao.return_value = {
         "success": True,
@@ -131,22 +129,16 @@ def test_simulation_without_selection_keeps_old_contract(
     response = client.post("/api/v1/verilog/simular-execucao", json=PROJECT)
 
     assert response.status_code == 200
-    service.simular_execucao.assert_called_once_with(
-        PROJECT["project_id"], VcdSelection()
-    )
+    service.simular_execucao.assert_called_once_with(PROJECT["project_id"], VcdSelection())
 
 
 @pytest.mark.parametrize(
     "extra",
     [{"begin_time": 5, "end_time": 1}, {"decimation": 0}, {"begin_time": -1}],
 )
-def test_invalid_selection_is_rejected(
-    client: TestClient, service: MagicMock, extra: dict
-) -> None:
+def test_invalid_selection_is_rejected(client: TestClient, service: MagicMock, extra: dict) -> None:
     """Recorte inconsistente é recusado antes de executar a simulação."""
-    response = client.post(
-        "/api/v1/verilog/simular-execucao", json={**PROJECT, **extra}
-    )
+    response = client.post("/api/v1/verilog/simular-execucao", json={**PROJECT, **extra})
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"

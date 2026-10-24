@@ -106,9 +106,7 @@ class HealthService:
         if use_cache:
             with self._lock:
                 cached = self._cached_report
-                is_fresh = (
-                    time.monotonic() - self._cached_at
-                ) < self.config.cache_ttl_seconds
+                is_fresh = (time.monotonic() - self._cached_at) < self.config.cache_ttl_seconds
                 if cached is not None and is_fresh:
                     return cached
 
@@ -125,12 +123,8 @@ class HealthService:
         checks["docker_daemon"] = daemon_check
 
         if daemon_check.status is HealthStatus.OK:
-            checks["yosys"] = self._check_tool(
-                "yosys", self.config.yosys_container_name
-            )
-            checks["icarus"] = self._check_tool(
-                "icarus", self.config.icarus_container_name
-            )
+            checks["yosys"] = self._check_tool("yosys", self.config.yosys_container_name)
+            checks["icarus"] = self._check_tool("icarus", self.config.icarus_container_name)
         else:
             unreachable = CheckResult(
                 status=HealthStatus.ERROR,
@@ -197,8 +191,7 @@ class HealthService:
             return CheckResult(
                 status=HealthStatus.DEGRADED,
                 detail=(
-                    f"Version command exited with {result.exit_code}: "
-                    f"{(result.stderr or result.stdout).strip()[:200]}"
+                    f"Version command exited with {result.exit_code}: {(result.stderr or result.stdout).strip()[:200]}"
                 ),
                 container=container_name,
             )

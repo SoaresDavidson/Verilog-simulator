@@ -220,11 +220,7 @@ class YosysIntegration:
             raise YosysError(f"Yosys Docker execution failed: {exc}") from exc
 
         stdout, stderr = execution.stdout, execution.stderr
-        stat_report_file = (
-            stat_report_file
-            if is_fresh_artifact(stat_report_file, started_at)
-            else None
-        )
+        stat_report_file = stat_report_file if is_fresh_artifact(stat_report_file, started_at) else None
         stat_report = self._read_stat_report(stat_report_file)
         has_structure = is_fresh_artifact(structure_file, started_at)
         base_result = YosysResult(
@@ -284,9 +280,7 @@ class YosysIntegration:
 
         return replace(base_result, success=True, netlist_content=netlist_content)
 
-    def _run(
-        self, command: list[str], project_dir: Path, container_dir: str
-    ) -> DockerCommandResult:
+    def _run(self, command: list[str], project_dir: Path, container_dir: str) -> DockerCommandResult:
         """Execute ``command`` in the configured mode (see ``ExecutionMode``)."""
         if self.config.execution_mode is ExecutionMode.EXEC:
             return self.docker.execute(
@@ -335,8 +329,7 @@ class YosysIntegration:
         sources.sort(key=lambda path: path.as_posix())
         if not sources:
             raise NoVerilogSourcesError(
-                "Nenhum arquivo Verilog sintetizável (.v ou .sv fora de testbenches) "
-                "foi encontrado no projeto."
+                "Nenhum arquivo Verilog sintetizável (.v ou .sv fora de testbenches) foi encontrado no projeto."
             )
         return sources
 

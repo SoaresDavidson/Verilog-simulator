@@ -70,9 +70,7 @@ def _describe_netlist_error(exc: ValidationError) -> str:
     )
 
 
-def _log_tool_finished(
-    tool: str, project_id: str, started: float, success: bool, stderr: str
-) -> None:
+def _log_tool_finished(tool: str, project_id: str, started: float, success: bool, stderr: str) -> None:
     """Log the end of a tool run with its duration; stderr only at DEBUG, truncated."""
     elapsed = time.perf_counter() - started
     if success:
@@ -177,18 +175,14 @@ class VerilogService:
                 ),
             )
             response["success"] = False
-            response["stderr"] = "\n".join(
-                part for part in (result.stderr, _describe_netlist_error(exc)) if part
-            )
+            response["stderr"] = "\n".join(part for part in (result.stderr, _describe_netlist_error(exc)) if part)
             return response
 
         response["netlist_content"] = netlist
         response["top_module"] = netlist.top_module
         return response
 
-    def simular_execucao(
-        self, project_id: str, selection: VcdSelection | None = None
-    ) -> dict:
+    def simular_execucao(self, project_id: str, selection: VcdSelection | None = None) -> dict:
         """
         Delegates Icarus simulation and preserves the API response contract.
 
@@ -249,9 +243,7 @@ class VerilogService:
 
         run_name = new_run_name()
         with run_registry.in_use(run_name), open_project_zip(archive_path) as archive:
-            project_id = extract_project_zip(
-                archive, settings.VERILOG_RUNS_DIR, limits, run_name=run_name
-            )
+            project_id = extract_project_zip(archive, settings.VERILOG_RUNS_DIR, limits, run_name=run_name)
             run_dir = settings.VERILOG_RUNS_DIR / run_name
             try:
                 session_token = create_session(run_dir)
@@ -267,7 +259,7 @@ class VerilogService:
         # Safely resolve the paths to ensure the project resides in our runs directory
         normalized_path = os.path.normpath(project_id).replace("\\", "/")
         parts = normalized_path.split("/")
-        
+
         # Verify it starts with runs/run_
         if len(parts) >= 2 and parts[0] == "runs" and parts[1].startswith("run_"):
             root_folder_name = parts[1]
@@ -300,8 +292,4 @@ class VerilogService:
                     logger.warning("Falha ao remover o run %s: %s", name, e)
                     errors.append(f"Falha ao remover {name}.")
 
-        return {
-            "deleted_count": len(deleted_folders),
-            "deleted_folders": deleted_folders,
-            "errors": errors
-        }
+        return {"deleted_count": len(deleted_folders), "deleted_folders": deleted_folders, "errors": errors}

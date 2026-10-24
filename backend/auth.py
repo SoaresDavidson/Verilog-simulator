@@ -56,9 +56,7 @@ def _digest(token: str) -> str:
 def create_session(run_dir: Path) -> str:
     """Create the session of ``run_dir`` and return its token (shown only once)."""
     token = secrets.token_urlsafe(32)
-    descriptor = os.open(
-        run_dir / SESSION_FILE_NAME, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
-    )
+    descriptor = os.open(run_dir / SESSION_FILE_NAME, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as session_file:
         session_file.write(_digest(token))
     return token
@@ -70,9 +68,7 @@ def session_matches(run_dir: Path, token: str) -> bool:
         stored = (run_dir / SESSION_FILE_NAME).read_text(encoding="utf-8").strip()
     except OSError:
         return False
-    return secrets.compare_digest(
-        stored.encode("ascii"), _digest(token).encode("ascii")
-    )
+    return secrets.compare_digest(stored.encode("ascii"), _digest(token).encode("ascii"))
 
 
 def run_name_from_project_id(project_id: str) -> str:
@@ -150,9 +146,7 @@ async def require_run_in_use_from_body(
         yield run
 
 
-def require_run_session_from_path(
-    project_id: str, x_session_token: SessionTokenHeader = None
-) -> AuthorizedRun:
+def require_run_session_from_path(project_id: str, x_session_token: SessionTokenHeader = None) -> AuthorizedRun:
     """Dependency for routes with ``{project_id}`` in the path."""
     return authorize_run(project_id, x_session_token)
 
@@ -172,9 +166,7 @@ def require_admin(x_admin_token: AdminTokenHeader = None) -> None:
             "ADMIN_TOKEN_MISSING",
             f"Envie o token de administrador no header {ADMIN_HEADER}.",
         )
-    if not secrets.compare_digest(
-        x_admin_token.encode("utf-8"), configured.encode("utf-8")
-    ):
+    if not secrets.compare_digest(x_admin_token.encode("utf-8"), configured.encode("utf-8")):
         raise ApiError(
             status.HTTP_403_FORBIDDEN,
             "ADMIN_TOKEN_INVALID",

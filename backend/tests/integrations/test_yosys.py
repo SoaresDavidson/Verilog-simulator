@@ -42,14 +42,11 @@ def docker_client() -> MagicMock:
     return client
 
 
-def make_integration(
-    tmp_path: Path, docker_client: MagicMock, timeout_seconds: float = 30
-) -> YosysIntegration:
+def make_integration(tmp_path: Path, docker_client: MagicMock, timeout_seconds: float = 30) -> YosysIntegration:
     """Create integration configured for temporary test storage."""
     return YosysIntegration(
         config=YosysConfig(
             execution_mode=ExecutionMode.EXEC,
-            
             verilog_base_dir=tmp_path,
             timeout_seconds=timeout_seconds,
         ),
@@ -62,9 +59,7 @@ def make_integration(
 
 def test_build_command_from_verilog_files() -> None:
     """Command includes each source and required Yosys stages."""
-    command = YosysIntegration.build_command(
-        [Path("alu.v"), Path("rtl/register file.sv")]
-    )
+    command = YosysIntegration.build_command([Path("alu.v"), Path("rtl/register file.sv")])
 
     assert command[:2] == ["yosys", "-p"]
     assert "read_verilog -sv alu.v" in command[2]
@@ -185,9 +180,7 @@ def test_invalid_netlist_is_logged_and_reported(
     assert "invalid estrutura.json" in caplog.text
 
 
-def test_missing_container_raises_specific_error(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
-) -> None:
+def test_missing_container_raises_specific_error(tmp_path: Path, project_dir: Path, docker_client: MagicMock) -> None:
     """Missing Docker container is reported as infrastructure failure."""
     docker_client.containers.get.side_effect = NotFound("missing")
 
@@ -261,9 +254,7 @@ def test_real_yosys_synthesis() -> None:
             encoding="utf-8",
         )
         result = YosysIntegration(
-            config=YosysConfig(
-            execution_mode=ExecutionMode.EXEC,
-            verilog_base_dir=base_dir),
+            config=YosysConfig(execution_mode=ExecutionMode.EXEC, verilog_base_dir=base_dir),
             docker_integration=DockerIntegration(docker_client=client),
         ).synthesize(project_id)
 

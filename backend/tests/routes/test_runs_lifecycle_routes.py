@@ -46,14 +46,18 @@ def test_run_is_marked_in_use_during_synthesis(api_client: TestClient) -> None:
     body = _upload(api_client)
     run_name = body["project_id"].split("/")[1]
     seen: list[bool] = []
-    service = VerilogService(
-        yosys_integration=MagicMock(), docker_integration=MagicMock()
-    )
+    service = VerilogService(yosys_integration=MagicMock(), docker_integration=MagicMock())
 
     def fake_map(project_id: str) -> dict:
         seen.append(run_registry.is_in_use(run_name))
-        return {"success": True, "stdout": "", "stderr": "", "top_module": None,
-                "netlist_content": None, "stat_report": None}
+        return {
+            "success": True,
+            "stdout": "",
+            "stderr": "",
+            "top_module": None,
+            "netlist_content": None,
+            "stat_report": None,
+        }
 
     service.mapear_processador = fake_map
     app.dependency_overrides[get_verilog_service] = lambda: service
@@ -69,20 +73,14 @@ def test_run_is_marked_in_use_during_synthesis(api_client: TestClient) -> None:
     assert not run_registry.is_in_use(run_name)
 
 
-def test_status_reports_runs_usage_and_last_collection(
-    api_client: TestClient, runs_dir: Path
-) -> None:
+def test_status_reports_runs_usage_and_last_collection(api_client: TestClient, runs_dir: Path) -> None:
     """O status expõe quantidade de runs, bytes e horário da última coleta."""
     _upload(api_client)
     state = CollectionState()
     collect_and_record(runs_dir, RetentionPolicy(), state=state)
     docker = MagicMock()
-    docker.execute.return_value = DockerCommandResult(
-        success=True, exit_code=0, stdout="v1", stderr=""
-    )
-    service = HealthService(
-        HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=0), docker, gc_state=state
-    )
+    docker.execute.return_value = DockerCommandResult(success=True, exit_code=0, stdout="v1", stderr="")
+    service = HealthService(HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=0), docker, gc_state=state)
     app.dependency_overrides[get_health_service] = lambda: service
 
     runs = api_client.get("/api/v1/status/").json()["runs"]
@@ -93,9 +91,7 @@ def test_status_reports_runs_usage_and_last_collection(
     assert runs["last_collection_removed"] == 0
 
 
-def test_lifespan_starts_periodic_collection(
-    runs_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_lifespan_starts_periodic_collection(runs_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Ao subir a API, a coleta periódica remove runs expirados."""
     run = runs_dir / ("run_" + "a" * 32)
     run.mkdir()

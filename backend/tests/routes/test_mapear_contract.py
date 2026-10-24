@@ -40,9 +40,7 @@ def use_netlist(netlist: dict | None, stderr: str = "") -> None:
     app.dependency_overrides[get_verilog_service] = lambda: service
 
 
-def test_success_response_serializes_typed_netlist(
-    client: TestClient, fixtures_dir: Path
-) -> None:
+def test_success_response_serializes_typed_netlist(client: TestClient, fixtures_dir: Path) -> None:
     """Resposta tem top_module, stat_report e netlist no formato do Yosys + width."""
     raw = json.loads((fixtures_dir / "netlist" / "estrutura.json").read_text())
     use_netlist(raw)
@@ -92,9 +90,7 @@ def test_openapi_describes_netlist_without_any(client: TestClient) -> None:
     spec = client.get("/api/v1/openapi.json").json()
     schemas = spec["components"]["schemas"]
 
-    netlist_field = schemas["MapearProcessadorResponse"]["properties"][
-        "netlist_content"
-    ]
+    netlist_field = schemas["MapearProcessadorResponse"]["properties"]["netlist_content"]
     refs = [option.get("$ref") for option in netlist_field["anyOf"]]
     assert "#/components/schemas/Netlist" in refs
     for name in ("NetlistModule", "NetlistPort", "NetlistCell", "NetlistNet"):

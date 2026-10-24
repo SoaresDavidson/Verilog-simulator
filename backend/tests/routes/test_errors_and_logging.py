@@ -69,9 +69,7 @@ def test_unexpected_exception_returns_generic_500_and_logs_traceback(
     assert SECRET_PATH in caplog.text
 
 
-def test_unexpected_exception_response_keeps_cors_headers(
-    client: TestClient, service: MagicMock
-) -> None:
+def test_unexpected_exception_response_keeps_cors_headers(client: TestClient, service: MagicMock) -> None:
     """O 500 genérico passa pelo CORS, senão o navegador esconderia o corpo."""
     service.mapear_processador.side_effect = RuntimeError("boom")
 
@@ -153,9 +151,7 @@ def test_request_id_is_generated_and_logged(
     assert "408" in request_lines[-1].getMessage()
 
 
-def test_request_id_is_propagated(
-    client: TestClient, service: MagicMock, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_request_id_is_propagated(client: TestClient, service: MagicMock, caplog: pytest.LogCaptureFixture) -> None:
     """X-Request-ID do cliente é reaproveitado na resposta, no corpo e no log."""
     service.mapear_processador.side_effect = YosysTimeoutError("exceeded", 1)
 

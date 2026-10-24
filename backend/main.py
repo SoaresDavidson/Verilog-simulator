@@ -42,7 +42,7 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     lifespan=lifespan,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    swagger_ui_parameters={"syntaxHighlight": False}
+    swagger_ui_parameters={"syntaxHighlight": False},
 )
 
 # Error schema (#12): handlers plus the innermost middleware that turns any
@@ -69,12 +69,11 @@ app.add_middleware(RequestIdMiddleware)
 # Include all API routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
 @app.get("/")
 def root():
-    return {
-        "message": f"Welcome to the {settings.PROJECT_NAME}!",
-        "docs_url": "/docs"
-    }
+    return {"message": f"Welcome to the {settings.PROJECT_NAME}!", "docs_url": "/docs"}
+
 
 if __name__ == "__main__":
     # log_config=None keeps the configuration done by configure_logging().

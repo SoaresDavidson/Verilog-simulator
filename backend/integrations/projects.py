@@ -57,9 +57,7 @@ def resolve_project_dir(base_dir: Path, project_id: str) -> tuple[Path, str]:
     return project_dir, container_dir.as_posix()
 
 
-def run_mount(
-    base_dir: Path, project_dir: Path, host_root: str | None = None
-) -> tuple[str, str]:
+def run_mount(base_dir: Path, project_dir: Path, host_root: str | None = None) -> tuple[str, str]:
     """Return the bind mount that exposes only the run holding ``project_dir``.
 
     Args:

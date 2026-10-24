@@ -58,8 +58,7 @@ SIMULATION_TIMEOUT_MESSAGE = (
     "Verifique se o seu testbench possui `$finish` e se não há laços infinitos."
 )
 INTERNAL_ERROR_MESSAGE = (
-    "Erro interno no servidor. Tente novamente; se persistir, avise o professor "
-    "informando o request_id."
+    "Erro interno no servidor. Tente novamente; se persistir, avise o professor informando o request_id."
 )
 
 _DEFAULT_CODES = {

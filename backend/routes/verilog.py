@@ -78,6 +78,7 @@ def mapear_processador(
         stat_report=result["stat_report"],
     )
 
+
 @router.post(
     "/simular-execucao",
     response_model=SimularExecucaoResponse,
@@ -101,8 +102,9 @@ def simular_execucao(
         success=result["success"],
         stdout=result["stdout"],
         stderr=result["stderr"],
-        simulation_log=result["simulation_log"]
+        simulation_log=result["simulation_log"],
     )
+
 
 @router.post(
     "/upload-projeto-zip",
@@ -114,11 +116,7 @@ def simular_execucao(
                 "inseguros, profundidade excessiva, compressão suspeita ou nenhum .v/.sv."
             )
         },
-        413: {
-            "description": (
-                "Upload, total descompactado ou número de entradas acima do limite."
-            )
-        },
+        413: {"description": ("Upload, total descompactado ou número de entradas acima do limite.")},
     },
 )
 async def upload_projeto_zip(
@@ -159,9 +157,7 @@ async def upload_projeto_zip(
 async def _stream_upload_to_temp_file(file: UploadFile, limit_bytes: int) -> Path:
     """Copy the upload to a temporary file in chunks, aborting past ``limit_bytes``."""
     written = 0
-    with tempfile.NamedTemporaryFile(
-        prefix="upload_", suffix=".zip", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(prefix="upload_", suffix=".zip", delete=False) as temp_file:
         temp_path = Path(temp_file.name)
         try:
             while chunk := await file.read(_UPLOAD_CHUNK_SIZE):

@@ -56,21 +56,14 @@ def test_constants_are_kept_as_strings(raw: dict) -> None:
     netlist = Netlist.model_validate(raw)
 
     assert netlist.modules["cpu"].ports["konst"].bits == ["0", "x", "0", "1"]
-    add = next(
-        cell for cell in netlist.modules["inc4"].cells.values() if cell.type == "$add"
-    )
+    add = next(cell for cell in netlist.modules["inc4"].cells.values() if cell.type == "$add")
     assert add.connections["B"] == ["1", "0", "0", "0"]
 
 
 def test_cells_and_nets_correlate_by_bit_ids(raw: dict) -> None:
     """Bits das conexões de uma célula aparecem nos netnames do módulo."""
     module = Netlist.model_validate(raw).modules[ALU]
-    net_bits = {
-        bit
-        for net in module.netnames.values()
-        for bit in net.bits
-        if isinstance(bit, int)
-    }
+    net_bits = {bit for net in module.netnames.values() for bit in net.bits if isinstance(bit, int)}
 
     for cell in module.cells.values():
         assert cell.type.startswith("$")
@@ -103,9 +96,7 @@ def test_optional_parameter_defaults_are_not_invented(raw: dict) -> None:
     dumped = Netlist.model_validate(raw).model_dump(mode="json")
 
     assert "parameter_default_values" not in dumped["modules"]["cpu"]
-    assert dumped["modules"][ALU]["parameter_default_values"] == {
-        "WIDTH": "00000000000000000000000000000100"
-    }
+    assert dumped["modules"][ALU]["parameter_default_values"] == {"WIDTH": "00000000000000000000000000000100"}
 
 
 def test_integer_top_attribute_is_accepted(raw: dict) -> None:

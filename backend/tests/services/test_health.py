@@ -41,9 +41,7 @@ def docker_integration() -> MagicMock:
     return integration
 
 
-def test_healthy_environment_reports_ok(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_healthy_environment_reports_ok(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Com daemon, containers e storage saudáveis, o status geral é 'ok'."""
     report = HealthService(config, docker_integration).check()
 
@@ -53,9 +51,7 @@ def test_healthy_environment_reports_ok(
     assert all(check.status is HealthStatus.OK for check in report.checks.values())
 
 
-def test_tool_version_is_reported_as_detail(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_tool_version_is_reported_as_detail(config: HealthConfig, docker_integration: MagicMock) -> None:
     """A primeira linha da saída da ferramenta vira o detalhe do check."""
     report = HealthService(config, docker_integration).check()
 
@@ -64,13 +60,9 @@ def test_tool_version_is_reported_as_detail(
     assert report.checks["icarus"].container == "icarus-verilog"
 
 
-def test_unreachable_daemon_marks_everything_as_error(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_unreachable_daemon_marks_everything_as_error(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Sem daemon não há como inspecionar containers: relatório vira 'error'."""
-    docker_integration.get_client.side_effect = DockerConnectionError(
-        "daemon unavailable"
-    )
+    docker_integration.get_client.side_effect = DockerConnectionError("daemon unavailable")
 
     report = HealthService(config, docker_integration).check()
 
@@ -82,13 +74,9 @@ def test_unreachable_daemon_marks_everything_as_error(
     docker_integration.execute.assert_not_called()
 
 
-def test_ping_failure_is_detected(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_ping_failure_is_detected(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Cliente existente mas daemon sem resposta também resulta em 'error'."""
-    docker_integration.get_client.return_value.ping.side_effect = OSError(
-        "connection refused"
-    )
+    docker_integration.get_client.return_value.ping.side_effect = OSError("connection refused")
 
     report = HealthService(config, docker_integration).check()
 
@@ -96,9 +84,7 @@ def test_ping_failure_is_detected(
     assert "connection refused" in report.checks["docker_daemon"].detail
 
 
-def test_missing_container_marks_only_that_tool(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_missing_container_marks_only_that_tool(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Container ausente derruba apenas o seu check, mas o geral vira 'error'."""
 
     def execute(container_name: str, **_kwargs: object) -> SimpleNamespace:
@@ -115,9 +101,7 @@ def test_missing_container_marks_only_that_tool(
     assert report.checks["icarus"].status is HealthStatus.OK
 
 
-def test_stopped_container_is_reported_as_error(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_stopped_container_is_reported_as_error(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Container parado é falha de infraestrutura, não degradação."""
     docker_integration.execute.side_effect = DockerContainerUnavailableError(
         "Container 'yosys' is 'exited', not running."
@@ -129,9 +113,7 @@ def test_stopped_container_is_reported_as_error(
     assert "not running" in report.checks["yosys"].detail
 
 
-def test_tool_binary_failure_degrades_instead_of_failing(
-    config: HealthConfig, docker_integration: MagicMock
-) -> None:
+def test_tool_binary_failure_degrades_instead_of_failing(config: HealthConfig, docker_integration: MagicMock) -> None:
     """Container de pé com binário que não responde deixa a API degradada."""
     docker_integration.execute.return_value = SimpleNamespace(
         success=False,
@@ -147,9 +129,7 @@ def test_tool_binary_failure_degrades_instead_of_failing(
     assert "command not found" in report.checks["yosys"].detail
 
 
-def test_missing_runs_directory_is_an_error(
-    runs_dir: Path, docker_integration: MagicMock
-) -> None:
+def test_missing_runs_directory_is_an_error(runs_dir: Path, docker_integration: MagicMock) -> None:
     """Diretório de runs inexistente impede qualquer execução."""
     config = HealthConfig(runs_dir=runs_dir / "inexistente", cache_ttl_seconds=0)
 
@@ -172,13 +152,9 @@ def test_non_writable_runs_directory_is_an_error(
     assert "not writable" in report.checks["storage"].detail
 
 
-def test_result_is_cached_within_the_ttl(
-    runs_dir: Path, docker_integration: MagicMock
-) -> None:
+def test_result_is_cached_within_the_ttl(runs_dir: Path, docker_integration: MagicMock) -> None:
     """O TTL evita que cada requisição converse com o daemon novamente."""
-    service = HealthService(
-        HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=60), docker_integration
-    )
+    service = HealthService(HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=60), docker_integration)
 
     first = service.check()
     second = service.check()
@@ -189,9 +165,7 @@ def test_result_is_cached_within_the_ttl(
 
 def test_cache_can_be_bypassed(runs_dir: Path, docker_integration: MagicMock) -> None:
     """A verificação pode ser forçada, ignorando o resultado em cache."""
-    service = HealthService(
-        HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=60), docker_integration
-    )
+    service = HealthService(HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=60), docker_integration)
 
     service.check()
     service.check(use_cache=False)
@@ -199,9 +173,7 @@ def test_cache_can_be_bypassed(runs_dir: Path, docker_integration: MagicMock) ->
     assert docker_integration.get_client.call_count == 2
 
 
-def test_version_command_uses_configured_timeout(
-    runs_dir: Path, docker_integration: MagicMock
-) -> None:
+def test_version_command_uses_configured_timeout(runs_dir: Path, docker_integration: MagicMock) -> None:
     """O timeout curto do healthcheck é repassado à integração Docker."""
     config = HealthConfig(runs_dir=runs_dir, cache_ttl_seconds=0, timeout_seconds=2)
 

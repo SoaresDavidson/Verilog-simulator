@@ -49,9 +49,7 @@ class BodySizeLimitMiddleware:
         body_limit = file_limit + MULTIPART_OVERHEAD_BYTES
         declared = dict(scope["headers"]).get(b"content-length")
         if declared is not None and declared.isdigit() and int(declared) > body_limit:
-            response = error_response(
-                413, UPLOAD_TOO_LARGE_CODE, too_large_message(file_limit)
-            )
+            response = error_response(413, UPLOAD_TOO_LARGE_CODE, too_large_message(file_limit))
             await response(scope, receive, send)
             return
 

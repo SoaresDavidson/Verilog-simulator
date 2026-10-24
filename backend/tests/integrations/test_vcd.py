@@ -44,9 +44,7 @@ def legacy_parse(vcd_path: Path) -> dict:
         "modules": modules,
         "timeline": timeline,
     }
-    return json.loads(
-        json.dumps(data, default=lambda o: float(o) if isinstance(o, Decimal) else o)
-    )
+    return json.loads(json.dumps(data, default=lambda o: float(o) if isinstance(o, Decimal) else o))
 
 
 def write_vcd(path: Path, changes: list[tuple[int, str, str]]) -> Path:
@@ -230,9 +228,7 @@ def test_missing_vcd_raises_format_error(tmp_path: Path) -> None:
         parse_vcd(tmp_path / "missing.vcd")
 
 
-def test_parse_metrics_are_logged(
-    two_signals: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_parse_metrics_are_logged(two_signals: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Duração e contagens do parse ficam registradas no log."""
     with caplog.at_level("INFO", logger="integrations.vcd"):
         parse_vcd(two_signals)

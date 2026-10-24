@@ -60,9 +60,7 @@ def test_security_options_are_passed_to_containers_run() -> None:
     """Só o run (rw) e os scripts (ro) são montados, sem rede, rootfs ro, sem caps, não-root."""
     client = make_client()
     config = DockerConfig(
-        sandbox=SandboxConfig(
-            user="2000:3000", mem_limit="256m", cpus=0.5, pids_limit=64, tmpfs_size="16m"
-        )
+        sandbox=SandboxConfig(user="2000:3000", mem_limit="256m", cpus=0.5, pids_limit=64, tmpfs_size="16m")
     )
 
     run(client, config, read_only_mounts={"/srv/vc/scripts": "/scripts"})
@@ -298,12 +296,8 @@ def test_resource_limit_becomes_typed_tool_errors(tmp_path: Path, run_dir: Path,
     docker.run_ephemeral.side_effect = error
 
     with pytest.raises(YosysResourceLimitError, match="limite de memória") as yosys_error:
-        YosysIntegration(YosysConfig(verilog_base_dir=tmp_path, execution_mode=mode), docker).synthesize(
-            "runs/run_x"
-        )
+        YosysIntegration(YosysConfig(verilog_base_dir=tmp_path, execution_mode=mode), docker).synthesize("runs/run_x")
     with pytest.raises(IcarusResourceLimitError, match="limite de memória") as icarus_error:
-        IcarusIntegration(IcarusConfig(verilog_base_dir=tmp_path, execution_mode=mode), docker).simulate(
-            "runs/run_x"
-        )
+        IcarusIntegration(IcarusConfig(verilog_base_dir=tmp_path, execution_mode=mode), docker).simulate("runs/run_x")
 
     assert yosys_error.value.limit == icarus_error.value.limit == "memory"

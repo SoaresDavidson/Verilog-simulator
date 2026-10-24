@@ -169,9 +169,7 @@ class DockerIntegration:
             )
             self._docker_client.ping()
         except (DockerException, OSError) as exc:
-            raise DockerConnectionError(
-                f"Could not connect to Docker daemon: {exc}"
-            ) from exc
+            raise DockerConnectionError(f"Could not connect to Docker daemon: {exc}") from exc
         return self._docker_client
 
     def get_container(self, container_name: str) -> Any:
@@ -182,20 +180,14 @@ class DockerIntegration:
         try:
             container = self.get_client().containers.get(container_name)
         except NotFound as exc:
-            raise DockerContainerNotFoundError(
-                f"Container '{container_name}' was not found."
-            ) from exc
+            raise DockerContainerNotFoundError(f"Container '{container_name}' was not found.") from exc
         except DockerConnectionError:
             raise
         except (DockerException, OSError) as exc:
-            raise DockerConnectionError(
-                f"Could not access container '{container_name}': {exc}"
-            ) from exc
+            raise DockerConnectionError(f"Could not access container '{container_name}': {exc}") from exc
 
         if container.status != "running":
-            raise DockerContainerUnavailableError(
-                f"Container '{container_name}' is '{container.status}', not running."
-            )
+            raise DockerContainerUnavailableError(f"Container '{container_name}' is '{container.status}', not running.")
         return container
 
     def execute(
@@ -227,9 +219,7 @@ class DockerIntegration:
         if not workdir.strip():
             raise ValueError("Docker command working directory cannot be empty.")
 
-        timeout = (
-            self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
-        )
+        timeout = self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
         if timeout <= 0:
             raise ValueError("Docker timeout must be greater than zero.")
 
@@ -246,35 +236,24 @@ class DockerIntegration:
             )["Id"]
             stream = api.exec_start(exec_id, stream=True, demux=True)
         except (DockerException, OSError, KeyError, TypeError) as exc:
-            raise DockerExecutionError(
-                f"Failed to execute command in container '{container_name}': {exc}"
-            ) from exc
+            raise DockerExecutionError(f"Failed to execute command in container '{container_name}': {exc}") from exc
 
         output = _StreamReader(stream, self.config.max_output_bytes)
         if not output.wait(timeout + self.config.kill_grace_seconds):
-            raise DockerTimeoutError(
-                f"Command in container '{container_name}' exceeded {timeout:g} seconds."
-            )
+            raise DockerTimeoutError(f"Command in container '{container_name}' exceeded {timeout:g} seconds.")
         if output.error is not None:
             raise DockerExecutionError(
-                f"Failed to read output from container '{container_name}': "
-                f"{output.error}"
+                f"Failed to read output from container '{container_name}': {output.error}"
             ) from output.error
 
         try:
             exit_code = int(api.exec_inspect(exec_id)["ExitCode"])
         except (DockerException, OSError, KeyError, TypeError, ValueError) as exc:
-            raise DockerExecutionError(
-                f"Container '{container_name}' returned an invalid execution result."
-            ) from exc
+            raise DockerExecutionError(f"Container '{container_name}' returned an invalid execution result.") from exc
 
         elapsed = time.monotonic() - started_at
-        if exit_code == TIMEOUT_EXIT_CODE or (
-            exit_code == KILLED_EXIT_CODE and elapsed >= timeout
-        ):
-            raise DockerTimeoutError(
-                f"Command in container '{container_name}' exceeded {timeout:g} seconds."
-            )
+        if exit_code == TIMEOUT_EXIT_CODE or (exit_code == KILLED_EXIT_CODE and elapsed >= timeout):
+            raise DockerTimeoutError(f"Command in container '{container_name}' exceeded {timeout:g} seconds.")
         if exit_code == KILLED_EXIT_CODE:
             # SIGKILL before the deadline: the container's memory cgroup OOM killer.
             raise DockerResourceLimitError(memory_limit_message())
@@ -327,9 +306,7 @@ class DockerIntegration:
         if not run_dir_host.strip() or not workdir.strip():
             raise ValueError("Run directory and working directory cannot be empty.")
 
-        timeout = (
-            self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
-        )
+        timeout = self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
         if timeout <= 0:
             raise ValueError("Docker timeout must be greater than zero.")
 
@@ -353,32 +330,20 @@ class DockerIntegration:
                 f"Image '{image}' was not found; build it with docker compose build."
             ) from exc
         except (DockerException, OSError) as exc:
-            raise DockerExecutionError(
-                f"Failed to start a container from image '{image}': {exc}"
-            ) from exc
+            raise DockerExecutionError(f"Failed to start a container from image '{image}': {exc}") from exc
 
         try:
-            exit_code, oom_killed, stdout, stderr = self._collect(
-                container, image, timeout, started_at
-            )
+            exit_code, oom_killed, stdout, stderr = self._collect(container, image, timeout, started_at)
         finally:
             _remove_container(container)
 
         elapsed = time.monotonic() - started_at
         if oom_killed:
-            raise DockerResourceLimitError(
-                memory_limit_message(self.config.sandbox.mem_limit)
-            )
-        if exit_code == TIMEOUT_EXIT_CODE or (
-            exit_code == KILLED_EXIT_CODE and elapsed >= timeout
-        ):
-            raise DockerTimeoutError(
-                f"Container from image '{image}' exceeded {timeout:g} seconds."
-            )
+            raise DockerResourceLimitError(memory_limit_message(self.config.sandbox.mem_limit))
+        if exit_code == TIMEOUT_EXIT_CODE or (exit_code == KILLED_EXIT_CODE and elapsed >= timeout):
+            raise DockerTimeoutError(f"Container from image '{image}' exceeded {timeout:g} seconds.")
         if exit_code == KILLED_EXIT_CODE:
-            raise DockerResourceLimitError(
-                memory_limit_message(self.config.sandbox.mem_limit)
-            )
+            raise DockerResourceLimitError(memory_limit_message(self.config.sandbox.mem_limit))
 
         return DockerCommandResult(
             success=exit_code == 0,
@@ -412,25 +377,17 @@ class DockerIntegration:
             ),
         }
 
-    def _collect(
-        self, container: Any, image: str, timeout: float, started_at: float
-    ) -> tuple[int, bool, str, str]:
+    def _collect(self, container: Any, image: str, timeout: float, started_at: float) -> tuple[int, bool, str, str]:
         """Wait for ``container`` and return exit code, OOM flag and output."""
         try:
             status = container.wait(timeout=timeout + self.config.kill_grace_seconds)
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as exc:
             if time.monotonic() - started_at < timeout:
-                raise DockerConnectionError(
-                    f"Lost connection to Docker while waiting for '{image}': {exc}"
-                ) from exc
+                raise DockerConnectionError(f"Lost connection to Docker while waiting for '{image}': {exc}") from exc
             _kill_container(container)
-            raise DockerTimeoutError(
-                f"Container from image '{image}' exceeded {timeout:g} seconds."
-            ) from exc
+            raise DockerTimeoutError(f"Container from image '{image}' exceeded {timeout:g} seconds.") from exc
         except (DockerException, OSError) as exc:
-            raise DockerExecutionError(
-                f"Failed to wait for container from image '{image}': {exc}"
-            ) from exc
+            raise DockerExecutionError(f"Failed to wait for container from image '{image}': {exc}") from exc
 
         try:
             exit_code = int(status["StatusCode"])
@@ -440,9 +397,7 @@ class DockerIntegration:
             stdout = _decode_limited(container.logs(stdout=True, stderr=False), limit)
             stderr = _decode_limited(container.logs(stdout=False, stderr=True), limit)
         except (DockerException, OSError, KeyError, TypeError, ValueError) as exc:
-            raise DockerExecutionError(
-                f"Container from image '{image}' returned an invalid execution result."
-            ) from exc
+            raise DockerExecutionError(f"Container from image '{image}' returned an invalid execution result.") from exc
         return exit_code, oom_killed, stdout, stderr
 
 
@@ -484,9 +439,7 @@ class _StreamReader:
         self._buffers = {"stdout": bytearray(), "stderr": bytearray()}
         self._truncated = {"stdout": False, "stderr": False}
         self.error: BaseException | None = None
-        self._thread = threading.Thread(
-            target=self._run, name="docker-exec-stream", daemon=True
-        )
+        self._thread = threading.Thread(target=self._run, name="docker-exec-stream", daemon=True)
         self._thread.start()
 
     def wait(self, seconds: float) -> bool:

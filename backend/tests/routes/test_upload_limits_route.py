@@ -65,9 +65,7 @@ def test_file_above_limit_is_aborted_while_copying(
     assert list(temp_dir.iterdir()) == []
 
 
-def test_rejected_archive_leaves_no_residue(
-    api_client: TestClient, runs_dir: Path, temp_dir: Path
-) -> None:
+def test_rejected_archive_leaves_no_residue(api_client: TestClient, runs_dir: Path, temp_dir: Path) -> None:
     """Em erro de validação não sobra run nem arquivo temporário."""
     response = _upload(api_client, make_zip({"top.v": "x", "../fora.v": "x"}))
 
@@ -76,9 +74,7 @@ def test_rejected_archive_leaves_no_residue(
     assert list(temp_dir.iterdir()) == []
 
 
-def test_accepted_upload_removes_temp_file(
-    api_client: TestClient, runs_dir: Path, temp_dir: Path
-) -> None:
+def test_accepted_upload_removes_temp_file(api_client: TestClient, runs_dir: Path, temp_dir: Path) -> None:
     """Upload aceito também remove o arquivo temporário."""
     response = _upload(api_client, make_zip({"top.v": "module top; endmodule"}))
 

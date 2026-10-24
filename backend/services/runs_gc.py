@@ -224,11 +224,7 @@ def collect_runs(
     if policy.max_total_bytes > 0 and total > policy.max_total_bytes:
         survivors: list[RunInfo] = []
         for run in kept:  # oldest first
-            if (
-                total > policy.max_total_bytes
-                and run.name not in skipped
-                and try_remove(run)
-            ):
+            if total > policy.max_total_bytes and run.name not in skipped and try_remove(run):
                 total -= run.size_bytes
             else:
                 survivors.append(run)

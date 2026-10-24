@@ -57,9 +57,7 @@ def test_missing_permission_is_tolerated(run_dir: Path, monkeypatch: pytest.Monk
     assert chown.call_count == 1
 
 
-def test_integrations_hand_the_run_over_before_executing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_integrations_hand_the_run_over_before_executing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Yosys e Icarus entregam o run ao dono configurado antes de chamar o Docker."""
     from integrations import icarus, yosys
     from integrations.docker import DockerCommandResult
@@ -69,8 +67,8 @@ def test_integrations_hand_the_run_over_before_executing(
     (run / "top.v").write_text("module top; endmodule\n")
     order: list[str] = []
     docker = MagicMock()
-    docker.execute.side_effect = lambda **_: order.append("execute") or DockerCommandResult(
-        success=False, exit_code=1, stdout="", stderr=""
+    docker.execute.side_effect = lambda **_: (
+        order.append("execute") or DockerCommandResult(success=False, exit_code=1, stdout="", stderr="")
     )
     for module in (yosys, icarus):
         monkeypatch.setattr(module, "grant_run_access", lambda *args: order.append(f"grant{args[1:]}"))

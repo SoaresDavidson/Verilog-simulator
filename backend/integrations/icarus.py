@@ -175,9 +175,7 @@ class IcarusIntegration:
         sources = [validate_relative_source(source) for source in verilog_files]
         return ["bash", PurePosixPath(self.config.script_path).as_posix(), *sources]
 
-    def simulate(
-        self, project_id: str, selection: VcdSelection | None = None
-    ) -> IcarusResult:
+    def simulate(self, project_id: str, selection: VcdSelection | None = None) -> IcarusResult:
         """Compile and simulate a project, returning its parsed waveform.
 
         Args:
@@ -199,9 +197,7 @@ class IcarusIntegration:
             IcarusSimulationError: If the simulation exits unsuccessfully.
             VcdParseError: If the generated VCD cannot be parsed.
         """
-        project_dir, container_dir = resolve_project_dir(
-            self.config.verilog_base_dir, project_id
-        )
+        project_dir, container_dir = resolve_project_dir(self.config.verilog_base_dir, project_id)
         command = self.build_command(self._find_verilog_sources(project_dir))
         remove_artifacts(list(project_dir.rglob("*.vcd")))
         if self.config.run_owner is not None:
@@ -243,14 +239,10 @@ class IcarusIntegration:
             simulation_log = parse_vcd(vcd_file, selection, self.config.vcd_limits)
         except VcdFormatError as exc:
             logger.warning("Failed to parse VCD for %s: %s", project_id, exc)
-            raise VcdParseError(
-                "Simulation finished but its VCD file could not be parsed.", result
-            ) from exc
+            raise VcdParseError("Simulation finished but its VCD file could not be parsed.", result) from exc
         return replace(result, simulation_log=simulation_log)
 
-    def _run(
-        self, command: list[str], project_dir: Path, container_dir: str
-    ) -> DockerCommandResult:
+    def _run(self, command: list[str], project_dir: Path, container_dir: str) -> DockerCommandResult:
         """Execute ``command`` in the configured mode (see ``ExecutionMode``)."""
         if self.config.execution_mode is ExecutionMode.EXEC:
             return self.docker.execute(
@@ -282,17 +274,12 @@ class IcarusIntegration:
         if exit_code == 0:
             return
         if exit_code == COMPILATION_FAILED_EXIT_CODE:
-            raise IcarusCompilationError(
-                "iverilog failed to compile the project.", result
-            )
+            raise IcarusCompilationError("iverilog failed to compile the project.", result)
         if exit_code in _SCRIPT_MISSING_EXIT_CODES:
             raise IcarusError(
-                f"Simulation script '{self.config.script_path}' could not be executed "
-                f"(exit code {exit_code})."
+                f"Simulation script '{self.config.script_path}' could not be executed (exit code {exit_code})."
             )
-        raise IcarusSimulationError(
-            f"Simulation failed with exit code {exit_code}.", result
-        )
+        raise IcarusSimulationError(f"Simulation failed with exit code {exit_code}.", result)
 
     @staticmethod
     def _find_verilog_sources(project_dir: Path) -> list[Path]:
@@ -303,9 +290,7 @@ class IcarusIntegration:
         ]
         sources.sort(key=lambda path: path.as_posix())
         if not sources:
-            raise NoVerilogSourcesError(
-                "Nenhum arquivo Verilog (.v ou .sv) foi encontrado no projeto para simular."
-            )
+            raise NoVerilogSourcesError("Nenhum arquivo Verilog (.v ou .sv) foi encontrado no projeto para simular.")
         return sources
 
     @staticmethod
@@ -316,11 +301,7 @@ class IcarusIntegration:
         removed before the run; the mtime check covers a failed removal). With
         several candidates the most recently modified wins, ties broken by path.
         """
-        candidates = [
-            path
-            for path in project_dir.rglob("*.vcd")
-            if is_fresh_artifact(path, started_at)
-        ]
+        candidates = [path for path in project_dir.rglob("*.vcd") if is_fresh_artifact(path, started_at)]
         if not candidates:
             return None
         candidates.sort(key=lambda path: (path.stat().st_mtime, path.as_posix()))

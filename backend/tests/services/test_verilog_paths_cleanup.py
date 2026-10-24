@@ -13,9 +13,7 @@ def _resolve(project_id: str) -> tuple[Path, str]:
     return resolve_project_dir(settings.VERILOG_RUNS_DIR.parent, project_id)
 
 
-def test_resolve_paths_returns_local_and_container_paths(
-    service: VerilogService, verilog_project: Path
-) -> None:
+def test_resolve_paths_returns_local_and_container_paths(service: VerilogService, verilog_project: Path) -> None:
     local, container = _resolve("runs/run_test")
 
     assert local == verilog_project.resolve()

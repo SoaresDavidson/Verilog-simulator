@@ -44,9 +44,7 @@ class _WithWidth(_YosysModel):
     @model_validator(mode="before")
     @classmethod
     def _fill_width(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "width" not in data and isinstance(
-            data.get("bits"), list
-        ):
+        if isinstance(data, dict) and "width" not in data and isinstance(data.get("bits"), list):
             return {**data, "width": len(data["bits"])}
         return data
 
@@ -74,9 +72,7 @@ class NetlistCell(_YosysModel):
         default_factory=dict,
         description="Direction of each cell port; absent for unknown black boxes.",
     )
-    connections: dict[str, list[Bit]] = Field(
-        ..., description="Bits connected to each cell port."
-    )
+    connections: dict[str, list[Bit]] = Field(..., description="Bits connected to each cell port.")
 
 
 class NetlistNet(_WithWidth):
@@ -90,9 +86,7 @@ class NetlistModule(_YosysModel):
     """Synthesized module."""
 
     attributes: dict[str, AttributeValue] = Field(default_factory=dict)
-    parameter_default_values: dict[str, AttributeValue] | None = Field(
-        None, exclude_if=lambda value: value is None
-    )
+    parameter_default_values: dict[str, AttributeValue] | None = Field(None, exclude_if=lambda value: value is None)
     ports: dict[str, NetlistPort] = Field(default_factory=dict)
     cells: dict[str, NetlistCell] = Field(default_factory=dict)
     netnames: dict[str, NetlistNet] = Field(default_factory=dict)
@@ -113,9 +107,7 @@ class Netlist(_YosysModel):
     def _check_top(self) -> Self:
         tops = [name for name, module in self.modules.items() if module.is_top]
         if len(tops) != 1:
-            raise ValueError(
-                f"expected exactly one module with the 'top' attribute, found {len(tops)}"
-            )
+            raise ValueError(f"expected exactly one module with the 'top' attribute, found {len(tops)}")
         return self
 
     @property

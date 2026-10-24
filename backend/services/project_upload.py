@@ -20,9 +20,7 @@ SOURCE_EXTENSIONS = frozenset({".v", ".sv"})
 #: Tool outputs (``.json``, ``.vcd``) are never extracted, so a ZIP cannot ship
 #: a prefabricated ``estrutura.json`` or waveform that would be returned as if
 #: it were the result of synthesis or simulation.
-ALLOWED_EXTENSIONS = SOURCE_EXTENSIONS | frozenset(
-    {".vh", ".svh", ".mem", ".hex", ".txt"}
-)
+ALLOWED_EXTENSIONS = SOURCE_EXTENSIONS | frozenset({".vh", ".svh", ".mem", ".hex", ".txt"})
 
 #: Files written by the tools inside the run; never taken from the archive.
 RESERVED_NAMES = frozenset({"relatorio.txt", "estrutura.json"})
@@ -88,10 +86,7 @@ def new_run_name() -> str:
 
 def has_verilog_sources(run_dir: Path) -> bool:
     """Tell whether ``run_dir`` contains at least one ``.v``/``.sv`` file, recursively."""
-    return any(
-        path.is_file() and path.suffix.lower() in SOURCE_EXTENSIONS
-        for path in run_dir.rglob("*")
-    )
+    return any(path.is_file() and path.suffix.lower() in SOURCE_EXTENSIONS for path in run_dir.rglob("*"))
 
 
 def open_project_zip(archive_path: Path) -> zipfile.ZipFile:
@@ -99,9 +94,7 @@ def open_project_zip(archive_path: Path) -> zipfile.ZipFile:
     try:
         return zipfile.ZipFile(archive_path)
     except (zipfile.BadZipFile, zipfile.LargeZipFile, OSError) as exc:
-        raise ProjectUploadError(
-            "O arquivo enviado não é um ZIP válido ou está corrompido."
-        ) from exc
+        raise ProjectUploadError("O arquivo enviado não é um ZIP válido ou está corrompido.") from exc
 
 
 def extract_project_zip(
@@ -134,10 +127,7 @@ def extract_project_zip(
     try:
         _extract_members(archive, members, run_dir.resolve(), limits)
         if not has_verilog_sources(run_dir):
-            raise ProjectUploadError(
-                "O projeto não contém nenhum arquivo Verilog (.v) ou "
-                "SystemVerilog (.sv)."
-            )
+            raise ProjectUploadError("O projeto não contém nenhum arquivo Verilog (.v) ou SystemVerilog (.sv).")
     except (
         zipfile.BadZipFile,
         zipfile.LargeZipFile,
@@ -147,8 +137,7 @@ def extract_project_zip(
     ) as exc:
         shutil.rmtree(run_dir, ignore_errors=True)
         raise ProjectUploadError(
-            "O arquivo ZIP está corrompido, protegido por senha ou usa um formato "
-            "não suportado."
+            "O arquivo ZIP está corrompido, protegido por senha ou usa um formato não suportado."
         ) from exc
     except BaseException:
         shutil.rmtree(run_dir, ignore_errors=True)
@@ -156,9 +145,7 @@ def extract_project_zip(
     return project_id_for(run_name)
 
 
-def _plan_members(
-    archive: zipfile.ZipFile, limits: UploadLimits
-) -> list[tuple[zipfile.ZipInfo, PurePosixPath]]:
+def _plan_members(archive: zipfile.ZipFile, limits: UploadLimits) -> list[tuple[zipfile.ZipInfo, PurePosixPath]]:
     """Validate every entry name and return the files to extract."""
     entries = archive.infolist()
     if not entries:
@@ -183,15 +170,9 @@ def _plan_members(
         planned.append((info, relative))
 
     planned = _strip_wrapper_folder(planned)
-    planned = [
-        (info, relative)
-        for info, relative in planned
-        if relative.name.lower() not in RESERVED_NAMES
-    ]
+    planned = [(info, relative) for info, relative in planned if relative.name.lower() not in RESERVED_NAMES]
     if not planned:
-        raise ProjectUploadError(
-            "O projeto não contém nenhum arquivo Verilog (.v) ou SystemVerilog (.sv)."
-        )
+        raise ProjectUploadError("O projeto não contém nenhum arquivo Verilog (.v) ou SystemVerilog (.sv).")
     return planned
 
 
@@ -199,27 +180,20 @@ def _validate_entry_name(name: str, limits: UploadLimits) -> PurePosixPath | Non
     """Reject unsafe names; return the relative path (``None`` for the root)."""
     if len(name) > limits.max_path_length:
         raise ProjectUploadError(
-            "O arquivo ZIP contém um caminho mais longo que o limite de "
-            f"{limits.max_path_length} caracteres."
+            f"O arquivo ZIP contém um caminho mais longo que o limite de {limits.max_path_length} caracteres."
         )
     if any(char in _INVALID_NAME_CHARS or ord(char) < 32 for char in name):
-        raise ProjectUploadError(
-            "O arquivo ZIP contém nomes de arquivo com caracteres inválidos."
-        )
+        raise ProjectUploadError("O arquivo ZIP contém nomes de arquivo com caracteres inválidos.")
 
     normalized = name.replace("\\", "/")
     relative = PurePosixPath(normalized)
     if normalized.startswith("/") or ".." in relative.parts:
-        raise ProjectUploadError(
-            "O arquivo ZIP contém caminhos fora da pasta do projeto."
-        )
+        raise ProjectUploadError("O arquivo ZIP contém caminhos fora da pasta do projeto.")
     parts = [part for part in relative.parts if part != "."]
     if not parts:
         return None
     if len(parts) - 1 > limits.max_depth:
-        raise ProjectUploadError(
-            f"O projeto excede o limite de {limits.max_depth} níveis de pastas."
-        )
+        raise ProjectUploadError(f"O projeto excede o limite de {limits.max_depth} níveis de pastas.")
     return PurePosixPath(*parts)
 
 
@@ -246,15 +220,11 @@ def _extract_members(
     for info, relative in members:
         target = run_dir.joinpath(*relative.parts).resolve()
         if not target.is_relative_to(run_dir) or target == run_dir:
-            raise ProjectUploadError(
-                "O arquivo ZIP contém caminhos fora da pasta do projeto."
-            )
+            raise ProjectUploadError("O arquivo ZIP contém caminhos fora da pasta do projeto.")
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
         except (FileExistsError, NotADirectoryError) as exc:
-            raise ProjectUploadError(
-                "O arquivo ZIP contém arquivos duplicados ou conflitantes."
-            ) from exc
+            raise ProjectUploadError("O arquivo ZIP contém arquivos duplicados ou conflitantes.") from exc
         ratio_limit = max(
             info.compress_size * limits.max_compression_ratio,
             _RATIO_CHECK_FLOOR_BYTES,
@@ -264,9 +234,7 @@ def _extract_members(
         try:
             destination_file = target.open("xb")
         except (FileExistsError, IsADirectoryError, NotADirectoryError) as exc:
-            raise ProjectUploadError(
-                "O arquivo ZIP contém arquivos duplicados ou conflitantes."
-            ) from exc
+            raise ProjectUploadError("O arquivo ZIP contém arquivos duplicados ou conflitantes.") from exc
         with archive.open(info) as source, destination_file as destination:
             while chunk := source.read(_CHUNK_SIZE):
                 entry_written += len(chunk)
@@ -279,7 +247,6 @@ def _extract_members(
                     )
                 if entry_written > ratio_limit:
                     raise ProjectUploadError(
-                        "O arquivo ZIP tem taxa de compressão suspeita "
-                        "(possível zip bomb) e foi rejeitado."
+                        "O arquivo ZIP tem taxa de compressão suspeita (possível zip bomb) e foi rejeitado."
                     )
                 destination.write(chunk)

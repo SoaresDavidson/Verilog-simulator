@@ -47,14 +47,12 @@ def docker_client() -> MagicMock:
     return client
 
 
-def make_integration(
-    tmp_path: Path, docker_client: MagicMock, timeout_seconds: float = 30
-) -> IcarusIntegration:
+def make_integration(tmp_path: Path, docker_client: MagicMock, timeout_seconds: float = 30) -> IcarusIntegration:
     """Cria a integração apontando para o diretório temporário."""
     return IcarusIntegration(
         config=IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            verilog_base_dir=tmp_path, timeout_seconds=timeout_seconds),
+            execution_mode=ExecutionMode.EXEC, verilog_base_dir=tmp_path, timeout_seconds=timeout_seconds
+        ),
         docker_integration=DockerIntegration(
             config=DockerConfig(timeout_seconds=timeout_seconds),
             docker_client=docker_client,
@@ -64,9 +62,7 @@ def make_integration(
 
 def test_build_command_from_files() -> None:
     """Comando usa o script configurado seguido dos fontes relativos."""
-    integration = IcarusIntegration(IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            script_path="/opt/sim.sh"))
+    integration = IcarusIntegration(IcarusConfig(execution_mode=ExecutionMode.EXEC, script_path="/opt/sim.sh"))
 
     assert integration.build_command([Path("tb.v"), Path("rtl/alu file.sv")]) == [
         "bash",
@@ -101,9 +97,7 @@ def test_successful_simulation_parses_vcd(
     def produce_vcd(**_kwargs: object) -> None:
         shutil.copy(fixtures_dir / "counter.vcd", project_dir / "wave.vcd")
 
-    execution = fake_exec(
-        docker_client, stdout=b"VCD info: dumpfile", stderr=b"", side_effect=produce_vcd
-    )
+    execution = fake_exec(docker_client, stdout=b"VCD info: dumpfile", stderr=b"", side_effect=produce_vcd)
 
     result = make_integration(tmp_path, docker_client).simulate("runs/run_test")
 
@@ -202,9 +196,7 @@ def test_most_recent_generated_vcd_is_chosen(
     assert "2 VCD files" in caplog.text
 
 
-def test_missing_container_raises_specific_error(
-    tmp_path: Path, project_dir: Path, docker_client: MagicMock
-) -> None:
+def test_missing_container_raises_specific_error(tmp_path: Path, project_dir: Path, docker_client: MagicMock) -> None:
     """Container ausente é falha de infraestrutura."""
     docker_client.containers.get.side_effect = NotFound("missing")
 
@@ -229,9 +221,7 @@ def test_timeout_raises_specific_error(
     from integrations.docker import DockerTimeoutError
 
     integration = make_integration(tmp_path, docker_client, timeout_seconds=1)
-    mocker.patch.object(
-        integration.docker, "execute", side_effect=DockerTimeoutError("exceeded")
-    )
+    mocker.patch.object(integration.docker, "execute", side_effect=DockerTimeoutError("exceeded"))
 
     with pytest.raises(IcarusTimeoutError, match="exceeded 1"):
         integration.simulate("runs/run_test")
@@ -248,9 +238,7 @@ def test_container_timeout_exit_code_raises_timeout(
     )
 
     with pytest.raises(IcarusTimeoutError) as error:
-        make_integration(tmp_path, docker_client, timeout_seconds=3).simulate(
-            "runs/run_test"
-        )
+        make_integration(tmp_path, docker_client, timeout_seconds=3).simulate("runs/run_test")
 
     assert error.value.timeout_seconds == 3
     assert execution.full_command[:3] == ["timeout", "--signal=KILL", "3s"]
@@ -304,9 +292,7 @@ def test_corrupted_vcd_raises_parse_error(
     """VCD corrompido vira VcdParseError carregando o resultado da execução."""
 
     def produce_bad_vcd(**_kwargs: object) -> None:
-        (project_dir / "wave.vcd").write_text(
-            "$timescale 1ns $end\n$enddefinitions $end\n#abc\n"
-        )
+        (project_dir / "wave.vcd").write_text("$timescale 1ns $end\n$enddefinitions $end\n#abc\n")
 
     fake_exec(docker_client, stdout=b"ok", side_effect=produce_bad_vcd)
 
@@ -317,9 +303,7 @@ def test_corrupted_vcd_raises_parse_error(
     assert error.value.result.vcd_file == project_dir / "wave.vcd"
 
 
-def test_project_without_sources_is_rejected(
-    tmp_path: Path, docker_client: MagicMock
-) -> None:
+def test_project_without_sources_is_rejected(tmp_path: Path, docker_client: MagicMock) -> None:
     """Projeto sem .v/.sv não chega a executar no container."""
     (tmp_path / "runs" / "run_empty").mkdir(parents=True)
 
@@ -329,9 +313,7 @@ def test_project_without_sources_is_rejected(
 
 
 @pytest.mark.parametrize("project_id", ["../etc", "/runs/run_x", "runs/other"])
-def test_unsafe_project_id_is_rejected(
-    tmp_path: Path, docker_client: MagicMock, project_id: str
-) -> None:
+def test_unsafe_project_id_is_rejected(tmp_path: Path, docker_client: MagicMock, project_id: str) -> None:
     """Project IDs fora de runs/run_ são recusados."""
     with pytest.raises(ValueError):
         make_integration(tmp_path, docker_client).simulate(project_id)
@@ -370,9 +352,7 @@ def test_real_icarus_simulation() -> None:
             encoding="utf-8",
         )
         result = IcarusIntegration(
-            config=IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            verilog_base_dir=base_dir),
+            config=IcarusConfig(execution_mode=ExecutionMode.EXEC, verilog_base_dir=base_dir),
             docker_integration=DockerIntegration(docker_client=client),
         ).simulate(project_id)
 
@@ -415,17 +395,12 @@ def test_concurrent_simulations_do_not_interfere() -> None:
         projects[marker] = project_id
 
     integration = IcarusIntegration(
-        config=IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            verilog_base_dir=base_dir),
+        config=IcarusConfig(execution_mode=ExecutionMode.EXEC, verilog_base_dir=base_dir),
         docker_integration=DockerIntegration(docker_client=client),
     )
     try:
         with ThreadPoolExecutor(max_workers=2) as pool:
-            futures = {
-                marker: pool.submit(integration.simulate, project_id)
-                for marker, project_id in projects.items()
-            }
+            futures = {marker: pool.submit(integration.simulate, project_id) for marker, project_id in projects.items()}
             results = {marker: future.result() for marker, future in futures.items()}
 
         for marker, result in results.items():
@@ -465,9 +440,7 @@ def test_infinite_testbench_is_killed_within_timeout() -> None:
             encoding="utf-8",
         )
         integration = IcarusIntegration(
-            config=IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            verilog_base_dir=base_dir, timeout_seconds=3),
+            config=IcarusConfig(execution_mode=ExecutionMode.EXEC, verilog_base_dir=base_dir, timeout_seconds=3),
             docker_integration=DockerIntegration(
                 config=DockerConfig(timeout_seconds=3, kill_grace_seconds=2),
                 docker_client=client,
@@ -507,15 +480,11 @@ def test_vcd_limits_and_selection_are_applied(
     """Limites da configuração e recorte do cliente chegam ao parse do VCD."""
     fake_exec(
         docker_client,
-        side_effect=lambda **_: shutil.copy(
-            fixtures_dir / "counter.vcd", project_dir / "wave.vcd"
-        ),
+        side_effect=lambda **_: shutil.copy(fixtures_dir / "counter.vcd", project_dir / "wave.vcd"),
     )
     integration = IcarusIntegration(
         config=IcarusConfig(
-            execution_mode=ExecutionMode.EXEC,
-            
-            verilog_base_dir=tmp_path, vcd_limits=VcdLimits(max_timestamps=2)
+            execution_mode=ExecutionMode.EXEC, verilog_base_dir=tmp_path, vcd_limits=VcdLimits(max_timestamps=2)
         ),
         docker_integration=DockerIntegration(docker_client=docker_client),
     )

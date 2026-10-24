@@ -68,11 +68,7 @@ class VcdSelection:
             raise ValueError("begin_time must be zero or positive.")
         if self.end_time is not None and self.end_time < 0:
             raise ValueError("end_time must be zero or positive.")
-        if (
-            self.begin_time is not None
-            and self.end_time is not None
-            and self.begin_time > self.end_time
-        ):
+        if self.begin_time is not None and self.end_time is not None and self.begin_time > self.end_time:
             raise ValueError("begin_time must not be greater than end_time.")
         if self.decimation < 1:
             raise ValueError("decimation must be at least 1.")
@@ -103,9 +99,7 @@ def parse_vcd(
     try:
         file_bytes = vcd_path.stat().st_size
     except OSError as exc:
-        raise VcdFormatError(
-            f"Could not read VCD file '{vcd_path.name}': {exc}"
-        ) from exc
+        raise VcdFormatError(f"Could not read VCD file '{vcd_path.name}': {exc}") from exc
 
     header = _load(vcd_path, only_sigs=True, store_scopes=True)
     metadata: dict[str, Any] = {
@@ -153,9 +147,7 @@ def parse_vcd(
         "modules": modules,
         "timeline": {str(stamp): timeline[stamp] for stamp in timestamps},
     }
-    _log_metrics(
-        vcd_path, started, file_bytes, len(references), len(timestamps), reasons
-    )
+    _log_metrics(vcd_path, started, file_bytes, len(references), len(timestamps), reasons)
     return result
 
 
@@ -163,9 +155,7 @@ def _load(vcd_path: Path, **kwargs: Any) -> VCDVCD:
     try:
         return VCDVCD(str(vcd_path), **kwargs)
     except OSError as exc:
-        raise VcdFormatError(
-            f"Could not read VCD file '{vcd_path.name}': {exc}"
-        ) from exc
+        raise VcdFormatError(f"Could not read VCD file '{vcd_path.name}': {exc}") from exc
     except Exception as exc:  # vcdvcd raises bare Exception for some syntax errors
         raise VcdFormatError(f"Malformed VCD file '{vcd_path.name}': {exc}") from exc
 

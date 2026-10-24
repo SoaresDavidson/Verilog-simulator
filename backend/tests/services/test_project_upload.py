@@ -80,9 +80,7 @@ def test_uppercase_extension_counts_as_source(runs_dir: Path) -> None:
     ],
     ids=["vazio", "sem-fontes", "nao-zip", "truncado"],
 )
-def test_invalid_archives_are_rejected_without_residue(
-    runs_dir: Path, archive: bytes, fragment: str
-) -> None:
+def test_invalid_archives_are_rejected_without_residue(runs_dir: Path, archive: bytes, fragment: str) -> None:
     """ZIP vazio, corrompido ou sem fontes gera erro 400 e nenhum resíduo."""
     with pytest.raises(ProjectUploadError) as excinfo:
         _upload(runs_dir, archive)
@@ -111,9 +109,7 @@ def test_yosys_finds_nested_sources_with_canonical_id(runs_dir: Path) -> None:
     """A síntese continua encontrando fontes em subpastas pelo id canônico."""
     archive = make_zip({"rtl/core/top.v": "module top; endmodule", "tb/tb_top.v": "x"})
     project_id = _upload(runs_dir, archive)
-    integration = YosysIntegration(
-        YosysConfig(verilog_base_dir=runs_dir.parent), docker_integration=object()
-    )
+    integration = YosysIntegration(YosysConfig(verilog_base_dir=runs_dir.parent), docker_integration=object())
 
     project_dir, container_dir = integration._resolve_project(project_id)
     sources = integration._find_verilog_sources(project_dir)

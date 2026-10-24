@@ -62,9 +62,7 @@ def test_folders_without_run_prefix_are_never_removed(tmp_path: Path) -> None:
     other = _make_run(tmp_path, "importante", age_hours=100)
     (tmp_path / "run_arquivo_solto").write_text("x")
 
-    report = collect_runs(
-        tmp_path, RetentionPolicy(ttl_seconds=HOUR, max_total_bytes=1), now=NOW
-    )
+    report = collect_runs(tmp_path, RetentionPolicy(ttl_seconds=HOUR, max_total_bytes=1), now=NOW)
 
     assert report.removed == ()
     assert other.exists()
@@ -77,9 +75,7 @@ def test_run_in_use_is_kept_beyond_ttl(tmp_path: Path) -> None:
     registry = RunRegistry()
 
     with registry.in_use("run_busy"):
-        report = collect_runs(
-            tmp_path, RetentionPolicy(ttl_seconds=HOUR), now=NOW, registry=registry
-        )
+        report = collect_runs(tmp_path, RetentionPolicy(ttl_seconds=HOUR), now=NOW, registry=registry)
 
     assert run.exists()
     assert report.skipped_in_use == ("run_busy",)
@@ -97,9 +93,7 @@ def test_removal_failure_is_reported_and_does_not_stop(tmp_path: Path) -> None:
             raise PermissionError(13, "Permission denied")
         removed.append(path.name)
 
-    report = collect_runs(
-        tmp_path, RetentionPolicy(ttl_seconds=HOUR), now=NOW, remover=remover
-    )
+    report = collect_runs(tmp_path, RetentionPolicy(ttl_seconds=HOUR), now=NOW, remover=remover)
 
     assert removed == ["run_b"]
     assert report.removed == ("run_b",)
@@ -113,9 +107,7 @@ def test_size_cap_removes_oldest_first(tmp_path: Path) -> None:
     _make_run(tmp_path, "run_2", age_hours=2, size=100)
     _make_run(tmp_path, "run_3", age_hours=1, size=100)
 
-    report = collect_runs(
-        tmp_path, RetentionPolicy(ttl_seconds=0, max_total_bytes=150), now=NOW
-    )
+    report = collect_runs(tmp_path, RetentionPolicy(ttl_seconds=0, max_total_bytes=150), now=NOW)
 
     assert report.removed == ("run_1", "run_2")
     assert report.remaining.total_bytes == 100
@@ -157,9 +149,7 @@ def test_missing_runs_dir_is_an_empty_collection(tmp_path: Path) -> None:
     assert measure_runs(tmp_path / "nada").count == 0
 
 
-def test_collect_and_record_logs_and_stores_report(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
-) -> None:
+def test_collect_and_record_logs_and_stores_report(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     """Cada coleta é registrada em log e guardada para o status."""
     run = _make_run(tmp_path, "run_old", age_hours=1)
     os.utime(run, (0, 0))
