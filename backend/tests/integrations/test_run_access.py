@@ -77,11 +77,11 @@ def test_integrations_hand_the_run_over_before_executing(
 
     with pytest.raises(yosys.YosysSynthesisError):
         yosys.YosysIntegration(
-            yosys.YosysConfig(verilog_base_dir=tmp_path, run_owner=(7, 8)), docker
+            yosys.YosysConfig(verilog_base_dir=tmp_path, run_owner=(7, 8), execution_mode="exec"), docker
         ).synthesize("runs/run_x")
     with pytest.raises(icarus.IcarusSimulationError):
         icarus.IcarusIntegration(
-            icarus.IcarusConfig(verilog_base_dir=tmp_path, run_owner=(7, 8)), docker
+            icarus.IcarusConfig(verilog_base_dir=tmp_path, run_owner=(7, 8), execution_mode="exec"), docker
         ).simulate("runs/run_x")
 
     assert order == ["grant(7, 8)", "execute", "grant(7, 8)", "execute"]

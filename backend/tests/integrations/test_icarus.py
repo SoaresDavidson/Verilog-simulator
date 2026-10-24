@@ -12,7 +12,7 @@ import docker
 import pytest
 from docker.errors import DockerException, NotFound
 
-from integrations.docker import DockerConfig, DockerIntegration
+from integrations.docker import DockerConfig, DockerIntegration, ExecutionMode
 from integrations.icarus import (
     COMPILATION_FAILED_EXIT_CODE,
     SIMULATION_FAILED_EXIT_CODE,
@@ -52,7 +52,9 @@ def make_integration(
 ) -> IcarusIntegration:
     """Cria a integração apontando para o diretório temporário."""
     return IcarusIntegration(
-        config=IcarusConfig(verilog_base_dir=tmp_path, timeout_seconds=timeout_seconds),
+        config=IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            verilog_base_dir=tmp_path, timeout_seconds=timeout_seconds),
         docker_integration=DockerIntegration(
             config=DockerConfig(timeout_seconds=timeout_seconds),
             docker_client=docker_client,
@@ -62,7 +64,9 @@ def make_integration(
 
 def test_build_command_from_files() -> None:
     """Comando usa o script configurado seguido dos fontes relativos."""
-    integration = IcarusIntegration(IcarusConfig(script_path="/opt/sim.sh"))
+    integration = IcarusIntegration(IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            script_path="/opt/sim.sh"))
 
     assert integration.build_command([Path("tb.v"), Path("rtl/alu file.sv")]) == [
         "bash",
@@ -366,7 +370,9 @@ def test_real_icarus_simulation() -> None:
             encoding="utf-8",
         )
         result = IcarusIntegration(
-            config=IcarusConfig(verilog_base_dir=base_dir),
+            config=IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            verilog_base_dir=base_dir),
             docker_integration=DockerIntegration(docker_client=client),
         ).simulate(project_id)
 
@@ -409,7 +415,9 @@ def test_concurrent_simulations_do_not_interfere() -> None:
         projects[marker] = project_id
 
     integration = IcarusIntegration(
-        config=IcarusConfig(verilog_base_dir=base_dir),
+        config=IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            verilog_base_dir=base_dir),
         docker_integration=DockerIntegration(docker_client=client),
     )
     try:
@@ -457,7 +465,9 @@ def test_infinite_testbench_is_killed_within_timeout() -> None:
             encoding="utf-8",
         )
         integration = IcarusIntegration(
-            config=IcarusConfig(verilog_base_dir=base_dir, timeout_seconds=3),
+            config=IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            verilog_base_dir=base_dir, timeout_seconds=3),
             docker_integration=DockerIntegration(
                 config=DockerConfig(timeout_seconds=3, kill_grace_seconds=2),
                 docker_client=client,
@@ -503,6 +513,8 @@ def test_vcd_limits_and_selection_are_applied(
     )
     integration = IcarusIntegration(
         config=IcarusConfig(
+            execution_mode=ExecutionMode.EXEC,
+            
             verilog_base_dir=tmp_path, vcd_limits=VcdLimits(max_timestamps=2)
         ),
         docker_integration=DockerIntegration(docker_client=docker_client),

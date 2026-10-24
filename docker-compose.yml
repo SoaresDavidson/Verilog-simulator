@@ -20,8 +20,11 @@ x-execution-hardening: &execution-hardening
   tty: true
 
 services:
+  # Além de servir o modo EXECUTION_MODE=exec, estes serviços constroem e
+  # nomeiam as imagens usadas pelos containers efêmeros (modo padrão).
   icarus:
     <<: *execution-hardening
+    image: ${ICARUS_IMAGE:-verilog-classroom/icarus:latest}
     build:
       context: .
       dockerfile: icarus.dockerfile
@@ -32,6 +35,7 @@ services:
 
   yosys:
     <<: *execution-hardening
+    image: ${YOSYS_IMAGE:-verilog-classroom/yosys:latest}
     build:
       context: .
       dockerfile: yosys.dockerfile
@@ -72,6 +76,17 @@ services:
       # Dono entregue a cada run antes da execução; igual ao usuário das imagens.
       - EXECUTION_UID=${EXECUTION_UID:-1000}
       - EXECUTION_GID=${EXECUTION_GID:-1000}
+      - EXECUTION_MODE=${EXECUTION_MODE:-ephemeral}
+      - YOSYS_IMAGE=${YOSYS_IMAGE:-verilog-classroom/yosys:latest}
+      - ICARUS_IMAGE=${ICARUS_IMAGE:-verilog-classroom/icarus:latest}
+      - EXECUTION_MEM_LIMIT=${EXECUTION_MEM_LIMIT:-512m}
+      - EXECUTION_CPUS=${EXECUTION_CPUS:-1.0}
+      - EXECUTION_PIDS_LIMIT=${EXECUTION_PIDS_LIMIT:-256}
+      # O daemon resolve os bind mounts dos containers efêmeros no HOST: estes
+      # são os caminhos no host de ./verilog_code e ./scripts. ${PWD} vale quando
+      # o compose é chamado da raiz do repositório; senão, defina-os no .env da raiz.
+      - HOST_VERILOG_ROOT=${HOST_VERILOG_ROOT:-${PWD}/verilog_code}
+      - HOST_SCRIPTS_DIR=${HOST_SCRIPTS_DIR:-${PWD}/scripts}
     healthcheck:
       test:
         - CMD

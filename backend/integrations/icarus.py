@@ -7,19 +7,23 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .docker import (
+    DockerCommandResult,
     DockerConfig,
     DockerConnectionError,
     DockerContainerNotFoundError,
     DockerContainerUnavailableError,
     DockerExecutionError,
     DockerIntegration,
+    DockerResourceLimitError,
     DockerTimeoutError,
+    ExecutionMode,
 )
 from .projects import (
     grant_run_access,
     is_fresh_artifact,
     remove_artifacts,
     resolve_project_dir,
+    run_mount,
     validate_relative_source,
 )
 from .vcd import VcdFormatError, VcdLimits, VcdSelection, parse_vcd
@@ -46,10 +50,21 @@ class IcarusConfig:
     docker_host: str | None = None
     run_owner: tuple[int, int] | None = None
     """``(uid, gid)`` that receives the run before execution; ``None`` keeps it."""
+    execution_mode: ExecutionMode = ExecutionMode.EPHEMERAL
+    image: str = "verilog-classroom/icarus:latest"
+    """Image of the per-execution container (``ephemeral`` mode)."""
+    host_verilog_root: str | None = None
+    """Path of ``verilog_base_dir`` on the Docker host (``None``: same as local)."""
+    host_scripts_dir: str | None = None
+    """Host directory mounted read-only at the parent of ``script_path``
+    (``ephemeral`` mode). ``None`` mounts nothing: the image must ship the script."""
     vcd_limits: VcdLimits = field(default_factory=VcdLimits)
 
     def __post_init__(self) -> None:
         """Validate configuration values."""
+        object.__setattr__(self, "execution_mode", ExecutionMode(self.execution_mode))
+        if not self.image.strip():
+            raise ValueError("Icarus image cannot be empty.")
         if not self.container_name.strip():
             raise ValueError("Icarus container name cannot be empty.")
         if self.timeout_seconds <= 0:
@@ -78,6 +93,18 @@ class IcarusError(Exception):
 
 class IcarusContainerNotFoundError(IcarusError):
     """Raised when the Icarus container or Docker daemon is unavailable."""
+
+
+class IcarusResourceLimitError(IcarusError):
+    """Raised when the execution is killed for exceeding a resource limit.
+
+    The message is in pt-BR and safe to show to the student; ``limit`` names
+    the exhausted resource (``"memory"``).
+    """
+
+    def __init__(self, message: str, limit: str = "memory") -> None:
+        super().__init__(message)
+        self.limit = limit
 
 
 class IcarusTimeoutError(IcarusError):
@@ -166,6 +193,7 @@ class IcarusIntegration:
             ValueError: If project ID is unsafe.
             IcarusContainerNotFoundError: If container or daemon is unavailable.
             IcarusTimeoutError: If execution exceeds configured timeout.
+            IcarusResourceLimitError: If execution is killed by the memory limit.
             IcarusCompilationError: If ``iverilog`` rejects the sources.
             IcarusSimulationError: If the simulation exits unsuccessfully.
             VcdParseError: If the generated VCD cannot be parsed.
@@ -180,12 +208,9 @@ class IcarusIntegration:
         started_at = time.time()
 
         try:
-            execution = self.docker.execute(
-                container_name=self.config.container_name,
-                command=command,
-                workdir=container_dir,
-                timeout_seconds=self.config.timeout_seconds,
-            )
+            execution = self._run(command, project_dir, container_dir)
+        except DockerResourceLimitError as exc:
+            raise IcarusResourceLimitError(str(exc), exc.limit) from exc
         except (
             DockerConnectionError,
             DockerContainerNotFoundError,
@@ -221,6 +246,35 @@ class IcarusIntegration:
                 "Simulation finished but its VCD file could not be parsed.", result
             ) from exc
         return replace(result, simulation_log=simulation_log)
+
+    def _run(
+        self, command: list[str], project_dir: Path, container_dir: str
+    ) -> DockerCommandResult:
+        """Execute ``command`` in the configured mode (see ``ExecutionMode``)."""
+        if self.config.execution_mode is ExecutionMode.EXEC:
+            return self.docker.execute(
+                container_name=self.config.container_name,
+                command=command,
+                workdir=container_dir,
+                timeout_seconds=self.config.timeout_seconds,
+            )
+        run_dir_host, run_dir_container = run_mount(
+            self.config.verilog_base_dir, project_dir, self.config.host_verilog_root
+        )
+        scripts = (
+            {self.config.host_scripts_dir: PurePosixPath(self.config.script_path).parent.as_posix()}
+            if self.config.host_scripts_dir
+            else None
+        )
+        return self.docker.run_ephemeral(
+            image=self.config.image,
+            command=command,
+            run_dir_host=run_dir_host,
+            run_dir_container=run_dir_container,
+            workdir=container_dir,
+            timeout_seconds=self.config.timeout_seconds,
+            read_only_mounts=scripts,
+        )
 
     def _raise_for_exit_code(self, result: IcarusResult) -> None:
         exit_code = result.exit_code

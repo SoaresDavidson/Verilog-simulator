@@ -49,6 +49,31 @@ def resolve_project_dir(base_dir: Path, project_id: str) -> tuple[Path, str]:
     return project_dir, container_dir.as_posix()
 
 
+def run_mount(
+    base_dir: Path, project_dir: Path, host_root: str | None = None
+) -> tuple[str, str]:
+    """Return the bind mount that exposes only the run holding ``project_dir``.
+
+    Args:
+        base_dir: Local directory mounted as ``/verilog_code`` (as in
+            :func:`resolve_project_dir`).
+        project_dir: Resolved project directory returned by
+            :func:`resolve_project_dir`.
+        host_root: Path of ``base_dir`` on the Docker daemon's host. ``None``
+            when the backend runs directly on that host (the local path is used).
+
+    Returns:
+        ``(host path, container path)`` of the ``runs/run_<id>`` directory.
+    """
+    resolved_base = base_dir.resolve()
+    run_parts = project_dir.relative_to(resolved_base).parts[:2]
+    host_base = PurePosixPath(host_root) if host_root else PurePosixPath(resolved_base.as_posix())
+    return (
+        host_base.joinpath(*run_parts).as_posix(),
+        CONTAINER_VERILOG_ROOT.joinpath(*run_parts).as_posix(),
+    )
+
+
 PRIVATE_RUN_FILES = frozenset({".session"})
 """Run files the backend keeps to itself (``auth.SESSION_FILE_NAME``)."""
 

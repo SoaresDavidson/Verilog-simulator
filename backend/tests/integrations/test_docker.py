@@ -15,6 +15,7 @@ from integrations.docker import (
     DockerContainerUnavailableError,
     DockerExecutionError,
     DockerIntegration,
+    DockerResourceLimitError,
     DockerTimeoutError,
     wrap_with_timeout,
 )
@@ -177,19 +178,20 @@ def test_container_side_timeout_exit_code_raises(
         )
 
 
-def test_early_sigkill_is_not_reported_as_timeout(
+def test_early_sigkill_is_reported_as_memory_limit(
     docker_client: MagicMock, fake_exec, mocker: MagicMock
 ) -> None:
-    """137 antes do limite (ex.: OOM) é falha comum, não timeout."""
+    """137 antes do limite (OOM killer do container) vira erro de recurso, não timeout."""
     fake_exec(docker_client, exit_code=KILLED_EXIT_CODE)
     clock = mocker.patch("integrations.docker.time.monotonic")
     clock.side_effect = [0.0, 2.0]
 
-    result = DockerIntegration(docker_client=docker_client).execute(
-        "icarus-verilog", ["vvp"], "/verilog_code", timeout_seconds=30
-    )
+    with pytest.raises(DockerResourceLimitError, match="limite de memória") as error:
+        DockerIntegration(docker_client=docker_client).execute(
+            "icarus-verilog", ["vvp"], "/verilog_code", timeout_seconds=30
+        )
 
-    assert result.exit_code == KILLED_EXIT_CODE
+    assert error.value.limit == "memory"
 
 
 def test_backend_deadline_raises_timeout(docker_client: MagicMock, fake_exec) -> None:

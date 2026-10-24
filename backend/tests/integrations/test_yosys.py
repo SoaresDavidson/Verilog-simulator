@@ -12,7 +12,7 @@ import docker
 import pytest
 from docker.errors import DockerException, NotFound
 
-from integrations.docker import DockerConfig, DockerIntegration
+from integrations.docker import DockerConfig, DockerIntegration, ExecutionMode
 from integrations.yosys import (
     YosysConfig,
     YosysContainerNotFoundError,
@@ -48,6 +48,8 @@ def make_integration(
     """Create integration configured for temporary test storage."""
     return YosysIntegration(
         config=YosysConfig(
+            execution_mode=ExecutionMode.EXEC,
+            
             verilog_base_dir=tmp_path,
             timeout_seconds=timeout_seconds,
         ),
@@ -259,7 +261,9 @@ def test_real_yosys_synthesis() -> None:
             encoding="utf-8",
         )
         result = YosysIntegration(
-            config=YosysConfig(verilog_base_dir=base_dir),
+            config=YosysConfig(
+            execution_mode=ExecutionMode.EXEC,
+            verilog_base_dir=base_dir),
             docker_integration=DockerIntegration(docker_client=client),
         ).synthesize(project_id)
 

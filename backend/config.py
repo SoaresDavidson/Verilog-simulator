@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,6 +31,23 @@ class Settings(BaseSettings):
     # execution so the tools can write their artifacts.
     EXECUTION_UID: int = 1000
     EXECUTION_GID: int = 1000
+    # How Yosys/Icarus run (#7): "ephemeral" = one locked-down container per
+    # execution that only sees its run; "exec" = docker exec in the long-lived
+    # yosys/icarus-verilog containers (shared volume with every run).
+    EXECUTION_MODE: Literal["ephemeral", "exec"] = "ephemeral"
+    YOSYS_IMAGE: str = "verilog-classroom/yosys:latest"
+    ICARUS_IMAGE: str = "verilog-classroom/icarus:latest"
+    # Limits of each ephemeral container (the compose file applies the same
+    # defaults to the long-lived ones).
+    EXECUTION_MEM_LIMIT: str = "512m"
+    EXECUTION_CPUS: float = 1.0
+    EXECUTION_PIDS_LIMIT: int = 256
+    EXECUTION_TMPFS_SIZE: str = "64m"
+    # Bind mounts are resolved by the Docker daemon, i.e. on the HOST. When the
+    # backend runs in a container, set the host paths of VERILOG_RUNS_DIR.parent
+    # (/verilog_code) and of the scripts folder. None = backend runs on the host.
+    HOST_VERILOG_ROOT: str | None = None
+    HOST_SCRIPTS_DIR: str | None = None
     # Simulation script path inside the Icarus container
     ICARUS_SCRIPT_PATH: str = "/scripts/simular.sh"
 
