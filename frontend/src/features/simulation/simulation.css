@@ -70,3 +70,9 @@
 .sim-wf__canvas { overflow-y: auto; overflow-x: hidden; min-height: 0; flex: 1; }
 .sim-wf__canvas canvas { display: block; cursor: crosshair; }
 .sim-wf__empty { font-size: 12px; padding: 16px; text-align: center; }
+
+/* Split diagrama | waveform (#35) */
+.sim-split { height: clamp(420px, 70vh, 900px); min-width: 0; }
+.sim-dp { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface); overflow: auto; }
+.sim-dp__placeholder { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.sim-split .sim-wf { flex: 1; }

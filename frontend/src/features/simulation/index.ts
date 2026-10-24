@@ -2,7 +2,8 @@
  * API pública da tela 4 (simulação). O diagrama ao vivo (#32) deve usar estes
  * seletores para obter valores no cursor, em vez de reler a timeline.
  */
-export { SimulationScreen } from './SimulationScreen'
+export { SimulationScreen, type SimulationScreenProps } from './SimulationScreen'
+export type { DiagramSlot, LiveDiagramContext } from './liveDiagram'
 export {
   floorIndex,
   formatTime,

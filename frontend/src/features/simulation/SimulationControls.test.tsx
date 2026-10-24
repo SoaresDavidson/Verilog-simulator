@@ -193,3 +193,11 @@ describe('Tela 4 — playback (#34)', () => {
 afterEach(() => {
   vi.useRealTimers()
 })
+
+describe('Tela 4 — layout redimensionável (#35)', () => {
+  it('separa diagrama ao vivo e formas de onda com divisor acessível', () => {
+    renderApp({ initialState: simulatedState() })
+    expect(main().getByRole('separator', { name: 'Redimensionar diagrama e formas de onda' })).toBeInTheDocument()
+    expect(main().getByRole('region', { name: 'Diagrama ao vivo' })).toBeInTheDocument()
+  })
+})

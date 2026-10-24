@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { SimLog } from '../../api/types'
 import { useStepNavigation } from '../../app/useStepNavigation'
 import { Screen } from '../../components/Screen'
+import { SplitPane } from '../../components/SplitPane'
 import { useSessionState } from '../../state/hooks'
 import { RunPanel } from './RunPanel'
 import { SignalList } from './SignalList'
 import { defaultVisibleIds, listSignals } from './signals'
 import { MAX_WAVEFORM_SIGNALS } from './limits'
+import type { DiagramSlot, LiveDiagramContext } from './liveDiagram'
 import { indexSimLog } from './simlog'
 import { TimelineControls } from './TimelineControls'
 import { usePlayback } from './usePlayback'
@@ -15,8 +17,17 @@ import { buildWaveformModel } from './waveform/model'
 import { Waveform } from './waveform/Waveform'
 import './simulation.css'
 
-/** Tela 4 (#s4) — simulação Icarus, lista de sinais, waveform e timeline. */
-export function SimulationScreen() {
+export interface SimulationScreenProps {
+  /**
+   * Painel do diagrama ao vivo (#32), acima do waveform. Pode ser uma função
+   * que recebe o contexto (log, cursor, sinais visíveis). Sem slot, mostra um
+   * placeholder.
+   */
+  diagramSlot?: DiagramSlot
+}
+
+/** Tela 4 (#s4) — simulação Icarus, lista de sinais, diagrama ao vivo, waveform e timeline. */
+export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
   const nav = useStepNavigation()
   const state = useSessionState()
   const run = useSimulationRun()
@@ -44,6 +55,18 @@ export function SimulationScreen() {
     [simLog, sim, visibleSignals, playback.time],
   )
 
+  const diagramContext: LiveDiagramContext | null =
+    simLog && sim?.usable ? { simLog, time: playback.time, signals, visibleIds, toggleSignal } : null
+  let diagram: ReactNode = null
+  if (diagramContext) diagram = typeof diagramSlot === 'function' ? diagramSlot(diagramContext) : diagramSlot
+  if (diagram == null) {
+    diagram = (
+      <div className="sim-dp__placeholder">
+        <p className="muted">Diagrama ao vivo</p>
+      </div>
+    )
+  }
+
   const lastTime = sim?.usable ? sim.timestamps[sim.timestamps.length - 1] : null
 
   return (
@@ -66,7 +89,16 @@ export function SimulationScreen() {
             onToggle={toggleSignal}
             selectedSignals={state.selectedSignals}
           />
-          {waveModel && <Waveform model={waveModel} onSeekTime={playback.seekTime} />}
+          <SplitPane
+            className="sim-split"
+            orientation="vertical"
+            defaultRatio={0.45}
+            minFirst={120}
+            minSecond={160}
+            separatorLabel="Redimensionar diagrama e formas de onda"
+            first={<section className="sim-dp" aria-label="Diagrama ao vivo">{diagram}</section>}
+            second={waveModel && <Waveform model={waveModel} onSeekTime={playback.seekTime} />}
+          />
         </div>
       )}
 
