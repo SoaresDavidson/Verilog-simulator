@@ -36,6 +36,7 @@
   --pcb-ink: #eef5f1;
   --pcb-mute: #a9cbbd;
   --pcb-line: rgba(238, 245, 241, 0.16);
+  --glyph-ink: #0f4d3a;
 
   /* Acento de interface = verde de placa (seleção, foco, estado ativo) */
   --accent: #0f5c45;
@@ -93,7 +94,8 @@
 
   /* Tipografia: Atkinson Hyperlegible (criada para leitura difícil — sala de aula, projetor) */
   --fb: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --fh: var(--fb);
+  /* Display: Big Shoulders, tipo municipal de sinalização — títulos e números de placa */
+  --fh: "Big Shoulders Display", "Atkinson Hyperlegible Next", "Arial Narrow", sans-serif;
   --fd: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
 
   /* Movimento */
@@ -103,6 +105,15 @@
   --t-fast: 140ms;
   --t: 240ms;
   --t-slow: 520ms;
+
+  /* Escala tipográfica */
+  --fs-display: clamp(40px, 3.2vw + 18px, 60px);
+  --fs-plate: clamp(34px, 1.6vw + 22px, 46px);
+  --fs-h2: 17px;
+  --fs-body: 15px;
+  --fs-sm: 13.5px;
+  --fs-xs: 12px;
+  --fs-data: 13px;
 
   --hh: 68px;
 }
@@ -130,6 +141,7 @@
   --pcb-ink: #eef5f1;
   --pcb-mute: #9fc2b3;
   --pcb-line: rgba(238, 245, 241, 0.12);
+  --glyph-ink: #4bb892;
 
   --accent: #5cc9a2;
   --accent-ct: #4bb892;

@@ -69,7 +69,7 @@ export function SignalSelector() {
     <section className="card syn-sig" aria-labelledby={headingId}>
       <div className="ch">
         <h2 id={headingId}>Fios para visualizar</h2>
-        <span role="status" className="muted syn-sig__count">
+        <span role="status" className="count syn-sig__count">
           {selectedCount} de {options.length} selecionado{selectedCount === 1 ? '' : 's'}
         </span>
       </div>
@@ -125,9 +125,11 @@ export function SignalSelector() {
                         onChange={(event) => toggle(option.ref, event.target.checked)}
                       />
                       <span className="syn-sig__ref">{option.ref}</span>
-                      <span className="syn-sig__meta">
-                        {widthLabel(option.width)} · {DIRECTION_LABEL[option.direction]}
+                      <span className="syn-sig__w">{widthLabel(option.width)}</span>
+                      <span className="sr-only" aria-hidden="true">
+                        {' · '}
                       </span>
+                      <span className={`syn-sig__dir syn-sig__dir--${option.direction}`}>{DIRECTION_LABEL[option.direction]}</span>
                     </label>
                   </li>
                 ))}

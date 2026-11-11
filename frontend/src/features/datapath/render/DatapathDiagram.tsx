@@ -8,6 +8,7 @@ import { Minimap } from './Minimap'
 import { PropertiesPanel } from './PropertiesPanel'
 import { useViewport } from './useViewport'
 import './diagram.css'
+import { IconEnter, IconFit, IconMinus, IconPlus, IconSearch } from '../../../components/icons'
 
 /** Acima disso o diagrama só é desenhado sob demanda (fallback). */
 export const DEFAULT_MAX_NODES = 400
@@ -265,13 +266,13 @@ function DiagramView({ graph, layout, values, selectedSignals, selection, onSele
           </p>
           <div className="ctb dpd-tb" role="toolbar" aria-label="Controles do diagrama">
             <button type="button" className="bi" title="Aproximar (+)" aria-label="Aproximar" onClick={() => zoomBy(1.25)}>
-              +
+              <IconPlus size={17} />
             </button>
             <button type="button" className="bi" title="Afastar (-)" aria-label="Afastar" onClick={() => zoomBy(1 / 1.25)}>
-              −
+              <IconMinus size={17} />
             </button>
             <button type="button" className="bi" title="Centralizar (0)" aria-label="Centralizar" onClick={fit}>
-              ⊞
+              <IconFit size={17} />
             </button>
             <button
               type="button"
@@ -281,7 +282,7 @@ function DiagramView({ graph, layout, values, selectedSignals, selection, onSele
               aria-expanded={searchOpen}
               onClick={() => setSearchOpen((o) => !o)}
             >
-              ⌕
+              <IconSearch size={17} />
             </button>
             {searchOpen && (
               <form
@@ -313,7 +314,7 @@ function DiagramView({ graph, layout, values, selectedSignals, selection, onSele
                   {q ? (targets.length ? `${hitIdx >= 0 ? hitIdx + 1 : 0}/${targets.length}` : 'nada') : ''}
                 </span>
                 <button type="submit" className="bi" aria-label="Próximo resultado" disabled={targets.length === 0}>
-                  ↵
+                  <IconEnter size={16} />
                 </button>
               </form>
             )}

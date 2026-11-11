@@ -142,7 +142,7 @@ function draw(canvas: HTMLCanvasElement, model: WaveformModel, vp: WaveformViewp
   ctx.clearRect(0, 0, vp.width, vp.height)
   ctx.fillStyle = p.bg
   ctx.fillRect(0, 0, vp.width, vp.height)
-  ctx.font = '10px "Fira Code", monospace'
+  ctx.font = '11.5px "Atkinson Hyperlegible Mono", ui-monospace, monospace'
   ctx.textBaseline = 'middle'
 
   const plotRight = vp.width

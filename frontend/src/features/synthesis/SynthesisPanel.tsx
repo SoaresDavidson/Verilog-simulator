@@ -1,10 +1,33 @@
+import type React from 'react'
 import { useId, useMemo } from 'react'
 import type { SynthesisResponse } from '../../api/types'
+import { SynthArt } from '../../components/art'
+import {
+  GlyphBus,
+  GlyphCellTypes,
+  GlyphChip,
+  GlyphGate,
+  GlyphPort,
+  GlyphWire,
+  IconChevron,
+  IconRestart,
+  IconRun,
+  IconTerminal,
+} from '../../components/icons'
 import { useSessionState } from '../../state/hooks'
 import { isSynthesisConfirmed } from '../../state/session'
 import { isToolAvailable, useHealth } from '../health'
 import { netlistStats } from './netlist'
 import type { SynthesisFailureKind, UseSynthesis } from './useSynthesis'
+
+const STAT_GLYPH: Record<string, (p: { size?: number }) => React.ReactElement> = {
+  modules: GlyphChip,
+  cells: GlyphGate,
+  ports: GlyphPort,
+  wires: GlyphWire,
+  wireBits: GlyphBus,
+  cellTypes: GlyphCellTypes,
+}
 
 /** Limite de caracteres exibidos por log (o fim é o mais útil). */
 export const MAX_LOG_CHARS = 20_000
@@ -43,8 +66,12 @@ function Logs({ result, open }: { result: SynthesisResponse; open: boolean }) {
   )
   if (open) return content
   return (
-    <details className="syn-details">
-      <summary>Log do Yosys</summary>
+    <details className="disc syn-details">
+      <summary>
+        <IconChevron size={16} className="disc__chev" />
+        <IconTerminal size={17} />
+        Log do Yosys
+      </summary>
       {content}
     </details>
   )
@@ -98,16 +125,26 @@ export function SynthesisPanel({ synthesis }: { synthesis: UseSynthesis }) {
         <h2 id={headingId}>Síntese Yosys</h2>
         <button
           type="button"
-          className="btn bp bsm"
+          className={`btn bsm ${status === 'success' ? 'bs' : 'bp'}`}
           onClick={() => void start()}
           disabled={!canStart}
           aria-disabled={!canStart}
         >
+          {status === 'success' || status === 'error' ? <IconRestart size={16} /> : <IconRun size={16} />}
           {label}
         </button>
       </div>
-      <p role="status" className="syn-run__status muted" data-status={status}>
-        {statusText}
+      {!(confirmed && stats) && (
+        <div className="syn-run__art">
+          <SynthArt running={running} />
+        </div>
+      )}
+      <p role="status" className="syn-run__status" data-status={status}>
+        <span
+          className={`led ${running ? 'led--run' : status === 'success' && confirmed ? 'led--ok' : status === 'error' ? 'led--err' : ''}`}
+          aria-hidden="true"
+        />
+        <span>{statusText}</span>
       </p>
       {yosysDown && !running && (
         <p className="syn-note state-warn">O healthcheck indica Yosys indisponível; a síntese pode falhar.</p>
@@ -133,16 +170,24 @@ export function SynthesisPanel({ synthesis }: { synthesis: UseSynthesis }) {
       {confirmed && result && stats && (
         <>
           <div className="ns syn-stats" role="list" aria-label="Estatísticas da netlist">
-            {stats.map((stat) => (
-              <div key={stat.key} className="nst" role="listitem" data-stat={stat.key}>
-                <div className="v">{stat.value}</div>
-                <div className="l">{stat.label}</div>
-              </div>
-            ))}
+            {stats.map((stat, i) => {
+              const Glyph = STAT_GLYPH[stat.key] ?? GlyphChip
+              return (
+                <div key={stat.key} className="nst" role="listitem" data-stat={stat.key} style={{ '--i': i } as React.CSSProperties}>
+                  <Glyph size={38} />
+                  <div className="v">{stat.value.toLocaleString('pt-BR')}</div>
+                  <div className="l">{stat.label}</div>
+                </div>
+              )
+            })}
           </div>
           {result.stat_report && result.stat_report.trim() !== '' && (
-            <details className="syn-details">
-              <summary>Relatório do Yosys (stat)</summary>
+            <details className="disc syn-details">
+              <summary>
+                <IconChevron size={16} className="disc__chev" />
+                <IconTerminal size={17} />
+                Relatório do Yosys (stat)
+              </summary>
               <pre className="lb syn-stat-report" tabIndex={0}>
                 {tail(result.stat_report).text}
               </pre>

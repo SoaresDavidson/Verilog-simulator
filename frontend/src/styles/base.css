@@ -137,8 +137,8 @@ select:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0
     opacity: 0; translate: 0 -6px;
     transition: opacity var(--t) var(--ease-out), translate var(--t) var(--ease-out), overlay var(--t) allow-discrete, display var(--t) allow-discrete;
   }
-  ::picker(select):popover-open { opacity: 1; translate: 0 0; }
-  @starting-style { ::picker(select):popover-open { opacity: 0; translate: 0 -6px; } }
+  select:open::picker(select) { opacity: 1; translate: 0 0; }
+  @starting-style { select:open::picker(select) { opacity: 0; translate: 0 -6px; } }
   option {
     padding: 8px 12px; border-radius: var(--r-sm); font-size: 14px; cursor: pointer;
     display: flex; align-items: center; gap: 8px; white-space: pre;
@@ -184,3 +184,7 @@ table { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Listas roláveis contêm seus textos ocultos (sr-only) — sem isso eles escapam
+   do recorte e esticam a rolagem da página. */
+ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position: relative; }

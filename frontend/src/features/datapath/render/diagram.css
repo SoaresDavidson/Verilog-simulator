@@ -1,52 +1,65 @@
 /* Diagrama SVG do caminho de dados (#30), reutilizado na tela 4 (#32). */
-.dpd { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
-.dpd-legend__mode { margin-left: auto; }
-/* Classes do protótipo (.cw/.ctb/.mm/.pp), escopadas ao diagrama. */
-.dpd .cw { position: relative; overflow: hidden; border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface); }
-.dpd .ctb { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; z-index: 5; }
-.dpd .ctb .bi { background: var(--surface-ct); border: 1px solid var(--ov); }
-.dpd .mm { position: absolute; bottom: 8px; right: 8px; width: 160px; height: 100px; border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface); overflow: hidden; z-index: 5; }
-.dpd .pp { position: absolute; top: 8px; right: 8px; z-index: 6; }
+.dpd { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1; }
+.dpd-legend { padding: 2px 2px 0; }
+.dpd-legend__k { font-weight: 700; color: var(--fg); margin-right: 2px; }
+.dpd-legend__mode { margin-left: auto; font-size: 13px; }
+
+/* Prancheta: placa clara com malha de furos */
+.dpd .cw {
+  position: relative; overflow: hidden; border: 1px solid var(--ov); border-radius: var(--r-lg);
+  background-color: var(--surface);
+  background-image: radial-gradient(circle, var(--hole) 1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+.dpd .ctb { position: absolute; top: 12px; left: 12px; display: flex; gap: 4px; z-index: 5; }
+.dpd .mm { position: absolute; bottom: 12px; right: 12px; width: 168px; height: 104px; border: 1px solid var(--ov); border-radius: var(--r-md); background: var(--surface); overflow: hidden; z-index: 5; box-shadow: var(--shadow-sm); }
+.dpd .pp { position: absolute; top: 12px; right: 12px; z-index: 6; }
 .dpd-stage { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.dpd-canvas { height: clamp(320px, 62vh, 760px); touch-action: none; user-select: none; -webkit-user-select: none; }
-.dpd-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dpd-canvas { height: clamp(360px, 64vh, 780px); touch-action: none; user-select: none; -webkit-user-select: none; }
+.dpd-canvas:focus-visible { outline: 2.5px solid var(--copper); outline-offset: 2px; }
 .dpd-svg { display: block; cursor: grab; }
 .dpd-svg:active { cursor: grabbing; }
-.dpd-tb { flex-wrap: wrap; align-items: center; max-width: calc(100% - 16px); }
-.dpd-tb .bi { display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
-.dpd-search { display: flex; align-items: center; gap: 4px; background: var(--surface-ct); border: 1px solid var(--ov); border-radius: var(--r); padding: 2px 4px; }
-.dpd-search input { width: 150px; max-width: 40vw; background: transparent; border: none; color: var(--fg); padding: 4px; font-family: var(--fd); font-size: 12px; }
-.dpd-search input:focus-visible { outline: none; }
-.dpd-search:focus-within { border-color: var(--accent); }
-.dpd-search__n { font-family: var(--fd); font-size: 10px; color: var(--muted); min-width: 28px; }
-.dpd-fallback { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* Barra de ferramentas: pílula flutuante */
+.dpd-tb {
+  flex-wrap: wrap; align-items: center; max-width: calc(100% - 24px);
+  padding: 4px; border-radius: var(--r-pill); background: var(--surface); border: 1px solid var(--ov); box-shadow: var(--shadow);
+}
+.dpd-tb .bi { width: 36px; height: 36px; min-height: 36px; color: var(--fg); }
+.dpd-tb .bi:hover:not(:disabled) { background: var(--surface-hi); }
+.dpd-tb .bi[aria-expanded="true"] { background: var(--pcb); color: #fff; }
+.dpd-search { display: flex; align-items: center; gap: 4px; padding: 0 4px 0 8px; }
+.dpd-search input[type="search"] { width: 170px; max-width: 40vw; min-height: 32px; padding: 4px 10px; font-family: var(--fd); font-size: 13px; border-radius: var(--r-pill); }
+.dpd-search__n { font-family: var(--fd); font-size: 12px; color: var(--muted); min-width: 32px; }
+.dpd-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 /* Minimapa */
 .dpd-mm { cursor: crosshair; }
 .dpd-mm svg { display: block; touch-action: none; }
 .mm-node { fill: var(--surface-highest); }
-.mmv-rect { fill: var(--accent-lt); stroke: var(--accent); stroke-width: 1.5; }
+.mmv-rect { fill: rgba(176, 86, 29, 0.1); stroke: var(--copper); stroke-width: 1.5; rx: 3; }
 
 /* Painel de propriedades */
-.dpd-pp { max-height: calc(100% - 16px); overflow: auto; width: 260px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); }
+.dpd-pp { max-height: calc(100% - 24px); overflow: auto; width: 290px; font-size: 13.5px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-lg); padding: 16px; animation: ti var(--t) var(--ease-out); }
 .pp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pp-head h3 { font-size: 13px; word-break: break-all; }
-.pp-dl { display: flex; flex-direction: column; gap: 4px; margin: 0; }
-.pp-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 6px; }
-.pp-row dt { color: var(--muted); font-size: 11px; }
+.pp-head h3 { font-size: 15px; word-break: break-all; }
+.pp-head .bi { width: 32px; height: 32px; min-height: 32px; }
+.pp-dl { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.pp-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px; }
+.pp-row dt { color: var(--muted); font-size: 12.5px; }
 .pp-row dd { margin: 0; word-break: break-all; }
-.pp-sub { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-.pp-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+.pp-sub { font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 4px; }
+.pp-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
 
-/* SVG */
-.dp-toplabel { fill: var(--accent); font: 700 11px var(--fd); letter-spacing: 0.5px; }
-.dp-wire { fill: none; stroke: var(--outline); stroke-width: 1.4; }
+/* ---------------- SVG ---------------- */
+.dp-toplabel { fill: var(--copper-ink); font: 700 12px var(--fd); letter-spacing: 0.08em; }
+.dp-wire { fill: none; stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; transition: stroke 160ms ease, stroke-width 160ms ease; }
 .dp-wire-hit { fill: none; stroke: transparent; stroke-width: 10; cursor: pointer; }
-.dp-edge--bus .dp-wire { stroke-width: 3; }
-.dp-edge:hover .dp-wire { stroke: var(--fg); }
+.dp-edge--bus .dp-wire { stroke-width: 3.2; }
+.dp-edge:hover .dp-wire { stroke: var(--copper); }
 .dp-busmark line { stroke: var(--outline); stroke-width: 1.2; }
-.dp-busmark text { fill: var(--muted); font: 9px var(--fd); text-anchor: middle; }
-.dp-wlabel { fill: var(--muted); font: 9px var(--fd); pointer-events: none; }
+.dp-busmark text { fill: var(--muted); font: 9.5px var(--fd); text-anchor: middle; }
+.dp-wlabel { fill: var(--muted); font: 9.5px var(--fd); pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
 .dp-edge--const .dp-wire { stroke-dasharray: 4 3; }
 
 .dp-v--0 .dp-wire { stroke: var(--s0); }
@@ -58,41 +71,48 @@
 .dp-v--x .dp-wlabel { fill: var(--sx); }
 .dp-v--z .dp-wlabel { fill: var(--sz); }
 
-.dp-edge--sig .dp-wire { stroke-width: 3.5; filter: drop-shadow(0 0 2px var(--accent)); }
-.dp-edge--sig:not([class*="dp-v--"]) .dp-wire { stroke: var(--accent); }
-.dp-edge.dp-hit .dp-wire { stroke: var(--sx); stroke-width: 3.5; }
-.dp-edge.dp-on .dp-wire { stroke: var(--accent); stroke-width: 4; }
+/* Sinais escolhidos: trilha de cobre mais grossa */
+.dp-edge--sig .dp-wire { stroke-width: 3.4; }
+.dp-edge--sig:not([class*="dp-v--"]) .dp-wire { stroke: var(--copper); }
+.dp-edge.dp-hit .dp-wire { stroke: var(--gold); stroke-width: 4; }
+.dp-edge.dp-on .dp-wire { stroke: var(--pcb); stroke-width: 4.2; }
 .dp-edge.dp-on .dp-wlabel, .dp-edge.dp-hit .dp-wlabel { fill: var(--fg); font-weight: 700; }
 
+/* Nós: células como chips, portas como pílulas */
 .dp-node { cursor: pointer; }
 .dp-node:focus { outline: none; }
-.dp-node:focus-visible .dp-box { stroke: var(--accent); stroke-width: 2.5; }
-.dp-box { fill: var(--surface-hi); stroke: var(--ov); stroke-width: 1.2; }
+.dp-node:focus-visible .dp-box { stroke: var(--copper); stroke-width: 2.5; }
+.dp-box { fill: var(--surface); stroke: var(--ov-strong); stroke-width: 1.3; transition: stroke 160ms ease, fill 160ms ease; }
 .dp-box2 { fill: none; stroke: var(--accent-bd); stroke-width: 1; }
-.dp-node--input .dp-box, .dp-node--output .dp-box, .dp-node--inout .dp-box { fill: var(--surface-ct); }
+.dp-node--cell .dp-box { fill: var(--surface-ct); }
+.dp-node--input .dp-box { fill: var(--s0b); stroke: color-mix(in srgb, var(--s0) 45%, transparent); }
+.dp-node--output .dp-box { fill: var(--copper-lt); stroke: color-mix(in srgb, var(--copper) 45%, transparent); }
+.dp-node--inout .dp-box { fill: var(--szb); stroke: color-mix(in srgb, var(--sz) 45%, transparent); }
 .dp-node--instance .dp-box { fill: var(--accent-lt); stroke: var(--accent-bd); }
-.dp-node--top .dp-box { stroke: var(--accent-bd); }
+.dp-notch { fill: var(--surface); stroke: var(--accent-bd); }
+.dp-pinpad { fill: var(--gold); stroke: var(--surface); stroke-width: 1; }
 .dp-node--const .dp-box { fill: var(--surface); stroke-dasharray: 3 2; }
 .dp-node--const.dp-v--0 .dp-box { stroke: var(--s0); fill: var(--s0b); }
 .dp-node--const.dp-v--1 .dp-box { stroke: var(--s1); fill: var(--s1b); }
 .dp-node--const.dp-v--x .dp-box { stroke: var(--sx); fill: var(--sxb); }
 .dp-node--const.dp-v--z .dp-box { stroke: var(--sz); fill: var(--szb); }
-.dp-node--sig .dp-box { stroke: var(--accent); stroke-width: 2; }
-.dp-node.dp-hit .dp-box { stroke: var(--sx); stroke-width: 2.5; }
-.dp-node.dp-on .dp-box { stroke: var(--accent); stroke-width: 3; }
-.dp-node:hover .dp-box { filter: brightness(1.15); }
-.dp-name { fill: var(--fg); font: 600 11px var(--fd); }
+.dp-node--sig .dp-box { stroke: var(--copper); stroke-width: 2; }
+.dp-node.dp-hit .dp-box { stroke: var(--gold); stroke-width: 3; }
+.dp-node.dp-on .dp-box { stroke: var(--pcb); stroke-width: 3; }
+:root[data-theme="dark"] .dp-node.dp-on .dp-box { stroke: var(--accent); }
+.dp-node:hover .dp-box { stroke: var(--copper); }
+.dp-name { fill: var(--fg); font: 700 11px var(--fd); }
 .dp-name--c { text-anchor: middle; }
-.dp-type { fill: var(--muted); font: 9px var(--fd); }
-.dp-pin { fill: var(--muted); font: 8.5px var(--fd); }
+.dp-type { fill: var(--muted); font: 9.5px var(--fd); }
+.dp-pin { fill: var(--muted); font: 9px var(--fd); }
 .dp-pin--out { text-anchor: end; }
 
 /* Nível de detalhe: afastado demais, esconde textos pequenos. */
 .dpd--far .dp-pin, .dpd--far .dp-type, .dpd--far .dp-wlabel, .dpd--far .dp-busmark text { display: none; }
 
-@media (max-width: 768px) {
-  .dpd-canvas { height: 56vh; min-height: 280px; }
-  .dpd .dpd-tb { top: auto; bottom: 8px; left: 8px; }
+@media (max-width: 860px) {
+  .dpd-canvas { height: 56vh; min-height: 300px; }
+  .dpd .dpd-tb { top: auto; bottom: 10px; left: 10px; }
   .dpd .dpd-mm { display: none; }
   .dpd .dpd-pp { position: static; width: auto; max-height: none; box-shadow: none; }
   .dpd-legend__mode { margin-left: 0; width: 100%; }

@@ -1,6 +1,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Screen } from '../../components/Screen'
+import { IconArrowLeft, IconArrowRight, IconFit, IconLayers } from '../../components/icons'
+import { ActionBar, Screen, type ScreenFigure } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
 import { NetlistExplorer } from './explorer/NetlistExplorer'
 import { buildNetlistModel } from './netlist/model'
@@ -93,6 +94,7 @@ export function DatapathScreen() {
                 className={`dp-tab${tab === t.id ? ' dp-tab--on' : ''}`}
                 onClick={() => setTab(t.id)}
               >
+                {t.id === 'diagram' ? <IconFit size={16} /> : <IconLayers size={16} />}
                 {t.label}
               </button>
             ))}
@@ -133,17 +135,31 @@ export function DatapathScreen() {
     )
   }
 
+  const figures: ScreenFigure[] | undefined = graph
+    ? [
+        { value: model.modules.length, label: model.modules.length === 1 ? 'módulo' : 'módulos' },
+        { value: graph.nodes.filter((n) => n.kind === 'cell' || n.kind === 'instance').length, label: 'blocos no diagrama' },
+        { value: graph.edges.length, label: 'ligações', accent: true },
+      ]
+    : undefined
+
   return (
-    <Screen title="Caminho de Dados" description="Diagrama e estrutura gerados a partir do netlist da síntese.">
+    <Screen
+      title="Caminho de Dados"
+      description="O circuito que o Yosys montou, desenhado. Arraste para mover, use a roda para aproximar e clique em um bloco para ver as ligações."
+      figures={figures}
+    >
       {content}
-      <div className="scr__actions">
-        <button type="button" className="btn bs bsm" onClick={() => nav.goTo(2)}>
+      <ActionBar tone="ok" hint="Circuito montado. Próximo: rodar o testbench e ver os valores nos fios.">
+        <button type="button" className="btn bs" onClick={() => nav.goTo(2)}>
+          <IconArrowLeft size={16} />
           Voltar
         </button>
-        <button type="button" className="btn bp bsm" onClick={() => nav.goTo(4)}>
-          Simular →
+        <button type="button" className="btn bp" onClick={() => nav.goTo(4)}>
+          Simular
+          <IconArrowRight size={16} />
         </button>
-      </div>
+      </ActionBar>
     </Screen>
   )
 }

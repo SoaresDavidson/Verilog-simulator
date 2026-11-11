@@ -1,3 +1,4 @@
+import { IconPinned } from '../../components/icons'
 import { useId, useMemo, useState } from 'react'
 import { MAX_LIST_ROWS } from './limits'
 import type { SimIndex } from './simlog'
@@ -91,7 +92,8 @@ export function SignalList({ signals, sim, time, visibleIds, onToggle, selectedS
                   <span className="sim-sig__name">{signal.name}</span>
                   {isSelected(signal) && (
                     <span className="sim-sig__mark" title="Escolhido na Seleção">
-                      ★<span className="sr-only"> escolhido na Seleção</span>
+                      <IconPinned size={13} />
+                      <span className="sr-only"> escolhido na Seleção</span>
                     </span>
                   )}
                 </label>

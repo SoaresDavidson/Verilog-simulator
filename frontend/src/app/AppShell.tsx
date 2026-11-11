@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { BrandMark } from '../components/art'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { DatapathScreen } from '../features/datapath/DatapathScreen'
 import { LiveDatapath } from '../features/simulation/live/LiveDatapath'
@@ -55,7 +56,14 @@ export interface AppShellProps {
 }
 
 export function AppShell({ headerActions }: AppShellProps) {
-  const { session } = useSessionState()
+  const state = useSessionState()
+  const { session } = state
+  // Colunas da marca que energizam: sessão, síntese, caminho de dados, simulação.
+  const progress =
+    (session ? 1 : 0) +
+    (state.synthesis.status === 'success' ? 1 : 0) +
+    (state.step >= 4 ? 1 : 0) +
+    (state.simulation.status === 'success' ? 1 : 0)
   const nav = useStepNavigation()
   const mainRef = useRef<HTMLElement>(null)
   const firstRender = useRef(true)
@@ -77,17 +85,26 @@ export function AppShell({ headerActions }: AppShellProps) {
         Pular para o conteúdo
       </a>
       <header className="app-header">
-        <div className="logo">
-          <span aria-hidden="true">▶</span> Verilog Classroom
+        <div className="brand logo">
+          <span className="brand__plaque">
+            <BrandMark size={36} lit={progress} />
+          </span>
+          <span className="brand__text">
+            <span className="brand__name">Verilog Classroom</span>
+            <span className="brand__tag" aria-hidden="true">
+              Lab · Hardware digital
+            </span>
+          </span>
         </div>
-        {session && (
-          <div className="sbadge" title="Sessão ativa">
-            <span className="sr-only">Sessão ativa: </span>
-            {session.projectId}
-          </div>
-        )}
         <Stepper nav={nav} />
         <div className="header-actions">
+          {session && (
+            <div className="sbadge" title="Sessão ativa">
+              <span className="sbadge__dot" aria-hidden="true" />
+              <span className="sr-only">Sessão ativa: </span>
+              <span className="sbadge__txt">{session.projectId}</span>
+            </div>
+          )}
           {headerActions}
           <ThemeToggle />
         </div>

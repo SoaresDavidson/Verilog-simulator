@@ -1,4 +1,5 @@
-import { useId } from 'react'
+import { useId, type CSSProperties } from 'react'
+import { IconPause, IconPlay, IconRestart, IconStepBack, IconStepFwd } from '../../components/icons'
 import { formatTime, type Timescale } from './simlog'
 import { PLAYBACK_INTERVALS, PLAYBACK_SPEEDS, type Playback } from './usePlayback'
 
@@ -18,21 +19,21 @@ export function TimelineControls({ playback, timescale, lastTime }: TimelineCont
   const total = lastTime === null ? '—' : formatTime(lastTime, timescale)
 
   return (
-    <div className="sim-tl" role="group" aria-label="Controles da timeline">
+    <div className="sim-tl" role="group" aria-label="Controles da timeline" data-disabled={disabled || undefined}>
       <div className="sim-tl__buttons">
         <button
           type="button"
-          className="btn bs bi"
+          className="btn bi sim-tl__play"
           onClick={playback.togglePlay}
           disabled={disabled}
           aria-label={playback.playing ? 'Pausar' : 'Reproduzir'}
           aria-pressed={playback.playing}
           title={playback.playing ? 'Pausar' : 'Reproduzir'}
         >
-          <span aria-hidden="true">{playback.playing ? '❚❚' : '▶'}</span>
+          {playback.playing ? <IconPause size={16} /> : <IconPlay size={16} />}
         </button>
         <button type="button" className="btn bs bi" onClick={playback.prev} disabled={disabled || playback.index <= 0} aria-label="Passo anterior" title="Passo anterior">
-          <span aria-hidden="true">◀◀</span>
+          <IconStepBack size={16} />
         </button>
         <button
           type="button"
@@ -42,10 +43,10 @@ export function TimelineControls({ playback, timescale, lastTime }: TimelineCont
           aria-label="Próximo passo"
           title="Próximo passo"
         >
-          <span aria-hidden="true">▶▶</span>
+          <IconStepFwd size={16} />
         </button>
         <button type="button" className="btn bs bi" onClick={playback.reset} disabled={disabled} aria-label="Reiniciar" title="Reiniciar">
-          <span aria-hidden="true">↺</span>
+          <IconRestart size={16} />
         </button>
       </div>
 
@@ -56,6 +57,7 @@ export function TimelineControls({ playback, timescale, lastTime }: TimelineCont
         max={Math.max(0, playback.count - 1)}
         step={1}
         value={Math.max(0, playback.index)}
+        style={{ '--fill': `${playback.count > 1 ? (Math.max(0, playback.index) / (playback.count - 1)) * 100 : 0}%` } as CSSProperties}
         onChange={(event) => playback.seek(Number(event.target.value))}
         disabled={disabled}
         aria-label="Timeline"

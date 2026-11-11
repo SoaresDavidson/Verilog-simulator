@@ -7,7 +7,7 @@ export interface LegendProps {
 export function Legend({ hasValues }: LegendProps) {
   return (
     <div className="lg dpd-legend" role="note" aria-label="Legenda dos estados lógicos">
-      <span>Legenda:</span>
+      <span className="dpd-legend__k">Legenda</span>
       <span className="b0 s0">0 Baixo</span>
       <span className="b0 s1">1 Alto</span>
       <span className="b0 sx">X Indefinido</span>

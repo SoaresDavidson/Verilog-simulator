@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { SimLog } from '../../api/types'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Screen } from '../../components/Screen'
+import { IconArrowLeft } from '../../components/icons'
+import { Screen, type ScreenFigure } from '../../components/Screen'
 import { SplitPane } from '../../components/SplitPane'
 import { useSessionState } from '../../state/hooks'
 import { RunPanel } from './RunPanel'
@@ -9,7 +10,7 @@ import { SignalList } from './SignalList'
 import { defaultVisibleIds, listSignals } from './signals'
 import { MAX_WAVEFORM_SIGNALS } from './limits'
 import type { DiagramSlot, LiveDiagramContext } from './liveDiagram'
-import { indexSimLog } from './simlog'
+import { formatTime, indexSimLog } from './simlog'
 import { TimelineControls } from './TimelineControls'
 import { usePlayback } from './usePlayback'
 import { useSimulationRun } from './useSimulationRun'
@@ -68,9 +69,22 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
   }
 
   const lastTime = sim?.usable ? sim.timestamps[sim.timestamps.length - 1] : null
+  const figures: ScreenFigure[] | undefined =
+    sim?.usable && lastTime !== null
+      ? [
+          { value: formatTime(lastTime, sim.timescale), label: 'de simulação' },
+          { value: signals.length, label: 'sinais gravados' },
+          { value: sim.timestamps.length, label: 'instantes', accent: true },
+        ]
+      : undefined
 
   return (
-    <Screen title="Simulação" description="Execute a simulação e acompanhe os sinais ao longo do tempo." className="sim-scr">
+    <Screen
+      title="Simulação"
+      description="Rode o testbench e acompanhe cada sinal ao longo do tempo, no diagrama e nas formas de onda."
+      className="sim-scr"
+      figures={figures}
+    >
       <RunPanel
         simulation={state.simulation}
         unusableLog={result !== null && !sim?.usable}
@@ -102,12 +116,14 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
         </div>
       )}
 
-      <TimelineControls playback={playback} timescale={sim?.timescale ?? { magnitude: 1, unit: '' }} lastTime={lastTime} />
-
       <div className="scr__actions">
-        <button type="button" className="btn bs bsm" onClick={() => nav.goTo(3)}>
-          Voltar ao Caminho de Dados
-        </button>
+        <div className="scr__actions-bar sim-dock">
+          <button type="button" className="btn bs sim-dock__back" onClick={() => nav.goTo(3)}>
+            <IconArrowLeft size={16} />
+            Voltar ao Caminho de Dados
+          </button>
+          <TimelineControls playback={playback} timescale={sim?.timescale ?? { magnitude: 1, unit: '' }} lastTime={lastTime} />
+        </div>
       </div>
     </Screen>
   )

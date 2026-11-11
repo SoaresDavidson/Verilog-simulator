@@ -2,7 +2,9 @@ import { useEffect, useReducer, useRef, useState, type DragEvent } from 'react'
 import { useApi } from '../../api/context'
 import { isAbortError, toUserMessage } from '../../api/errors'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Screen } from '../../components/Screen'
+import { BreadboardArt } from '../../components/art'
+import { GlyphSourceFile, GlyphTestbenchFile, IconArrowRight, IconSwap, IconUpload } from '../../components/icons'
+import { ActionBar, Screen } from '../../components/Screen'
 import { MAX_UPLOAD_BYTES } from '../../config'
 import { formatBytes } from '../../lib/format'
 import { useSession } from '../../state/hooks'
@@ -52,16 +54,6 @@ function uploadReducer(state: UploadState, action: UploadAction): UploadState {
     case 'RESET':
       return initialUpload
   }
-}
-
-function UploadIcon() {
-  return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" y1="3" x2="12" y2="15" />
-    </svg>
-  )
 }
 
 /** Tela 1 (#s1) — upload do ZIP e criação da sessão (#19, #25). */
@@ -151,59 +143,91 @@ export function UploadScreen() {
 
   const hasValidFile = upload.file !== null && upload.preview !== null
 
+  const chipLabel = upload.file?.name ?? session.session?.fileName ?? 'projeto.zip'
+  const seated = uploaded || hasValidFile
+
   return (
     <Screen
       title="Novo Projeto"
-      description="Faça upload de um arquivo ZIP contendo seus módulos Verilog/SystemVerilog."
-      className="scr--center"
+      description="Envie um ZIP com seus módulos Verilog/SystemVerilog e o testbench. Daqui até a simulação são quatro etapas."
     >
-      <p role="status" className="upload-status" data-phase={uploaded ? 'UPLOADED' : upload.phase}>
-        {status}
-      </p>
-
-      {uploaded && session.session ? (
-        <>
-          <FilePreview
-            title={session.session.fileName}
-            files={session.files?.items ?? []}
-            note={
-              session.files?.origin === 'client-preview'
-                ? 'Lista lida do ZIP no navegador; a síntese usa os arquivos enviados ao servidor.'
-                : undefined
-            }
-          />
-          <p className="muted upload-session">
-            Sessão: <code>{session.session.projectId}</code>
+      <div className="up">
+        <div className="up__main">
+          <p role="status" className="upload-status" data-phase={uploaded ? 'UPLOADED' : upload.phase}>
+            <span
+              className={`led ${uploaded ? 'led--ok' : busy ? 'led--run' : upload.phase === 'ERROR' ? 'led--err' : hasValidFile ? 'led--ok' : ''}`}
+              aria-hidden="true"
+            />
+            {status}
           </p>
-          <div className="scr__actions">
-            <button type="button" className="btn bd" onClick={() => void endSession()} disabled={ending}>
-              {ending ? 'Descartando…' : 'Descartar sessão'}
-            </button>
-            <button type="button" className="btn bp" onClick={() => nav.goTo(2)} disabled={ending}>
-              Criar Sessão e Continuar
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {!upload.file && (
-            <button
-              type="button"
-              className={`uz${dragging ? ' dg' : ''}`}
-              onClick={openPicker}
-              onDragOver={onDragOver}
-              onDragEnter={onDragOver}
-              onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              disabled={busy}
-              aria-describedby="upload-hint"
-            >
-              <UploadIcon />
-              <span className="uz__title">Arraste um arquivo .zip aqui</span>
-              <span id="upload-hint" className="uz__hint">
-                ou clique para selecionar · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
-              </span>
-            </button>
+
+          {uploaded && session.session ? (
+            <>
+              <div className="up__seated">
+                <BreadboardArt label={chipLabel} seated />
+              </div>
+              <FilePreview
+                title={session.session.fileName}
+                files={session.files?.items ?? []}
+                note={
+                  session.files?.origin === 'client-preview'
+                    ? 'Lista lida do ZIP no navegador; a síntese usa os arquivos enviados ao servidor.'
+                    : undefined
+                }
+              />
+              <p className="muted upload-session">
+                Sessão: <code>{session.session.projectId}</code>
+              </p>
+            </>
+          ) : (
+            <>
+              {!upload.file ? (
+                <button
+                  type="button"
+                  className={`uz${dragging ? ' dg' : ''}`}
+                  onClick={openPicker}
+                  onDragOver={onDragOver}
+                  onDragEnter={onDragOver}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={onDrop}
+                  disabled={busy}
+                  aria-describedby="upload-hint"
+                >
+                  <span className="uz__art">
+                    <BreadboardArt label={dragging ? 'solte aqui' : 'projeto.zip'} />
+                  </span>
+                  <span className="uz__title">Arraste um arquivo .zip aqui</span>
+                  <span id="upload-hint" className="uz__hint">
+                    ou <b>clique para escolher</b> · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
+                  </span>
+                </button>
+              ) : (
+                <div className="up__seated">
+                  <BreadboardArt label={chipLabel} seated={seated} />
+                </div>
+              )}
+
+              {upload.error && (
+                <div role="alert" className="state-error">
+                  {upload.error}
+                </div>
+              )}
+
+              {hasValidFile && upload.file && upload.preview && (
+                <FilePreview
+                  title={upload.file.name}
+                  subtitle={formatBytes(upload.file.size)}
+                  files={upload.preview}
+                  note="Pré-visualização lida do ZIP no navegador."
+                />
+              )}
+
+              {uploading && (
+                <div className="pb pb--indeterminate" role="progressbar" aria-label="Enviando projeto">
+                  <div className="fl" />
+                </div>
+              )}
+            </>
           )}
           <input
             ref={inputRef}
@@ -218,45 +242,93 @@ export function UploadScreen() {
               void selectFile(file)
             }}
           />
+        </div>
 
-          {upload.error && (
-            <div role="alert" className="state-error">
-              {upload.error}
-            </div>
-          )}
-
-          {hasValidFile && upload.file && upload.preview && (
-            <FilePreview
-              title={upload.file.name}
-              subtitle={formatBytes(upload.file.size)}
-              files={upload.preview}
-              note="Pré-visualização lida do ZIP no navegador."
-            />
-          )}
-
-          {uploading && (
-            <div className="pb pb--indeterminate" role="progressbar" aria-label="Enviando projeto">
-              <div className="fl" />
-            </div>
-          )}
-
-          <div className="scr__actions">
-            {uploading ? (
-              <button type="button" className="btn bs" onClick={() => abortRef.current?.abort()}>
-                Cancelar envio
-              </button>
-            ) : (
-              hasValidFile && (
-                <button type="button" className="btn bs" onClick={openPicker}>
-                  Trocar arquivo
-                </button>
-              )
-            )}
-            <button type="button" className="btn bp" onClick={() => void submit()} disabled={!hasValidFile || uploading}>
-              {uploading ? 'Enviando…' : upload.phase === 'ERROR' && hasValidFile ? 'Tentar novamente' : 'Enviar projeto'}
-            </button>
+        <aside className="up__guide card" aria-label="Como funciona">
+          <h2 className="up__guide-title">Como funciona</h2>
+          <ol className="up__steps">
+            <li className={uploaded ? 'is-done' : 'is-now'}>
+              <span className="up__step-n">1</span>
+              <div>
+                <b>Envie o projeto</b>
+                <p>Um .zip com os módulos e o testbench.</p>
+              </div>
+            </li>
+            <li>
+              <span className="up__step-n">2</span>
+              <div>
+                <b>Sintetize</b>
+                <p>O Yosys converte o código em portas e fios. Você escolhe os sinais.</p>
+              </div>
+            </li>
+            <li>
+              <span className="up__step-n">3</span>
+              <div>
+                <b>Veja o circuito</b>
+                <p>O caminho de dados aparece desenhado, com zoom e busca.</p>
+              </div>
+            </li>
+            <li>
+              <span className="up__step-n">4</span>
+              <div>
+                <b>Simule</b>
+                <p>O Icarus roda o testbench e os valores acendem nos fios.</p>
+              </div>
+            </li>
+          </ol>
+          <div className="up__zip">
+            <p className="up__zip-title">O que vai no .zip</p>
+            <ul className="up__zip-tree">
+              <li>
+                <GlyphSourceFile size={20} />
+                <code>rtl/meu_modulo.v</code>
+                <span className="tag tag--source">fonte</span>
+              </li>
+              <li>
+                <GlyphTestbenchFile size={20} />
+                <code>tb/tb_meu_modulo.v</code>
+                <span className="tag tag--testbench">testbench</span>
+              </li>
+            </ul>
+            <p className="up__zip-note">
+              Testbench: nome começando com <code>tb_</code> ou caminho com <code>testbench</code>.
+            </p>
           </div>
-        </>
+        </aside>
+      </div>
+
+      {uploaded && session.session ? (
+        <ActionBar tone="ok" hint="Projeto na bancada. Próximo: sintetizar com o Yosys.">
+          <button type="button" className="btn bd" onClick={() => void endSession()} disabled={ending}>
+            {ending ? 'Descartando…' : 'Descartar sessão'}
+          </button>
+          <button type="button" className="btn bp" onClick={() => nav.goTo(2)} disabled={ending}>
+            Criar Sessão e Continuar
+            <IconArrowRight size={16} />
+          </button>
+        </ActionBar>
+      ) : (
+        <ActionBar
+          tone={hasValidFile ? 'ok' : 'wait'}
+          hint={hasValidFile ? 'Arquivo conferido. Envie para criar a sessão.' : 'Escolha um .zip para começar.'}
+        >
+          {uploading ? (
+            <button type="button" className="btn bs" onClick={() => abortRef.current?.abort()}>
+              Cancelar envio
+            </button>
+          ) : (
+            hasValidFile && (
+              <button type="button" className="btn bs" onClick={openPicker}>
+                <IconSwap size={16} />
+                Trocar arquivo
+              </button>
+            )
+          )}
+          <button type="button" className="btn bp" onClick={() => void submit()} disabled={!hasValidFile || uploading}>
+            <IconUpload size={16} />
+            {uploading ? 'Enviando…' : upload.phase === 'ERROR' && hasValidFile ? 'Tentar novamente' : 'Enviar projeto'}
+          </button>
+        </ActionBar>
       )}
     </Screen>
   )

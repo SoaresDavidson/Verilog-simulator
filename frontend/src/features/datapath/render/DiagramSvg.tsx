@@ -154,8 +154,13 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
               }}
               onKeyDown={onActivate(select)}
             >
-              <rect className="dp-box" width={box.w} height={box.h} rx={node.kind === 'const' ? 12 : 4} />
-              {node.kind === 'instance' && <rect className="dp-box2" x={3} y={3} width={box.w - 6} height={box.h - 6} rx={3} />}
+              <rect className="dp-box" width={box.w} height={box.h} rx={isBlock ? 7 : Math.min(box.h / 2, 12)} />
+              {node.kind === 'instance' && <rect className="dp-box2" x={3} y={3} width={box.w - 6} height={box.h - 6} rx={5} />}
+              {node.kind === 'instance' && <path className="dp-notch" d={`M${box.w / 2 - 6} 0a6 6 0 0 0 12 0`} />}
+              {isBlock &&
+                [...node.inputs.map((p) => box.pins[`in:${p.name}`]), ...node.outputs.map((p) => box.pins[`out:${p.name}`])]
+                  .filter(Boolean)
+                  .map((pt, i) => <circle key={i} className="dp-pinpad" cx={pt.x - box.x} cy={pt.y - box.y} r={2.6} />)}
               {isBlock ? (
                 <>
                   <text className="dp-name" x={8} y={13}>

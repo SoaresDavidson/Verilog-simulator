@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { PROJECT_ID, SESSION_TOKEN, synthesizedState, uploadedState } from '../../test/fixtures'
 import { createFetchMock, fetchCall, jsonResponse } from '../../test/http'
 import { renderApp } from '../../test/render'
@@ -12,11 +12,11 @@ function allUrls(fetch: ReturnType<typeof createFetchMock>) {
 describe('encerramento da sessão (#36)', () => {
   it('saída normal chama DELETE, limpa o estado e volta ao upload', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fetch = createFetchMock().mockResolvedValueOnce(jsonResponse(200, { success: true, message: 'ok' }))
     renderApp({ fetch, initialState: synthesizedState({ step: 3, selectedSignals: ['top.clk'] }) })
 
     await user.click(screen.getByRole('button', { name: 'Encerrar sessão' }))
+    await user.click(screen.getByRole('button', { name: 'Encerrar e apagar' }))
 
     await screen.findByRole('heading', { level: 1, name: 'Novo Projeto' })
     const call = fetchCall(fetch)
@@ -31,40 +31,41 @@ describe('encerramento da sessão (#36)', () => {
 
   it('cancelar a confirmação não chama a API', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     const fetch = createFetchMock()
     renderApp({ fetch, initialState: uploadedState() })
 
     await user.click(screen.getByRole('button', { name: 'Encerrar sessão' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar trabalhando' }))
     expect(fetch).not.toHaveBeenCalled()
     expect(screen.getByTitle('Sessão ativa')).toBeInTheDocument()
   })
 
   it('falha de limpeza mantém a sessão e avisa', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fetch = createFetchMock()
       .mockResolvedValueOnce(jsonResponse(503, { error: { code: 'DOCKER_UNAVAILABLE', message: 'Docker indisponível.', request_id: 'r' } }))
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
     renderApp({ fetch, initialState: synthesizedState({ step: 2 }) })
 
     await user.click(screen.getByRole('button', { name: 'Encerrar sessão' }))
+    await user.click(screen.getByRole('button', { name: 'Encerrar e apagar' }))
     expect(await screen.findByText(/não foi possível encerrar a sessão\. docker indisponível/i)).toBeInTheDocument()
     expect(screen.getByTitle('Sessão ativa')).toHaveTextContent(PROJECT_ID)
     expect(screen.getByRole('heading', { level: 1, name: 'Seleção e Síntese' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Encerrar sessão' }))
+    await user.click(screen.getByRole('button', { name: 'Encerrar e apagar' }))
     expect(await screen.findByText(/não foi possível conectar/i)).toBeInTheDocument()
     expect(screen.getByTitle('Sessão ativa')).toBeInTheDocument()
   })
 
   it('404 (run já removido) encerra a sessão local', async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fetch = createFetchMock().mockResolvedValueOnce(jsonResponse(404, { detail: 'not found' }))
     renderApp({ fetch, initialState: uploadedState() })
 
     await user.click(screen.getByRole('button', { name: 'Encerrar sessão' }))
+    await user.click(screen.getByRole('button', { name: 'Encerrar e apagar' }))
     await waitFor(() => expect(screen.queryByTitle('Sessão ativa')).not.toBeInTheDocument())
   })
 

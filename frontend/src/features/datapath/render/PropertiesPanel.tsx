@@ -1,3 +1,4 @@
+import { IconClose } from '../../../components/icons'
 import type { ReactNode } from 'react'
 import { directionLabel, widthLabel } from '../netlist/model'
 import { edgesOfNet, edgesOfNode, type GraphEdge, type GraphNode, type NetlistGraph } from '../netlist/parse'
@@ -175,7 +176,7 @@ export function PropertiesPanel({ graph, selection, netValues, edgeValues, onSel
           {title}
         </h3>
         <button type="button" className="bi" aria-label="Fechar propriedades" onClick={onClose}>
-          ×
+          <IconClose size={16} />
         </button>
       </div>
       {body}

@@ -1,5 +1,9 @@
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Screen } from '../../components/Screen'
+import { useMemo } from 'react'
+import { IconArrowLeft, IconArrowRight } from '../../components/icons'
+import { ActionBar, Screen, type ScreenFigure } from '../../components/Screen'
+import { isSynthesisConfirmed } from '../../state/session'
+import { netlistStats } from './netlist'
 import { useSessionState } from '../../state/hooks'
 import { advanceBlockReason } from './advance'
 import { FileTree } from './FileTree'
@@ -21,9 +25,26 @@ export function SynthesisScreen() {
   // Um só ciclo de síntese para os dois painéis que a disparam.
   const synthesis = useSynthesis()
   const blockReason = advanceBlockReason(state)
+  const confirmed = isSynthesisConfirmed(state)
+  const netlist = confirmed ? state.synthesis.result?.netlist_content : null
+
+  const figures = useMemo<ScreenFigure[] | undefined>(() => {
+    if (!netlist) return undefined
+    const stats = netlistStats(netlist)
+    const pick = (key: string) => stats.find((s) => s.key === key)?.value ?? 0
+    return [
+      { value: pick('cells'), label: 'células' },
+      { value: pick('wires'), label: 'fios' },
+      { value: state.selectedSignals.length, label: 'sinais escolhidos', accent: true },
+    ]
+  }, [netlist, state.selectedSignals.length])
 
   return (
-    <Screen title="Seleção e Síntese" description="Confira os arquivos, execute a síntese e selecione os sinais.">
+    <Screen
+      title="Seleção e Síntese"
+      description="O Yosys transforma seu Verilog em portas e fios. Depois, escolha quais sinais você quer acompanhar."
+      figures={figures}
+    >
       <div className="split splitw">
         <div className="sp">
           <FileTree files={state.files} onReupload={() => nav.goTo(1)} />
@@ -32,27 +53,34 @@ export function SynthesisScreen() {
           <SynthesisPanel synthesis={synthesis} />
           <TopModulePanel synthesis={synthesis} />
           <SignalSelector />
-          <div className="scr__actions">
-            {blockReason && (
-              <span id="syn-advance-reason" className="syn-block-reason">
-                {blockReason}
-              </span>
-            )}
-            <button type="button" className="btn bs bsm" onClick={() => nav.goTo(1)}>
-              Voltar
-            </button>
-            <button
-              type="button"
-              className="btn bp bsm"
-              disabled={blockReason !== null}
-              aria-describedby={blockReason ? 'syn-advance-reason' : undefined}
-              onClick={() => nav.goTo(3)}
-            >
-              Ver Caminho de Dados →
-            </button>
-          </div>
         </div>
       </div>
+      <ActionBar
+        hintId={blockReason ? 'syn-advance-reason' : undefined}
+        tone={blockReason ? 'wait' : 'ok'}
+        hint={
+          blockReason ?? (
+            <>
+              Tudo pronto: <b>{state.selectedSignals.length}</b> sinais escolhidos. Agora veja o circuito desenhado.
+            </>
+          )
+        }
+      >
+        <button type="button" className="btn bs" onClick={() => nav.goTo(1)}>
+          <IconArrowLeft size={16} />
+          Voltar
+        </button>
+        <button
+          type="button"
+          className="btn bp"
+          disabled={blockReason !== null}
+          aria-describedby={blockReason ? 'syn-advance-reason' : undefined}
+          onClick={() => nav.goTo(3)}
+        >
+          Ver Caminho de Dados
+          <IconArrowRight size={16} />
+        </button>
+      </ActionBar>
     </Screen>
   )
 }

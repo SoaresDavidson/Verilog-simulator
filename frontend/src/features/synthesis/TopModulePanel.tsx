@@ -61,7 +61,7 @@ export function TopModulePanel({ synthesis }: { synthesis: UseSynthesis }) {
                   />
                   <span className="nm">{name}</span>
                 </label>
-                {isTop && <span className="syn-tag syn-tag--top">top</span>}
+                {isTop && <span className="tag tag--top">top</span>}
               </li>
             )
           })}
@@ -98,7 +98,7 @@ export function TopModulePanel({ synthesis }: { synthesis: UseSynthesis }) {
       <div className="ch">
         <h2 id={headingId}>Módulo Top</h2>
         {candidates.length > 0 && (
-          <span className="muted syn-meta">
+          <span className="count syn-meta">
             {candidates.length} módulo{candidates.length === 1 ? '' : 's'}
           </span>
         )}
