@@ -11,6 +11,7 @@ import {
   type ProjectId,
   type StatusResponse,
   type SimulationResponse,
+  type SynthesisRequest,
   type SynthesisResponse,
   type UploadResponse,
 } from './types'
@@ -24,13 +25,18 @@ export interface ApiClientConfig {
   timeoutMs?: number
 }
 
+export interface SynthesizeOptions extends RequestOptions {
+  /** Top explícito (`hierarchy -top`); `null`/omitido usa `hierarchy -auto-top`. */
+  topModule?: string | null
+}
+
 export interface ApiClient {
   /** Acesso direto para rotas ainda não cobertas pelos métodos abaixo. */
   readonly http: HttpClient
   /** `POST /verilog/upload-projeto-zip` (multipart, campo `file`). Não envia token. */
   uploadProject(file: File, options?: RequestOptions): Promise<UploadResponse>
   /** `POST /verilog/mapear-processador`. */
-  synthesize(projectId: ProjectId, options?: RequestOptions): Promise<SynthesisResponse>
+  synthesize(projectId: ProjectId, options?: SynthesizeOptions): Promise<SynthesisResponse>
   /** `POST /verilog/simular-execucao`. */
   simulate(projectId: ProjectId, options?: RequestOptions): Promise<SimulationResponse>
   /** `DELETE /verilog/projeto/{project_id}`. */
@@ -134,12 +140,10 @@ export function createApiClient(config: ApiClientConfig = {}): ApiClient {
       return assertUploadResponse(body)
     },
 
-    async synthesize(projectId, options) {
-      const body = await http.request<unknown>('/verilog/mapear-processador', {
-        ...options,
-        method: 'POST',
-        json: { project_id: projectId },
-      })
+    async synthesize(projectId, { topModule, ...options } = {}) {
+      const json: SynthesisRequest = { project_id: projectId }
+      if (topModule) json.top_module = topModule
+      const body = await http.request<unknown>('/verilog/mapear-processador', { ...options, method: 'POST', json })
       return assertSynthesisResponse(body)
     },
 

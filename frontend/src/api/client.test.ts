@@ -36,6 +36,16 @@ describe('createApiClient', () => {
     expect(JSON.parse(String(call.body))).toEqual({ project_id: PROJECT_ID })
   })
 
+  it('synthesize envia top_module só quando o top é explícito', async () => {
+    const fetchMock = createFetchMock()
+      .mockResolvedValueOnce(jsonResponse(200, synthesisOk))
+      .mockResolvedValueOnce(jsonResponse(200, synthesisOk))
+    await client(fetchMock, SESSION_TOKEN).synthesize(PROJECT_ID, { topModule: 'alu' })
+    await client(fetchMock, SESSION_TOKEN).synthesize(PROJECT_ID, { topModule: null })
+    expect(JSON.parse(String(fetchCall(fetchMock, 0).body))).toEqual({ project_id: PROJECT_ID, top_module: 'alu' })
+    expect(JSON.parse(String(fetchCall(fetchMock, 1).body))).toEqual({ project_id: PROJECT_ID })
+  })
+
   it('não envia token quando não há sessão', async () => {
     const fetchMock = createFetchMock().mockResolvedValueOnce(jsonResponse(200, synthesisOk))
     await client(fetchMock, null).synthesize(PROJECT_ID)

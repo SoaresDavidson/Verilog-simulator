@@ -97,16 +97,28 @@ export function moduleCandidates(netlist: Netlist): string[] {
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
+/**
+ * Módulos que o usuário pode escolher como top: os da última síntese
+ * automática (`saved`) mais os da netlist atual, sem repetição e ordenados.
+ */
+export function selectableTops(saved: readonly string[], netlist: Netlist | null): string[] {
+  const names = new Set([...saved, ...(netlist ? moduleCandidates(netlist) : [])])
+  return [...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+}
+
 export const TOP_MESSAGES = {
   missing: 'O backend não informou o módulo top da síntese. Verifique o log e tente novamente.',
   invalid: 'O módulo top informado pelo backend não existe na netlist recebida. Tente sintetizar novamente.',
+  notCandidate: 'O módulo escolhido não está entre os módulos da netlist. Escolha um módulo da lista.',
+  mismatch: 'O backend sintetizou um módulo top diferente do escolhido. Tente sintetizar novamente.',
 } as const
 
 export type TopCheck = { ok: true; top: string } | { ok: false; message: string }
 
 /**
- * Valida o `top_module` devolvido pelo backend (`hierarchy -auto-top`) contra
- * os candidatos da netlist. O cliente nunca escolhe um top por conta própria.
+ * Valida o `top_module` devolvido pelo backend contra os candidatos da
+ * netlist. O top exibido é sempre o que o backend confirmou, nunca um valor
+ * deduzido pelo cliente.
  */
 export function checkTopModule(netlist: Netlist, topModule: string | null | undefined): TopCheck {
   if (typeof topModule !== 'string' || topModule === '') return { ok: false, message: TOP_MESSAGES.missing }

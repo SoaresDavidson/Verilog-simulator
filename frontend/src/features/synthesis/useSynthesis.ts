@@ -1,7 +1,7 @@
 /**
  * Ciclo de vida da síntese (#22, #28): uma requisição por vez, resultado
  * anterior invalidado ao iniciar, falhas distinguidas por tipo e nova
- * tentativa sem reenviar o projeto.
+ * tentativa sem reenviar o projeto. Aceita top explícito (#27).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApi } from '../../api/context'
@@ -9,7 +9,7 @@ import { isAbortError, isApiError, MESSAGES, type ApiErrorKind } from '../../api
 import { PROJECT_ID_PATTERN, type SynthesisResponse } from '../../api/types'
 import { useSession } from '../../state/hooks'
 import type { SessionState } from '../../state/session'
-import { checkNetlist, checkTopModule } from './netlist'
+import { checkNetlist, checkTopModule, moduleCandidates, selectableTops, TOP_MESSAGES } from './netlist'
 
 /** Maior que o timeout padrão das ferramentas no backend, para receber o 408 dele. */
 export const SYNTHESIS_TIMEOUT_MS = 180_000
@@ -19,7 +19,7 @@ export type SynthesisFailureKind =
   | 'synthesis'
   /** Sucesso sem netlist utilizável. */
   | 'netlist'
-  /** `top_module` ausente ou fora da netlist. */
+  /** `top_module` ausente, fora da netlist ou diferente do pedido. */
   | 'top'
   /** Requisição interrompida ao sair da tela. */
   | 'interrupted'
@@ -42,7 +42,11 @@ export interface UseSynthesis {
   running: boolean
   /** Tipo da última falha observada nesta montagem da tela. */
   failureKind: SynthesisFailureKind | null
-  start: () => Promise<void>
+  /**
+   * Inicia a síntese. `topModule` string pede esse top (`hierarchy -top`),
+   * `null` volta ao automático e omitido repete o pedido da última síntese.
+   */
+  start: (topModule?: string | null) => Promise<void>
 }
 
 export function useSynthesis(): UseSynthesis {
@@ -63,27 +67,43 @@ export function useSynthesis(): UseSynthesis {
   const running = state.synthesis.status === 'running'
   const canStart = isValidProjectId(projectId) && !running
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (topModule?: string | null) => {
     const current = stateRef.current
     const id = current.session?.projectId
     if (inFlightRef.current || current.synthesis.status === 'running' || !isValidProjectId(id)) return
-    inFlightRef.current = true
-    const controller = new AbortController()
-    controllerRef.current = controller
-    setFailureKind(null)
-    dispatch({ type: 'SYNTHESIS_STARTED' })
-    dispatch({ type: 'TOP_MODULE_SELECTED', topModule: null })
-
-    // Descarta respostas que chegarem depois de a sessão mudar.
-    const stillCurrent = () => stateRef.current.session?.projectId === id
+    const requested = topModule === undefined ? current.topRequest : topModule
+    const allowed = selectableTops(current.topCandidates, current.synthesis.result?.netlist_content ?? null)
 
     const fail = (kind: SynthesisFailureKind, error: string, result?: SynthesisResponse) => {
       setFailureKind(kind)
       dispatch({ type: 'SYNTHESIS_FAILED', error, result: result ?? null })
     }
 
+    // Top fora da lista não chega ao backend. O pedido inválido não fica salvo,
+    // então "Tentar novamente" volta ao top automático.
+    if (requested !== null && !allowed.includes(requested)) {
+      dispatch({ type: 'SYNTHESIS_STARTED', topRequest: null })
+      dispatch({ type: 'TOP_MODULE_SELECTED', topModule: null })
+      fail('top', TOP_MESSAGES.notCandidate)
+      return
+    }
+
+    inFlightRef.current = true
+    const controller = new AbortController()
+    controllerRef.current = controller
+    setFailureKind(null)
+    dispatch({ type: 'SYNTHESIS_STARTED', topRequest: requested })
+    dispatch({ type: 'TOP_MODULE_SELECTED', topModule: null })
+
+    // Descarta respostas que chegarem depois de a sessão mudar.
+    const stillCurrent = () => stateRef.current.session?.projectId === id
+
     try {
-      const response = await api.synthesize(id, { signal: controller.signal, timeoutMs: SYNTHESIS_TIMEOUT_MS })
+      const response = await api.synthesize(id, {
+        signal: controller.signal,
+        timeoutMs: SYNTHESIS_TIMEOUT_MS,
+        topModule: requested,
+      })
       if (!stillCurrent()) return
       if (!response.success) {
         fail('synthesis', SYNTHESIS_MESSAGES.synthesis, response)
@@ -99,6 +119,11 @@ export function useSynthesis(): UseSynthesis {
         fail('top', top.message, { ...response, netlist_content: null })
         return
       }
+      if (requested !== null && top.top !== requested) {
+        fail('top', TOP_MESSAGES.mismatch, { ...response, netlist_content: null })
+        return
+      }
+      if (requested === null) dispatch({ type: 'TOP_CANDIDATES_SET', candidates: moduleCandidates(check.netlist) })
       dispatch({ type: 'SYNTHESIS_SUCCEEDED', result: { ...response, netlist_content: check.netlist } })
       dispatch({ type: 'TOP_MODULE_SELECTED', topModule: top.top })
     } catch (error) {

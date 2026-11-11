@@ -37,7 +37,20 @@ def test_mapear_processador_returns_typed_netlist(yosys_netlist: dict) -> None:
     assert result["top_module"] == "cpu"
     assert isinstance(result["netlist_content"], Netlist)
     assert result["stat_report"] == "Number of cells: 1"
-    integration.synthesize.assert_called_once_with("runs/run_test")
+    integration.synthesize.assert_called_once_with("runs/run_test", top_module=None)
+
+
+def test_mapear_processador_forwards_explicit_top(yosys_netlist: dict) -> None:
+    """Top escolhido pelo cliente chega à integração do Yosys."""
+    integration = MagicMock()
+    integration.synthesize.return_value = YosysResult(
+        success=True, exit_code=0, stdout="ok", stderr="", netlist_content=yosys_netlist
+    )
+    service = VerilogService(yosys_integration=integration)
+
+    service.mapear_processador("runs/run_test", "cpu")
+
+    integration.synthesize.assert_called_once_with("runs/run_test", top_module="cpu")
 
 
 def test_mapear_processador_preserves_failed_response() -> None:

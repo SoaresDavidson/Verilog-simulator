@@ -48,7 +48,7 @@ def test_run_is_marked_in_use_during_synthesis(api_client: TestClient) -> None:
     seen: list[bool] = []
     service = VerilogService(yosys_integration=MagicMock(), docker_integration=MagicMock())
 
-    def fake_map(project_id: str) -> dict:
+    def fake_map(project_id: str, top_module: str | None = None) -> dict:
         seen.append(run_registry.is_in_use(run_name))
         return {
             "success": True,

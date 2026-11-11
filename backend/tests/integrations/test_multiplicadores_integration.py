@@ -13,7 +13,7 @@ from pathlib import Path
 
 import docker
 import pytest
-from conftest import MULTIPLICADORES, zip_project
+from conftest import MULTIPLICADORES, make_zip, zip_project
 from docker.errors import DockerException, ImageNotFound
 
 from config import settings
@@ -95,3 +95,26 @@ def test_synthesis_then_simulation_share_the_run(service: VerilogService, tmp_pa
     assert synthesis["success"] and simulation["success"] and again["success"]
     assert again["top_module"] == synthesis["top_module"] == "mult_shift_add"
     assert PASSED in simulation["stdout"]
+
+
+HIERARCHY = """module inv(input a, output y); assign y = ~a; endmodule
+module cpu(input a, output y); inv u(.a(a), .y(y)); endmodule
+"""
+
+
+def test_explicit_top_synthesizes_submodule(service: VerilogService, tmp_path: Path) -> None:
+    """``hierarchy -top`` troca o top; módulo inexistente vira ``success: false``."""
+    archive = tmp_path / "hierarquia.zip"
+    archive.write_bytes(make_zip({"cpu.v": HIERARCHY}))
+    project_id = service.upload_zip_project(archive).project_id
+
+    auto = service.mapear_processador(project_id)
+    explicit = service.mapear_processador(project_id, "inv")
+    missing = service.mapear_processador(project_id, "nao_existe")
+
+    assert auto["top_module"] == "cpu"
+    assert set(auto["netlist_content"].modules) == {"cpu", "inv"}
+    assert explicit["success"] and explicit["top_module"] == "inv"
+    assert set(explicit["netlist_content"].modules) == {"inv"}
+    assert missing["success"] is False
+    assert "nao_existe" in missing["stderr"]

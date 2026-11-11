@@ -129,10 +129,12 @@ Dispara o mapeamento de hardware no container `yosys`.
 **Request Payload:**
 ```json
 {
-  "project_id": "runs/run_<uuid>"
+  "project_id": "runs/run_<uuid>",
+  "top_module": "alu"
 }
 ```
 * O `project_id` é o identificador único da pasta do projeto retornado pelo endpoint de upload. Ele deve residir sob `/verilog_code/runs/`.
+* `top_module` é opcional. Sem ele, o Yosys escolhe o top (`hierarchy -auto-top`). Com ele, roda `hierarchy -top <nome>`, e os módulos fora da hierarquia desse top saem da netlist. O nome precisa ser um identificador Verilog simples (`^[A-Za-z_][A-Za-z0-9_$]*$`, até 255 caracteres), senão a rota responde `422`. Um módulo que não existe nos fontes faz a síntese falhar com `success: false` e a mensagem do Yosys em `stderr`.
 * **Funcionamento:** Executa comandos do Yosys no container `yosys` para ler os arquivos `.v` e `.sv`, gerando e retornando o netlist estrutural (`estrutura.json`).
 * O Yosys é interrompido após `YOSYS_TIMEOUT_SECONDS`; nesse caso a rota responde `408` (`YOSYS_TIMEOUT`). Container indisponível responde `503` (`YOSYS_UNAVAILABLE`). Ver [Erros e logging](#erros-e-logging).
 

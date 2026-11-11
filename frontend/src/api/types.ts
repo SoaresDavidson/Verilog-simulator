@@ -74,16 +74,18 @@ export interface Netlist {
   modules: Record<string, NetlistModule>
 }
 
-/** POST /verilog/mapear-processador — body `{ project_id }`. */
+/** POST /verilog/mapear-processador — body `{ project_id, top_module? }`. */
 export interface SynthesisRequest {
   project_id: ProjectId
+  /** Top explícito (`hierarchy -top`); omitido, o Yosys escolhe (`hierarchy -auto-top`). */
+  top_module?: string
 }
 
 export interface SynthesisResponse {
   success: boolean
   stdout: string
   stderr: string
-  /** Módulo com atributo `top` (= 1 / "000..01"). */
+  /** Módulo com atributo `top` (= 1 / "000..01"): o pedido em `top_module` ou o escolhido pelo Yosys. */
   top_module: string | null
   netlist_content: Netlist | null
   stat_report: string | null

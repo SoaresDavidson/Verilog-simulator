@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import shlex
 import time
 from dataclasses import dataclass, replace
@@ -35,6 +36,9 @@ STRUCTURE_FILE_NAME = "estrutura.json"
 """Netlist written by ``write_json`` in the synthesis command."""
 
 STAT_REPORT_FILE_NAME = "relatorio.txt"
+
+#: Identificador Verilog simples aceito como top; identificadores escapados ficam de fora.
+TOP_MODULE_PATTERN = r"^[A-Za-z_][A-Za-z0-9_$]*$"
 """Statistics report written by ``tee -o ... stat``."""
 
 
@@ -140,18 +144,22 @@ class YosysIntegration:
         )
 
     @staticmethod
-    def build_command(verilog_files: list[Path]) -> list[str]:
+    def build_command(verilog_files: list[Path], top_module: str | None = None) -> list[str]:
         """Build Yosys command for relative Verilog source paths.
 
         Args:
             verilog_files: Source paths relative to project directory.
+            top_module: Top module name (``hierarchy -top``); ``None`` uses ``hierarchy -auto-top``.
 
         Returns:
             Docker exec argument list.
 
         Raises:
-            ValueError: If source list is empty or contains unsafe paths.
+            ValueError: If source list is empty, contains unsafe paths or ``top_module``
+                is not a plain Verilog identifier.
         """
+        if top_module is not None and re.fullmatch(TOP_MODULE_PATTERN, top_module) is None:
+            raise ValueError(f"Invalid top module name: '{top_module}'.")
         if not verilog_files:
             raise ValueError("At least one Verilog source file is required.")
 
@@ -164,7 +172,7 @@ class YosysIntegration:
 
         commands.extend(
             (
-                "hierarchy -auto-top",
+                f"hierarchy -top {top_module}" if top_module else "hierarchy -auto-top",
                 # write_json rejeita módulos com processos (blocos always) sem proc.
                 "proc",
                 f"tee -o {STAT_REPORT_FILE_NAME} stat",
@@ -173,11 +181,12 @@ class YosysIntegration:
         )
         return ["yosys", "-p", "; ".join(commands)]
 
-    def synthesize(self, project_id: str) -> YosysResult:
+    def synthesize(self, project_id: str, top_module: str | None = None) -> YosysResult:
         """Synthesize project and return generated netlist.
 
         Args:
             project_id: Safe project path below ``runs/run_<uuid>``.
+            top_module: Top module to synthesize; ``None`` lets Yosys pick it.
 
         Returns:
             Structured Yosys execution result.
@@ -193,7 +202,7 @@ class YosysIntegration:
         """
         project_dir, container_dir = self._resolve_project(project_id)
         verilog_files = self._find_verilog_sources(project_dir)
-        command = self.build_command(verilog_files)
+        command = self.build_command(verilog_files, top_module)
         structure_file = project_dir / STRUCTURE_FILE_NAME
         stat_report_file = project_dir / STAT_REPORT_FILE_NAME
         remove_artifacts((structure_file, stat_report_file))

@@ -184,7 +184,7 @@ def test_execution_logs_carry_project_id(
 ) -> None:
     """Linhas de log emitidas durante a execução trazem project_id e request_id."""
 
-    def fake_mapear(project_id: str) -> dict:
+    def fake_mapear(project_id: str, top_module: str | None = None) -> dict:
         logging.getLogger("services.verilog").info("executando")
         return {
             "success": False,
