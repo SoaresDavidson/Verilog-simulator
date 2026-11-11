@@ -1,113 +1,172 @@
 /*
- * Design tokens (portados de prototype/styles.css).
- * Tema escuro = padrão do protótipo. Tema claro via preferência do sistema
- * ou `<html data-theme="light">` (ThemeToggle).
+ * Identidade "Bancada no Campus".
+ * Material: protoboard (fundo claro com furos), placa de circuito (verde de
+ * máscara de solda), cobre e pinos dourados. Da arquitetura modernista do campus
+ * vêm os grandes blocos de cor, os números de placa e o azulejo modular de
+ * portas lógicas. Tema claro é o padrão (laboratório de dia, projetor em sala);
+ * o escuro é a "bancada à noite", via `<html data-theme="dark">`.
+ *
+ * Os nomes antigos (--bg, --surface, --accent...) continuam valendo: as features
+ * e o renderizador da forma de onda leem esses nomes.
  */
 :root {
-  color-scheme: dark;
-  --bg: #0b1519;
-  --surface: #131d22;
-  --surface-ct: #172126;
-  --surface-hi: #212b31;
-  --surface-highest: #2c363c;
-  --fg: #d9e4eb;
-  --muted: #859491;
-  --outline: #859491;
-  --ov: #3b4a47;
-  --accent: #51f3e3;
-  --accent-ct: #20d6c7;
-  --accent-dim: #2fddce;
-  --accent-lt: rgba(81, 243, 227, 0.1);
-  --accent-bd: rgba(81, 243, 227, 0.2);
-  --accent-hv: #3dd4c5;
-  --on-accent: #0b1519;
-  --danger: #ffb4ab;
-  --danger-bg: rgba(255, 180, 171, 0.12);
-  --on-danger: #0b1519;
-  --hover: rgba(255, 255, 255, 0.04);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-
-  /* Estados lógicos 0 / 1 / X / Z */
-  --s0: #5b9bd5;
-  --s0b: rgba(91, 155, 213, 0.15);
-  --s1: #74dc8b;
-  --s1b: rgba(116, 220, 139, 0.15);
-  --sx: #ffd59d;
-  --sxb: rgba(255, 213, 157, 0.15);
-  --sz: #b39ddb;
-  --szb: rgba(179, 157, 219, 0.15);
-
-  --r: 4px;
-  --fd: "Fira Code", "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
-  --fb: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --fh: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --hh: 48px;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg: #f4f7f8;
-    --surface: #ffffff;
-    --surface-ct: #f7fafb;
-    --surface-hi: #e8eef0;
-    --surface-highest: #dbe4e7;
-    --fg: #142026;
-    --muted: #4f5d5a;
-    --outline: #4f5d5a;
-    --ov: #c2cecb;
-    --accent: #00756c;
-    --accent-ct: #00857a;
-    --accent-dim: #00695f;
-    --accent-lt: rgba(0, 117, 108, 0.1);
-    --accent-bd: rgba(0, 117, 108, 0.25);
-    --accent-hv: #005f57;
-    --on-accent: #ffffff;
-    --danger: #b3261e;
-    --danger-bg: rgba(179, 38, 30, 0.08);
-    --on-danger: #ffffff;
-    --hover: rgba(0, 0, 0, 0.04);
-    --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
-    --s0: #2f6fae;
-    --s0b: rgba(47, 111, 174, 0.12);
-    --s1: #2b7f41;
-    --s1b: rgba(43, 127, 65, 0.12);
-    --sx: #8f5600;
-    --sxb: rgba(143, 86, 0, 0.12);
-    --sz: #6a4fa3;
-    --szb: rgba(106, 79, 163, 0.12);
-  }
-}
-
-:root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f7f8;
-  --surface: #ffffff;
-  --surface-ct: #f7fafb;
-  --surface-hi: #e8eef0;
-  --surface-highest: #dbe4e7;
-  --fg: #142026;
-  --muted: #4f5d5a;
-  --outline: #4f5d5a;
-  --ov: #c2cecb;
-  --accent: #00756c;
-  --accent-ct: #00857a;
-  --accent-dim: #00695f;
-  --accent-lt: rgba(0, 117, 108, 0.1);
-  --accent-bd: rgba(0, 117, 108, 0.25);
-  --accent-hv: #005f57;
+
+  /* Chão e superfícies */
+  --bg: #eceee8;              /* protoboard / concreto claro */
+  --surface: #fbfbf8;         /* placa onde o conteúdo assenta */
+  --surface-ct: #f4f5f0;      /* área recuada dentro da placa */
+  --surface-hi: #e6e9e2;      /* controles secundários */
+  --surface-highest: #dbe0d7;
+  --sunken: #e9ece5;
+  --hole: #c9cfc4;            /* furo da protoboard */
+
+  /* Tinta */
+  --fg: #15221c;
+  --muted: #4f5d55;
+  --faint: #6f7c74;
+  --outline: #8a958d;
+  --ov: #d6dbd1;              /* linha fina */
+  --ov-strong: #b9c1b5;
+
+  /* Placa (verde de máscara de solda) */
+  --pcb: #0f4d3a;
+  --pcb-2: #16674e;
+  --pcb-3: #1f7d60;
+  --pcb-ink: #eef5f1;
+  --pcb-mute: #a9cbbd;
+  --pcb-line: rgba(238, 245, 241, 0.16);
+
+  /* Acento de interface = verde de placa (seleção, foco, estado ativo) */
+  --accent: #0f5c45;
+  --accent-ct: #16674e;
+  --accent-dim: #1f7d60;
+  --accent-lt: rgba(15, 92, 69, 0.09);
+  --accent-bd: rgba(15, 92, 69, 0.28);
+  --accent-hv: #0b4635;
   --on-accent: #ffffff;
+
+  /* Ação = cobre */
+  --copper: #b0561d;
+  --copper-hv: #96470f;
+  --copper-2: #d98b4f;
+  --copper-lt: #f6e7da;
+  --copper-ink: #84400f;
+  --on-copper: #ffffff;
+
+  /* Pino dourado */
+  --gold: #e3b25a;
+  --gold-lt: #f8eed8;
+  --gold-ink: #7a5310;
+
+  /* Azul de azulejo (só ornamento) */
+  --tile-blue: #2a4fb8;
+
   --danger: #b3261e;
-  --danger-bg: rgba(179, 38, 30, 0.08);
+  --danger-bg: rgba(179, 38, 30, 0.07);
   --on-danger: #ffffff;
-  --hover: rgba(0, 0, 0, 0.04);
-  --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
-  --s0: #2f6fae;
-  --s0b: rgba(47, 111, 174, 0.12);
-  --s1: #2b7f41;
-  --s1b: rgba(43, 127, 65, 0.12);
-  --sx: #8f5600;
-  --sxb: rgba(143, 86, 0, 0.12);
-  --sz: #6a4fa3;
-  --szb: rgba(106, 79, 163, 0.12);
+  --hover: rgba(15, 77, 58, 0.05);
+
+  /* Profundidade: deslocamento + desfoque, tingida de verde */
+  --shadow-sm: 0 1px 2px rgba(16, 40, 30, 0.06), 0 2px 6px -2px rgba(16, 40, 30, 0.08);
+  --shadow: 0 2px 4px rgba(16, 40, 30, 0.05), 0 12px 32px -12px rgba(16, 40, 30, 0.22);
+  --shadow-lg: 0 4px 8px rgba(16, 40, 30, 0.06), 0 28px 60px -24px rgba(16, 40, 30, 0.35);
+
+  /* Estados lógicos 0 / 1 / X / Z (legenda do README: azul, verde, laranja, roxo) */
+  --s0: #2b62c4;
+  --s0b: rgba(43, 98, 196, 0.11);
+  --s1: #23873f;
+  --s1b: rgba(35, 135, 63, 0.11);
+  --sx: #b9630a;
+  --sxb: rgba(185, 99, 10, 0.12);
+  --sz: #6a51a8;
+  --szb: rgba(106, 81, 168, 0.11);
+
+  /* Forma */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Tipografia: Atkinson Hyperlegible (criada para leitura difícil — sala de aula, projetor) */
+  --fb: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fh: var(--fb);
+  --fd: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+
+  /* Movimento */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --t-fast: 140ms;
+  --t: 240ms;
+  --t-slow: 520ms;
+
+  --hh: 68px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c1411;
+  --surface: #121c18;
+  --surface-ct: #0f1815;
+  --surface-hi: #1b2722;
+  --surface-highest: #24322c;
+  --sunken: #0a110e;
+  --hole: #24302b;
+
+  --fg: #e4ede7;
+  --muted: #a3b5ab;
+  --faint: #7f9188;
+  --outline: #6c7d74;
+  --ov: #24322c;
+  --ov-strong: #35463f;
+
+  --pcb: #0e3d2f;
+  --pcb-2: #135340;
+  --pcb-3: #1b6a52;
+  --pcb-ink: #eef5f1;
+  --pcb-mute: #9fc2b3;
+  --pcb-line: rgba(238, 245, 241, 0.12);
+
+  --accent: #5cc9a2;
+  --accent-ct: #4bb892;
+  --accent-dim: #3aa180;
+  --accent-lt: rgba(92, 201, 162, 0.12);
+  --accent-bd: rgba(92, 201, 162, 0.32);
+  --accent-hv: #7bd8b5;
+  --on-accent: #08130f;
+
+  --copper: #e08a4f;
+  --copper-hv: #eb9f6a;
+  --copper-2: #e9a170;
+  --copper-lt: rgba(224, 138, 79, 0.14);
+  --copper-ink: #f0b088;
+  --on-copper: #1d0d03;
+
+  --gold: #e8bd6a;
+  --gold-lt: rgba(232, 189, 106, 0.13);
+  --gold-ink: #eec98a;
+
+  --tile-blue: #5d7fe0;
+
+  --danger: #ff9e94;
+  --danger-bg: rgba(255, 158, 148, 0.1);
+  --on-danger: #1f0806;
+  --hover: rgba(228, 237, 231, 0.04);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3), 0 28px 60px -24px rgba(0, 0, 0, 0.7);
+
+  --s0: #6f9ff0;
+  --s0b: rgba(111, 159, 240, 0.15);
+  --s1: #6fd28a;
+  --s1b: rgba(111, 210, 138, 0.14);
+  --sx: #f0a64e;
+  --sxb: rgba(240, 166, 78, 0.15);
+  --sz: #b49be6;
+  --szb: rgba(180, 155, 230, 0.15);
 }

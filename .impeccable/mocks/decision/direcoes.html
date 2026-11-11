@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Três direções</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600;700&family=Atkinson+Hyperlegible+Next:wght@400;500;600;700;800&family=Schibsted+Grotesk:wght@400;600;700;800&family=Public+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root { --page:#e7e8e3; --ink:#1b211e; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--page); color:var(--ink); font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif; padding:40px 16px 80px; }
+.intro { max-width:1180px; margin:0 auto 28px; }
+.intro h1 { font-size:28px; font-weight:800; letter-spacing:-.02em; }
+.intro p { color:#4a524d; margin-top:6px; max-width:70ch; }
+.dir { max-width:1180px; margin:0 auto 56px; }
+.dir__meta { display:flex; gap:16px; align-items:baseline; margin-bottom:12px; flex-wrap:wrap; }
+.dir__k { font:700 12px/1 "Atkinson Hyperlegible Mono",monospace; letter-spacing:.08em; text-transform:uppercase; background:#1b211e; color:#fff; padding:6px 10px; border-radius:99px; }
+.dir__n { font-size:22px; font-weight:800; }
+.dir__d { color:#4a524d; font-size:14px; flex-basis:100%; max-width:90ch; }
+.frame { border-radius:22px; overflow:hidden; box-shadow:0 1px 0 rgba(0,0,0,.05),0 24px 60px -30px rgba(20,30,25,.45); }
+.chips { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.chip { display:flex; align-items:center; gap:8px; font:600 12px "Atkinson Hyperlegible Mono",monospace; background:#fff; padding:5px 10px 5px 5px; border-radius:99px; }
+.chip i { width:20px; height:20px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.1); }
+
+/* =============== A — BANCADA NO CAMPUS =============== */
+.A { --ground:#f3f4ef; --board:#fbfbf8; --line:#dfe2da; --hole:#d3d7cd; --ink:#16231d; --mute:#5d6a62; --pcb:#0f4d3a; --pcb2:#16674e; --copper:#b8642b; --copper2:#d98b4f; --gold:#e3b25a;
+  --s0:#2f6fd0; --s1:#2a9a4c; --sx:#d07a12; --sz:#7a5fb8;
+  background:var(--ground); color:var(--ink); font-family:"Atkinson Hyperlegible Next",sans-serif; }
+.A .top { display:flex; align-items:center; gap:22px; padding:14px 22px; background:var(--pcb); color:#e8f1ec; position:relative; }
+.A .top::after { content:""; position:absolute; inset:auto 0 0 0; height:4px; background:repeating-linear-gradient(90deg,var(--copper2) 0 10px,transparent 10px 18px); opacity:.55; }
+.A .brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px; letter-spacing:-.01em; }
+.A .brand small { display:block; font:400 11px "Atkinson Hyperlegible Mono"; color:#9fc4b4; letter-spacing:.04em; }
+.A .trace { margin-left:auto; display:flex; align-items:center; }
+.A .pad { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#a9cbbd; padding:6px 12px 6px 6px; border-radius:99px; }
+.A .pad b { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font:700 11px "Atkinson Hyperlegible Mono"; border:2px solid #4f8a74; color:#cfe3da; }
+.A .pad.done b { background:var(--copper2); border-color:var(--copper2); color:#2b1606; }
+.A .pad.on { background:#f7f3ea; color:var(--pcb); }
+.A .pad.on b { background:var(--pcb); border-color:var(--gold); color:#fff; box-shadow:0 0 0 3px rgba(227,178,90,.35); }
+.A .wire { width:34px; height:3px; border-radius:3px; background:#3f7a64; }
+.A .wire.live { background:linear-gradient(90deg,var(--copper2),var(--gold)); }
+.A .body { display:grid; grid-template-columns:300px 1fr; gap:18px; padding:22px; }
+.A .sheet { grid-column:1/-1; display:grid; grid-template-columns:1fr auto; align-items:end; gap:16px; }
+.A h2 { font-size:34px; font-weight:800; letter-spacing:-.025em; line-height:1; }
+.A .lede { color:var(--mute); margin-top:8px; font-size:15px; }
+.A .carimbo { display:grid; grid-template-columns:auto auto auto; border:1.5px solid var(--ink); border-radius:14px; overflow:hidden; font:12px "Atkinson Hyperlegible Mono"; background:var(--board); }
+.A .carimbo div { padding:7px 12px; border-left:1.5px solid var(--ink); }
+.A .carimbo div:first-child { border-left:0; }
+.A .carimbo span { display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--mute); }
+.A .card { background:var(--board); border-radius:20px; padding:18px; border:1px solid var(--line); position:relative; }
+.A .card h3 { font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.A .card h3 em { font-style:normal; margin-left:auto; font:600 11px "Atkinson Hyperlegible Mono"; color:var(--mute); }
+.A .holes { background-image:radial-gradient(circle,var(--hole) 1.6px,transparent 2px); background-size:14px 14px; }
+.A .file { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:12px; background:var(--board); margin-bottom:8px; font:13px "Atkinson Hyperlegible Mono"; border:1px solid var(--line); }
+.A .file .tag { margin-left:auto; font-size:10.5px; padding:3px 8px; border-radius:99px; background:#e6efe9; color:var(--pcb); font-weight:700; }
+.A .file .tag.tb { background:#f6e7da; color:#8a4516; }
+.A .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.A .stat { border-radius:16px; padding:14px; background:var(--ground); border:1px solid var(--line); display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:center; }
+.A .stat svg { grid-row:span 2; }
+.A .stat b { font:700 26px/1 "Atkinson Hyperlegible Mono"; color:var(--pcb); }
+.A .stat span { font-size:12px; color:var(--mute); }
+.A .run { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.A .ok { display:inline-flex; align-items:center; gap:8px; font-weight:700; color:var(--s1); font-size:14px; }
+.A .led { width:10px; height:10px; border-radius:50%; background:var(--s1); box-shadow:0 0 0 4px rgba(42,154,76,.18); }
+.A .btn { border:0; font:700 14px "Atkinson Hyperlegible Next"; padding:11px 18px; border-radius:99px; display:inline-flex; gap:8px; align-items:center; }
+.A .btn.pri { background:var(--copper); color:#fff; box-shadow:inset 0 -2px 0 rgba(0,0,0,.18); }
+.A .btn.sec { background:#e9ece5; color:var(--ink); }
+.A .sig { display:flex; align-items:center; gap:12px; padding:9px 10px; border-radius:12px; font:13px "Atkinson Hyperlegible Mono"; }
+.A .sig:nth-child(odd) { background:var(--ground); }
+.A .cb { width:20px; height:20px; border-radius:7px; background:var(--pcb); display:grid; place-items:center; }
+.A .cb.off { background:#fff; border:2px solid #b9c0b4; }
+.A .sig .w { margin-left:auto; color:var(--mute); font-size:11.5px; }
+.A .dir-pill { font-size:10.5px; padding:2px 8px; border-radius:99px; font-weight:700; }
+.A .in { background:#e3ecfb; color:#1f4fa6; } .A .out { background:#f6e7da; color:#8a4516; }
+.A .foot { grid-column:1/-1; display:flex; align-items:center; gap:12px; background:var(--pcb); color:#dfece6; border-radius:99px; padding:8px 8px 8px 20px; }
+.A .foot p { font-size:14px; } .A .foot .btn { margin-left:auto; }
+.A .tiles { position:absolute; right:14px; top:14px; opacity:.9; }
+
+/* =============== B — PRANCHA MODERNISTA =============== */
+.B { --conc:#e9e7e1; --conc2:#f6f5f1; --ink:#14181f; --mute:#5c6270; --blue:#1d43b8; --blue2:#3b64e0; --sky:#dfe7fb; --ochre:#e0a526; --line:#cfccc4;
+  background:var(--conc); color:var(--ink); font-family:"Schibsted Grotesk",sans-serif; }
+.B .top { display:flex; align-items:center; gap:18px; padding:16px 26px; }
+.B .brand { font-weight:800; font-size:18px; display:flex; gap:10px; align-items:center; }
+.B .steps { margin-left:auto; display:flex; gap:6px; background:var(--conc2); padding:5px; border-radius:99px; }
+.B .steps span { font-size:13px; font-weight:600; padding:8px 14px; border-radius:99px; color:var(--mute); }
+.B .steps .on { background:var(--blue); color:#fff; }
+.B .steps .done { color:var(--blue); }
+.B .body { display:grid; grid-template-columns:1.1fr 1fr; gap:0; margin:0 26px 26px; background:var(--conc2); border-radius:28px; overflow:hidden; }
+.B .hero { background:var(--blue); color:#fff; padding:30px; position:relative; overflow:hidden; min-height:380px; }
+.B .hero h2 { font-size:46px; font-weight:800; letter-spacing:-.03em; line-height:.95; position:relative; }
+.B .hero p { margin-top:12px; color:#cfdaff; max-width:36ch; position:relative; }
+.B .hero .pat { position:absolute; inset:auto -10px -10px auto; opacity:.95; }
+.B .hero .nums { position:relative; display:flex; gap:28px; margin-top:34px; }
+.B .hero .nums b { display:block; font-size:44px; font-weight:800; letter-spacing:-.03em; line-height:1; }
+.B .hero .nums span { font-size:12px; color:#cfdaff; text-transform:uppercase; letter-spacing:.1em; }
+.B .side { padding:26px; display:flex; flex-direction:column; gap:14px; }
+.B .cota { display:flex; align-items:center; gap:8px; font:11px "JetBrains Mono"; color:var(--mute); }
+.B .cota::before,.B .cota::after { content:""; height:1px; flex:1; background:var(--mute); }
+.B .row { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; background:#fff; font:13px "JetBrains Mono"; }
+.B .row .cb { width:20px; height:20px; border-radius:50%; background:var(--blue); }
+.B .row .cb.off { background:#fff; border:2px solid var(--line); }
+.B .row em { margin-left:auto; font-style:normal; color:var(--mute); font-size:11px; }
+.B .btn { border:0; border-radius:99px; padding:13px 20px; font:700 14px "Schibsted Grotesk"; background:var(--ochre); color:#1d1400; align-self:flex-start; }
+.B .stamp { margin-top:auto; border:1.5px solid var(--ink); border-radius:16px; display:grid; grid-template-columns:repeat(3,1fr); font:11px "JetBrains Mono"; }
+.B .stamp div { padding:8px 10px; border-left:1.5px solid var(--ink); } .B .stamp div:first-child { border:0; }
+
+/* =============== C — DATASHEET =============== */
+.C { --paper:#fbfbf9; --ink:#121212; --mute:#5f5f5b; --rule:#d9d9d4; --sig:#e8590c; --soft:#f1f0ec;
+  background:var(--paper); color:var(--ink); font-family:"Public Sans",sans-serif; }
+.C .top { display:flex; align-items:center; gap:18px; padding:14px 24px; border-bottom:2px solid var(--ink); }
+.C .brand { font-weight:800; font-size:16px; letter-spacing:-.01em; }
+.C .brand span { font:400 11px "JetBrains Mono"; color:var(--mute); margin-left:8px; }
+.C .steps { margin-left:auto; display:flex; gap:4px; font:12px "JetBrains Mono"; }
+.C .steps span { padding:6px 12px; border-radius:99px; border:1.5px solid var(--rule); }
+.C .steps .on { background:var(--ink); color:#fff; border-color:var(--ink); }
+.C .steps .done { border-color:var(--ink); }
+.C .body { display:grid; grid-template-columns:1fr 360px; gap:24px; padding:24px; }
+.C h2 { font-size:30px; font-weight:800; letter-spacing:-.02em; }
+.C .pn { font:12px "JetBrains Mono"; color:var(--sig); font-weight:700; }
+.C .lede { color:var(--mute); margin:6px 0 18px; }
+.C .tbl { border-radius:16px; border:1.5px solid var(--ink); overflow:hidden; font:13px "JetBrains Mono"; }
+.C .tbl div { display:grid; grid-template-columns:30px 1fr 90px 80px; padding:9px 14px; border-top:1px solid var(--rule); align-items:center; }
+.C .tbl div:first-child { border:0; background:var(--ink); color:#fff; font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+.C .tbl .cb { width:16px; height:16px; border-radius:5px; background:var(--sig); }
+.C .tbl .cb.off { background:#fff; border:1.5px solid var(--ink); }
+.C .pin { background:var(--soft); border-radius:20px; padding:18px; }
+.C .pin h4 { font:700 11px "JetBrains Mono"; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px; }
+.C .kv { display:grid; grid-template-columns:1fr auto; font:13px "JetBrains Mono"; gap:6px 10px; margin-top:14px; }
+.C .kv b { color:var(--sig); }
+.C .btn { margin-top:16px; border:0; border-radius:99px; padding:12px 18px; font:700 14px "Public Sans"; background:var(--sig); color:#fff; }
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>Três direções para o Verilog Classroom</h1>
+  <p>As três mostram a mesma tela (etapa 2, Seleção e Síntese) com os mesmos dados, para comparar só a identidade. Em todas, os cantos são arredondados e os controles (checkbox, botões, etapas) são desenhados à mão, sem nenhum padrão do navegador.</p>
+</div>
+
+<!-- ================= A ================= -->
+<section class="dir">
+  <div class="dir__meta">
+    <span class="dir__k">A · recomendada</span><span class="dir__n">Bancada no Campus</span>
+    <p class="dir__d">Protoboard e placa de circuito como material: fundo branco-protoboard com furos, cabeçalho em verde de máscara de solda e cobre como cor de ação. Cada tela ganha um carimbo de prancha técnica, e o padrão em azulejo é feito de portas lógicas. O stepper é uma trilha de cobre que energiza ao avançar, e o logo é um chip DIP desenhado como a fachada de uma universidade.</p>
+  </div>
+  <div class="frame A">
+    <div class="top">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+          <!-- chip-fachada: frontão + colunas-trilha + pinos -->
+          <path d="M6 15 L20 6 L34 15 Z" fill="#d98b4f"/>
+          <rect x="7" y="15" width="26" height="18" rx="5" fill="#f7f3ea"/>
+          <path d="M20 15 a3 3 0 0 1 0 0" />
+          <circle cx="20" cy="15" r="3" fill="#0f4d3a"/>
+          <g stroke="#0f4d3a" stroke-width="2.4" stroke-linecap="round"><path d="M13 20v9M20 21v8M27 20v9"/></g>
+          <g fill="#e3b25a"><rect x="2" y="18" width="5" height="2.6" rx="1.3"/><rect x="2" y="23" width="5" height="2.6" rx="1.3"/><rect x="2" y="28" width="5" height="2.6" rx="1.3"/><rect x="33" y="18" width="5" height="2.6" rx="1.3"/><rect x="33" y="23" width="5" height="2.6" rx="1.3"/><rect x="33" y="28" width="5" height="2.6" rx="1.3"/></g>
+        </svg>
+        <div>Verilog Classroom<small>LAB · HARDWARE DIGITAL</small></div>
+      </div>
+      <div class="trace">
+        <span class="pad done"><b>✓</b>Upload</span><span class="wire live"></span>
+        <span class="pad on"><b>2</b>Síntese</span><span class="wire"></span>
+        <span class="pad"><b>3</b>Caminho de dados</span><span class="wire"></span>
+        <span class="pad"><b>4</b>Simulação</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="sheet">
+        <div><h2>Seleção e síntese</h2><p class="lede">O Yosys transforma seu código em portas e fios. Depois, escolha o que quer ver.</p></div>
+        <div class="carimbo"><div><span>Folha</span>02 / 04</div><div><span>Projeto</span>projeto-mult.zip</div><div><span>Top</span>mult_array</div></div>
+      </div>
+      <div class="card holes">
+        <h3>Arquivos <em>2</em></h3>
+        <div class="file"><svg width="22" height="16" viewBox="0 0 22 16"><rect x="3" y="2" width="16" height="12" rx="3" fill="#16231d"/><g fill="#e3b25a"><rect x="5" y="0" width="2" height="3" rx="1"/><rect x="10" y="0" width="2" height="3" rx="1"/><rect x="15" y="0" width="2" height="3" rx="1"/><rect x="5" y="13" width="2" height="3" rx="1"/><rect x="10" y="13" width="2" height="3" rx="1"/><rect x="15" y="13" width="2" height="3" rx="1"/></g></svg>mult_array.v<span class="tag">fonte</span></div>
+        <div class="file"><svg width="22" height="16" viewBox="0 0 22 16"><rect x="2" y="2" width="18" height="12" rx="3" fill="none" stroke="#b8642b" stroke-width="2"/><path d="M5 10 l3-4 3 4 3-4 3 4" fill="none" stroke="#b8642b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>tb_mult_array.v<span class="tag tb">testbench</span></div>
+      </div>
+      <div class="card">
+        <svg class="tiles" width="84" height="42" viewBox="0 0 84 42" aria-hidden="true"><g fill="#0f4d3a"><path d="M0 0h21v21H0z" opacity=".08"/><path d="M0 0h10a11 11 0 0 1 0 21H0z"/><path d="M21 0h21v21H21z" opacity=".08"/><path d="M42 21a21 21 0 0 1-21-21h21z" fill="#b8642b"/><path d="M42 0h10a11 11 0 0 1 0 21H42z" opacity=".25"/><path d="M63 21V0h21z" fill="#e3b25a"/><path d="M0 21h21v21H0z" fill="#b8642b" opacity=".85"/><path d="M21 21c12 0 21 9 21 21H21z"/><path d="M42 21h10a11 11 0 0 1 0 21H42z" fill="#e3b25a"/><path d="M63 42V21h21z" opacity=".25"/></g></svg>
+        <div class="run"><span class="ok"><span class="led"></span>Síntese concluída em 1,8 s</span></div>
+        <div class="stats">
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><rect x="7" y="7" width="20" height="20" rx="5" fill="#0f4d3a"/><g fill="#e3b25a"><rect x="2" y="11" width="5" height="2.4" rx="1.2"/><rect x="2" y="16" width="5" height="2.4" rx="1.2"/><rect x="2" y="21" width="5" height="2.4" rx="1.2"/><rect x="27" y="11" width="5" height="2.4" rx="1.2"/><rect x="27" y="16" width="5" height="2.4" rx="1.2"/><rect x="27" y="21" width="5" height="2.4" rx="1.2"/></g></svg><b>1</b><span>módulo</span></div>
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M6 8h10a9 9 0 0 1 0 18H6z" fill="#b8642b"/><circle cx="27" cy="17" r="3" fill="none" stroke="#0f4d3a" stroke-width="2.4"/><path d="M1 12h5M1 22h5" stroke="#0f4d3a" stroke-width="2.4" stroke-linecap="round"/></svg><b>48</b><span>células</span></div>
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="9" cy="17" r="5" fill="none" stroke="#0f4d3a" stroke-width="3"/><path d="M14 17h17" stroke="#b8642b" stroke-width="3" stroke-linecap="round"/><path d="M25 11l6 6-6 6" fill="none" stroke="#b8642b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>7</b><span>portas E/S</span></div>
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M3 9h10l8 16h10" fill="none" stroke="#b8642b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="3" cy="9" r="2.5" fill="#0f4d3a"/><circle cx="31" cy="25" r="2.5" fill="#0f4d3a"/></svg><b>141</b><span>fios</span></div>
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><g stroke="#0f4d3a" stroke-width="2.2" stroke-linecap="round"><path d="M3 8h28M3 14h28M3 20h28M3 26h28"/></g><path d="M22 4l-6 26" stroke="#b8642b" stroke-width="2.4" stroke-linecap="round"/></svg><b>3476</b><span>bits de fio</span></div>
+          <div class="stat"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M3 6h8a6 6 0 0 1 0 12H3z" fill="#0f4d3a"/><path d="M19 6q6 0 12 6-6 6-12 6 3-6 0-12z" fill="#b8642b"/><path d="M3 21h9l-4 8z" fill="#e3b25a"/><rect x="18" y="21" width="12" height="9" rx="2.5" fill="none" stroke="#0f4d3a" stroke-width="2.2"/></svg><b>7</b><span>tipos de célula</span></div>
+        </div>
+      </div>
+      <div class="card" style="grid-column:2">
+        <h3>Sinais para acompanhar <em>3 de 41</em></h3>
+        <div class="sig"><span class="cb"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>clk<span class="dir-pill in">entrada</span><span class="w">1 bit</span></div>
+        <div class="sig"><span class="cb"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>a<span class="dir-pill in">entrada</span><span class="w">[15:0]</span></div>
+        <div class="sig"><span class="cb"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>produto<span class="dir-pill out">saída</span><span class="w">[31:0]</span></div>
+        <div class="sig"><span class="cb off"></span>mcand<span class="w">[15:0] · interno</span></div>
+      </div>
+      <div class="foot"><p>3 sinais escolhidos. Próximo: ver o circuito desenhado.</p><button class="btn sec">Voltar</button><button class="btn pri">Ver caminho de dados →</button></div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#f3f4ef"></i>protoboard</span><span class="chip"><i style="background:#0f4d3a"></i>máscara de solda</span><span class="chip"><i style="background:#b8642b"></i>cobre</span><span class="chip"><i style="background:#e3b25a"></i>pino dourado</span><span class="chip">Atkinson Hyperlegible: fonte criada para máxima legibilidade</span></div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="dir">
+  <div class="dir__meta">
+    <span class="dir__k">B</span><span class="dir__n">Prancha Modernista</span>
+    <p class="dir__d">O campus modernista brasileiro: concreto claro, um azul forte de azulejo em grandes áreas e ocre nas ações. Os números aparecem grandes, como em placa de edifício. Usa cotas e carimbo de prancha, e o azulejo modular é feito de portas lógicas. Tem mais cara de arquitetura; o hardware entra pelos diagramas.</p>
+  </div>
+  <div class="frame B">
+    <div class="top">
+      <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34"><path d="M2 30 Q17 -6 32 30" fill="none" stroke="#1d43b8" stroke-width="4" stroke-linecap="round"/><path d="M10 30v-8M17 30V16M24 30v-8" stroke="#14181f" stroke-width="3" stroke-linecap="round"/></svg>Verilog Classroom</div>
+      <div class="steps"><span class="done">✓ Upload</span><span class="on">2 Síntese</span><span>3 Caminho</span><span>4 Simulação</span></div>
+    </div>
+    <div class="body">
+      <div class="hero">
+        <h2>Seleção<br>e síntese</h2>
+        <p>O Yosys transforma seu código em portas e fios.</p>
+        <div class="nums"><div><b>48</b><span>células</span></div><div><b>141</b><span>fios</span></div><div><b>7</b><span>portas</span></div></div>
+        <svg class="pat" width="260" height="170" viewBox="0 0 260 170" aria-hidden="true"><g fill="#fff"><path d="M0 85h43a42 42 0 0 1 0 85H0z" opacity=".95"/><path d="M85 85v85h85A85 85 0 0 0 85 85z" fill="#3b64e0"/><path d="M170 85h45a42 42 0 0 1 0 85h-45z" opacity=".25"/><path d="M85 0h43a42 42 0 0 1 0 85H85z" opacity=".25"/><path d="M170 0v85h85A85 85 0 0 0 170 0z" fill="#e0a526"/></g></svg>
+      </div>
+      <div class="side">
+        <span class="cota">sinais · 3 de 41</span>
+        <div class="row"><span class="cb"></span>clk<em>entrada · 1 bit</em></div>
+        <div class="row"><span class="cb"></span>a<em>entrada · [15:0]</em></div>
+        <div class="row"><span class="cb"></span>produto<em>saída · [31:0]</em></div>
+        <div class="row"><span class="cb off"></span>mcand<em>interno · [15:0]</em></div>
+        <button class="btn">Ver caminho de dados →</button>
+        <div class="stamp"><div>FOLHA 02/04</div><div>projeto-mult</div><div>top: mult_array</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#e9e7e1"></i>concreto</span><span class="chip"><i style="background:#1d43b8"></i>azul azulejo</span><span class="chip"><i style="background:#e0a526"></i>ocre</span><span class="chip">Schibsted Grotesk + JetBrains Mono</span></div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="dir">
+  <div class="dir__meta">
+    <span class="dir__k">C</span><span class="dir__n">Datasheet de Laboratório</span>
+    <p class="dir__d">O manual de componentes que todo aluno de digitais já abriu: papel branco, tinta preta e tabelas de pinagem, com um único laranja-sinal. É sóbrio, técnico e muito legível, mas tem menos clima de universidade e de arquitetura.</p>
+  </div>
+  <div class="frame C">
+    <div class="top"><div class="brand">VERILOG CLASSROOM<span>VC-2026 · rev. B</span></div><div class="steps"><span class="done">01 Upload</span><span class="on">02 Síntese</span><span>03 Caminho</span><span>04 Simulação</span></div></div>
+    <div class="body">
+      <div>
+        <span class="pn">MULT_ARRAY · 16×16</span>
+        <h2>Seleção e síntese</h2>
+        <p class="lede">O Yosys transforma seu código em portas e fios. Escolha o que quer acompanhar.</p>
+        <div class="tbl">
+          <div><span></span>sinal<span>direção</span><span>largura</span></div>
+          <div><span class="cb"></span>clk<span>entrada</span><span>1</span></div>
+          <div><span class="cb"></span>a<span>entrada</span><span>16</span></div>
+          <div><span class="cb"></span>produto<span>saída</span><span>32</span></div>
+          <div><span class="cb off"></span>mcand<span>interno</span><span>16</span></div>
+        </div>
+      </div>
+      <div class="pin">
+        <h4>Pinagem · mult_array</h4>
+        <svg width="320" height="150" viewBox="0 0 320 150"><rect x="110" y="10" width="100" height="130" rx="12" fill="none" stroke="#121212" stroke-width="2"/><path d="M150 10a10 10 0 0 0 20 0" fill="none" stroke="#121212" stroke-width="2"/><g stroke="#121212" stroke-width="2" stroke-linecap="round"><path d="M80 35h30M80 60h30M80 85h30M80 110h30M210 50h30M210 95h30"/></g><g font-family="JetBrains Mono" font-size="11"><text x="20" y="39">clk</text><text x="20" y="64">rst_n</text><text x="20" y="89">a[15:0]</text><text x="20" y="114">b[15:0]</text><text x="246" y="54">produto</text><text x="246" y="99">done</text></g><g fill="#e8590c"><circle cx="80" cy="35" r="4"/><circle cx="240" cy="50" r="4"/></g></svg>
+        <div class="kv"><span>células</span><b>48</b><span>fios</span><b>141</b><span>bits</span><b>3476</b></div>
+        <button class="btn">Ver caminho de dados →</button>
+      </div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#fbfbf9"></i>papel</span><span class="chip"><i style="background:#121212"></i>tinta</span><span class="chip"><i style="background:#e8590c"></i>laranja-sinal</span><span class="chip">Public Sans + JetBrains Mono</span></div>
+</section>
+</body>
+</html>
