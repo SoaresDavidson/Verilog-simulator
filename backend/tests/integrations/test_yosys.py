@@ -64,7 +64,7 @@ def test_build_command_from_verilog_files() -> None:
     assert command[:2] == ["yosys", "-p"]
     assert "read_verilog -sv alu.v" in command[2]
     assert "read_verilog -sv 'rtl/register file.sv'" in command[2]
-    assert "hierarchy -auto-top" in command[2]
+    assert "hierarchy -check -auto-top" in command[2]
     assert "tee -o relatorio.txt stat" in command[2]
     assert "write_json estrutura.json" in command[2]
 
@@ -73,7 +73,7 @@ def test_build_command_with_explicit_top() -> None:
     """Explicit top replaces automatic top detection."""
     command = YosysIntegration.build_command([Path("alu.v")], top_module="cpu_v2")
 
-    assert "hierarchy -top cpu_v2" in command[2]
+    assert "hierarchy -check -top cpu_v2" in command[2]
     assert "-auto-top" not in command[2]
 
 

@@ -150,6 +150,7 @@ class YosysIntegration:
         Args:
             verilog_files: Source paths relative to project directory.
             top_module: Top module name (``hierarchy -top``); ``None`` uses ``hierarchy -auto-top``.
+                Both run with ``-check``, so an instantiated module without a definition fails.
 
         Returns:
             Docker exec argument list.
@@ -172,7 +173,8 @@ class YosysIntegration:
 
         commands.extend(
             (
-                f"hierarchy -top {top_module}" if top_module else "hierarchy -auto-top",
+                # -check: módulo instanciado sem definição vira erro, não caixa-preta.
+                f"hierarchy -check -top {top_module}" if top_module else "hierarchy -check -auto-top",
                 # write_json rejeita módulos com processos (blocos always) sem proc.
                 "proc",
                 f"tee -o {STAT_REPORT_FILE_NAME} stat",
