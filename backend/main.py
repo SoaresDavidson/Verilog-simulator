@@ -1,7 +1,9 @@
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
@@ -18,10 +20,24 @@ from services.runs_gc import RetentionPolicy, periodic_collection
 # Configured before the app is built so startup messages already use it (#12).
 configure_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
 
+logger = logging.getLogger(__name__)
+
+
+def ensure_runs_dir(runs_dir: Path) -> None:
+    """Create the runs directory, which a fresh clone does not have (it is git-ignored).
+
+    A failure is only logged: the readiness check keeps reporting the storage error.
+    """
+    try:
+        runs_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning("Não foi possível criar o diretório de runs '%s': %s", runs_dir, exc)
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Run the periodic collection of expired runs while the API is up (#10)."""
+    """Prepare the runs directory and collect expired runs while the API is up (#10)."""
+    ensure_runs_dir(settings.VERILOG_RUNS_DIR)
     task: asyncio.Task[None] | None = None
     if settings.GC_INTERVAL_MINUTES > 0:
         task = asyncio.create_task(
