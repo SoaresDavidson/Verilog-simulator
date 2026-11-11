@@ -2,11 +2,23 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from integrations.yosys import TOP_MODULE_PATTERN
 from schemas.netlist import Netlist
 
 
 class MapearProcessadorRequest(BaseModel):
     project_id: str = Field(..., description="The unique project ID/folder path returned from the ZIP upload endpoint")
+    top_module: str | None = Field(
+        None,
+        max_length=255,
+        pattern=TOP_MODULE_PATTERN,
+        description=(
+            "Optional top module (`hierarchy -top <name>`). Omit it to let Yosys pick the top "
+            "(`hierarchy -auto-top`). A name absent from the sources makes the synthesis fail "
+            "(`success: false`). Modules outside the chosen top's hierarchy are left out of the netlist."
+        ),
+        examples=["mult_array"],
+    )
 
 
 class MapearProcessadorResponse(BaseModel):
@@ -20,7 +32,7 @@ class MapearProcessadorResponse(BaseModel):
     )
     top_module: str | None = Field(
         None,
-        description="Module selected by `hierarchy -auto-top` (the one with the `top` attribute); null when success is false",
+        description="Top module of the netlist (the one with the `top` attribute): the requested `top_module`, or the one picked by `hierarchy -auto-top`; null when success is false",
     )
     netlist_content: Netlist | None = Field(
         None,

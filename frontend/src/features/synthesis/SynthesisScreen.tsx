@@ -6,6 +6,7 @@ import { FileTree } from './FileTree'
 import { SignalSelector } from './SignalSelector'
 import { SynthesisPanel } from './SynthesisPanel'
 import { TopModulePanel } from './TopModulePanel'
+import { useSynthesis } from './useSynthesis'
 import './synthesis.css'
 
 /**
@@ -17,6 +18,8 @@ import './synthesis.css'
 export function SynthesisScreen() {
   const nav = useStepNavigation()
   const state = useSessionState()
+  // Um só ciclo de síntese para os dois painéis que a disparam.
+  const synthesis = useSynthesis()
   const blockReason = advanceBlockReason(state)
 
   return (
@@ -26,8 +29,8 @@ export function SynthesisScreen() {
           <FileTree files={state.files} onReupload={() => nav.goTo(1)} />
         </div>
         <div className="sp">
-          <SynthesisPanel />
-          <TopModulePanel />
+          <SynthesisPanel synthesis={synthesis} />
+          <TopModulePanel synthesis={synthesis} />
           <SignalSelector />
           <div className="scr__actions">
             {blockReason && (

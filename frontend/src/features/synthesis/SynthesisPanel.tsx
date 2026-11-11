@@ -4,7 +4,7 @@ import { useSessionState } from '../../state/hooks'
 import { isSynthesisConfirmed } from '../../state/session'
 import { isToolAvailable, useHealth } from '../health'
 import { netlistStats } from './netlist'
-import { useSynthesis, type SynthesisFailureKind } from './useSynthesis'
+import type { SynthesisFailureKind, UseSynthesis } from './useSynthesis'
 
 /** Limite de caracteres exibidos por log (o fim é o mais útil). */
 export const MAX_LOG_CHARS = 20_000
@@ -63,11 +63,11 @@ const FAILURE_TITLE: Partial<Record<SynthesisFailureKind, string>> = {
 }
 
 /** Tela 2c (#22, #28) — síntese Yosys com estados e estatísticas da netlist. */
-export function SynthesisPanel() {
+export function SynthesisPanel({ synthesis }: { synthesis: UseSynthesis }) {
   const headingId = useId()
   const state = useSessionState()
   const health = useHealth()
-  const { canStart, running, failureKind, start } = useSynthesis()
+  const { canStart, running, failureKind, start } = synthesis
   const { status, result, error } = state.synthesis
   const confirmed = isSynthesisConfirmed(state)
   const stats = useMemo(

@@ -69,6 +69,21 @@ def test_build_command_from_verilog_files() -> None:
     assert "write_json estrutura.json" in command[2]
 
 
+def test_build_command_with_explicit_top() -> None:
+    """Explicit top replaces automatic top detection."""
+    command = YosysIntegration.build_command([Path("alu.v")], top_module="cpu_v2")
+
+    assert "hierarchy -top cpu_v2" in command[2]
+    assert "-auto-top" not in command[2]
+
+
+@pytest.mark.parametrize("top_module", ["", "1cpu", "cpu; shell", "cpu top", "\\escaped", "a-b"])
+def test_build_command_rejects_invalid_top(top_module: str) -> None:
+    """Only plain Verilog identifiers reach the Yosys script."""
+    with pytest.raises(ValueError, match="Invalid top module"):
+        YosysIntegration.build_command([Path("alu.v")], top_module=top_module)
+
+
 def test_successful_synthesis_parses_generated_json(
     tmp_path: Path, project_dir: Path, docker_client: MagicMock, fake_exec
 ) -> None:

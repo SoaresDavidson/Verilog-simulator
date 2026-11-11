@@ -60,6 +60,14 @@ export interface SessionState {
   files: IdentifiedFiles | null
   /** Módulo top selecionado/confirmado. */
   topModule: string | null
+  /** Top pedido na última síntese; `null` = `hierarchy -auto-top`. */
+  topRequest: string | null
+  /**
+   * Módulos da netlist da última síntese automática. `hierarchy -top X` tira
+   * da netlist o que está fora da hierarquia de X, então a lista de escolha
+   * vem daqui para o usuário poder voltar a um módulo anterior.
+   */
+  topCandidates: string[]
   synthesis: OperationState<SynthesisResponse>
   /** Referências dos sinais escolhidos na tela 2. */
   selectedSignals: string[]
@@ -75,6 +83,8 @@ export const initialSessionState: SessionState = {
   session: null,
   files: null,
   topModule: null,
+  topRequest: null,
+  topCandidates: [],
   synthesis: idleOperation,
   selectedSignals: [],
   simulation: idleOperation,
@@ -85,7 +95,8 @@ export type SessionAction =
   | { type: 'SESSION_CREATED'; session: ActiveSession; files: IdentifiedFiles | null }
   | { type: 'FILES_IDENTIFIED'; files: IdentifiedFiles }
   | { type: 'TOP_MODULE_SELECTED'; topModule: string | null }
-  | { type: 'SYNTHESIS_STARTED' }
+  | { type: 'TOP_CANDIDATES_SET'; candidates: string[] }
+  | { type: 'SYNTHESIS_STARTED'; topRequest?: string | null }
   | { type: 'SYNTHESIS_SUCCEEDED'; result: SynthesisResponse }
   | { type: 'SYNTHESIS_FAILED'; error: string; result?: SynthesisResponse | null }
   | { type: 'SIGNALS_SELECTED'; signals: string[] }
@@ -145,10 +156,14 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
     case 'TOP_MODULE_SELECTED':
       return state.session ? { ...state, topModule: action.topModule } : state
 
+    case 'TOP_CANDIDATES_SET':
+      return state.session ? { ...state, topCandidates: action.candidates } : state
+
     case 'SYNTHESIS_STARTED':
       if (!state.session) return state
       return {
         ...state,
+        topRequest: action.topRequest ?? null,
         synthesis: { status: 'running', result: null, error: null },
         selectedSignals: [],
         simulation: idleOperation,

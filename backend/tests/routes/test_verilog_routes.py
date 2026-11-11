@@ -63,6 +63,30 @@ def test_mapear_invalid_id_returns_400(client: TestClient, svc: MagicMock) -> No
     assert response.status_code == 400
 
 
+def test_mapear_forwards_top_module(client: TestClient, svc: MagicMock) -> None:
+    svc.mapear_processador.return_value = {
+        "success": False,
+        "stdout": "",
+        "stderr": "ERROR: Module `cpu' not found!",
+        "top_module": None,
+        "netlist_content": None,
+        "stat_report": None,
+    }
+
+    response = client.post(f"{BASE}/mapear-processador", json={"project_id": "runs/run_x", "top_module": "cpu"})
+
+    assert response.status_code == 200
+    svc.mapear_processador.assert_called_once_with("runs/run_x", "cpu")
+
+
+@pytest.mark.parametrize("top_module", ["", "1cpu", "cpu; shell", "x" * 256])
+def test_mapear_rejects_invalid_top_module(client: TestClient, svc: MagicMock, top_module: str) -> None:
+    response = client.post(f"{BASE}/mapear-processador", json={"project_id": "runs/run_x", "top_module": top_module})
+
+    assert response.status_code == 422
+    svc.mapear_processador.assert_not_called()
+
+
 def test_mapear_unknown_run_returns_404(client: TestClient, svc: MagicMock) -> None:
     svc.mapear_processador.side_effect = FileNotFoundError("missing")
 

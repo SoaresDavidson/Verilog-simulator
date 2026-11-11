@@ -135,9 +135,12 @@ class VerilogService:
             docker_integration=self.docker_integration,
         )
 
-    def mapear_processador(self, project_id: str) -> dict:
+    def mapear_processador(self, project_id: str, top_module: str | None = None) -> dict:
         """
         Delegates Yosys synthesis and validates the netlist contract.
+
+        ``top_module`` selects the top explicitly (``hierarchy -top``); ``None``
+        keeps ``hierarchy -auto-top``.
 
         A netlist that does not match ``schemas.netlist.Netlist`` is never
         returned as success: the response becomes ``success: false`` with an
@@ -146,7 +149,7 @@ class VerilogService:
         logger.info("Síntese iniciada para %s.", project_id)
         started = time.perf_counter()
         try:
-            result = self.yosys_integration.synthesize(project_id)
+            result = self.yosys_integration.synthesize(project_id, top_module=top_module)
         except YosysSynthesisError as exc:
             result = exc.result
         _log_tool_finished("Síntese", project_id, started, result.success, result.stderr)

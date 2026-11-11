@@ -68,7 +68,7 @@ def mapear_processador(
 ):
     """Sintetiza o projeto com o Yosys. Erros seguem o formato `{"error": {"code", "message", "request_id"}}`."""
     bind_project_id(payload.project_id)
-    result = service.mapear_processador(payload.project_id)
+    result = service.mapear_processador(payload.project_id, payload.top_module)
     return MapearProcessadorResponse(
         success=result["success"],
         stdout=result["stdout"],
