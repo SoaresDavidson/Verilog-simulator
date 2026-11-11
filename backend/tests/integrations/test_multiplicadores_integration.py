@@ -118,3 +118,18 @@ def test_explicit_top_synthesizes_submodule(service: VerilogService, tmp_path: P
     assert set(explicit["netlist_content"].modules) == {"inv"}
     assert missing["success"] is False
     assert "nao_existe" in missing["stderr"]
+
+
+def test_undefined_module_fails_synthesis(service: VerilogService, tmp_path: Path) -> None:
+    """Módulo instanciado sem definição é erro de síntese, não caixa-preta."""
+    archive = tmp_path / "modulo_inexistente.zip"
+    archive.write_bytes(
+        make_zip({"top.v": "module top(input a, output y);\n  nao_existe u0(.a(a), .y(y));\nendmodule\n"})
+    )
+    project_id = service.upload_zip_project(archive).project_id
+
+    result = service.mapear_processador(project_id)
+
+    assert result["success"] is False
+    assert result["netlist_content"] is None
+    assert "nao_existe" in result["stderr"]
