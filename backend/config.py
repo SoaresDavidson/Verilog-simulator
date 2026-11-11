@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,6 +9,10 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "Verilog Classroom API"
     API_V1_STR: str = "/api/v1"
+
+    # Logging (#12): level name and output format (``text`` for dev, ``json`` for prod)
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: Literal["text", "json"] = "text"
 
     # CORS Origins (comma-separated string or list)
     ALLOWED_ORIGINS: list[str] = [
@@ -24,6 +29,36 @@ class Settings(BaseSettings):
     YOSYS_CONTAINER_NAME: str = "yosys"
     YOSYS_TIMEOUT_SECONDS: int = 30
     ICARUS_CONTAINER_NAME: str = "icarus-verilog"
+    ICARUS_TIMEOUT_SECONDS: int = 30
+    # Unprivileged user (#7) that runs Yosys/Icarus. Must match the UID/GID build
+    # args of yosys.dockerfile/icarus.dockerfile: each run is chowned to it before
+    # execution so the tools can write their artifacts.
+    EXECUTION_UID: int = 1000
+    EXECUTION_GID: int = 1000
+    # How Yosys/Icarus run (#7): "ephemeral" = one locked-down container per
+    # execution that only sees its run; "exec" = docker exec in the long-lived
+    # yosys/icarus-verilog containers (shared volume with every run).
+    EXECUTION_MODE: Literal["ephemeral", "exec"] = "ephemeral"
+    YOSYS_IMAGE: str = "verilog-classroom/yosys:latest"
+    ICARUS_IMAGE: str = "verilog-classroom/icarus:latest"
+    # Limits of each ephemeral container (the compose file applies the same
+    # defaults to the long-lived ones).
+    EXECUTION_MEM_LIMIT: str = "512m"
+    EXECUTION_CPUS: float = 1.0
+    EXECUTION_PIDS_LIMIT: int = 256
+    EXECUTION_TMPFS_SIZE: str = "64m"
+    # Bind mounts are resolved by the Docker daemon, i.e. on the HOST. When the
+    # backend runs in a container, set the host paths of VERILOG_RUNS_DIR.parent
+    # (/verilog_code) and of the scripts folder. None = backend runs on the host.
+    HOST_VERILOG_ROOT: str | None = None
+    HOST_SCRIPTS_DIR: str | None = None
+    # Simulation script path inside the Icarus container
+    ICARUS_SCRIPT_PATH: str = "/scripts/simular.sh"
+
+    # Upper bounds for the parsed VCD returned by /simular-execucao
+    VCD_MAX_TIMESTAMPS: int = 50_000
+    VCD_MAX_SIGNALS: int = 500
+    VCD_MAX_FILE_BYTES: int = 100 * 1024 * 1024
 
     # Shared volume where every project run is extracted and executed
     VERILOG_RUNS_DIR: Path = Path("/verilog_code/runs")
@@ -31,6 +66,24 @@ class Settings(BaseSettings):
     # Readiness checks (GET /api/v1/status/)
     HEALTH_TIMEOUT_SECONDS: float = 5
     HEALTH_CACHE_TTL_SECONDS: float = 5
+
+    # Upload hardening (#9): limits applied while receiving and extracting the ZIP
+    MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    MAX_UNCOMPRESSED_BYTES: int = 50 * 1024 * 1024
+    MAX_ZIP_ENTRIES: int = 500
+    MAX_ZIP_DEPTH: int = 8
+    MAX_ZIP_PATH_LENGTH: int = 255
+    MAX_COMPRESSION_RATIO: int = 200
+
+    # Authorization (#8): token required by POST /verilog/limpar (header
+    # X-Admin-Token). When unset, the route is disabled (404).
+    ADMIN_TOKEN: str | None = None
+
+    # Run retention (#10): runs idle longer than the TTL are removed; if the
+    # total exceeds the cap (0 = no cap) the oldest go first. 0 disables TTL/loop.
+    RUN_TTL_HOURS: float = 6
+    RUNS_MAX_TOTAL_BYTES: int = 0
+    GC_INTERVAL_MINUTES: float = 30
 
 
 settings = Settings()

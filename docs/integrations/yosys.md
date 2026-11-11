@@ -42,7 +42,7 @@ result = integration.synthesize(
     command=[
         "yosys",
         "-p",
-        "read_verilog -sv cpu.v; hierarchy -auto-top; write_json estrutura.json",
+        "read_verilog -sv cpu.v; hierarchy -auto-top; proc; write_json estrutura.json",
     ],
 )
 print(result.netlist_content)
@@ -71,6 +71,11 @@ Integração não interpreta `project_id`, procura arquivos `.v`/`.sv` nem adici
 | `netlist_content` | `dict | None` | Conteúdo processado de `estrutura.json`. |
 | `structure_file` | `Path | None` | Caminho local da netlist. |
 | `stat_report_file` | `Path | None` | Caminho local do relatório estatístico. |
+| `stat_report` | `str | None` | Conteúdo de `relatorio.txt`, exposto como `stat_report` em `/mapear-processador`. |
+
+## Isolamento de artefatos
+
+Antes de executar, a integração apaga `estrutura.json` e `relatorio.txt` do diretório do run. Depois, só aceita arquivos com `mtime` posterior ao início da execução (tolerância de 1 s). Uma netlist de execução anterior, ou enviada dentro do ZIP, nunca é devolvida: se o Yosys não gerou `estrutura.json`, o resultado é `success: false` com `netlist_content: null`. Não há fallback para `netlist.json`, `netlist.v` ou `mapped.v`.
 
 ## Exceções
 

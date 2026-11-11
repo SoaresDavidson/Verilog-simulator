@@ -1,0 +1,113 @@
+/*
+ * Design tokens (portados de prototype/styles.css).
+ * Tema escuro = padrão do protótipo. Tema claro via preferência do sistema
+ * ou `<html data-theme="light">` (ThemeToggle).
+ */
+:root {
+  color-scheme: dark;
+  --bg: #0b1519;
+  --surface: #131d22;
+  --surface-ct: #172126;
+  --surface-hi: #212b31;
+  --surface-highest: #2c363c;
+  --fg: #d9e4eb;
+  --muted: #859491;
+  --outline: #859491;
+  --ov: #3b4a47;
+  --accent: #51f3e3;
+  --accent-ct: #20d6c7;
+  --accent-dim: #2fddce;
+  --accent-lt: rgba(81, 243, 227, 0.1);
+  --accent-bd: rgba(81, 243, 227, 0.2);
+  --accent-hv: #3dd4c5;
+  --on-accent: #0b1519;
+  --danger: #ffb4ab;
+  --danger-bg: rgba(255, 180, 171, 0.12);
+  --on-danger: #0b1519;
+  --hover: rgba(255, 255, 255, 0.04);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* Estados lógicos 0 / 1 / X / Z */
+  --s0: #5b9bd5;
+  --s0b: rgba(91, 155, 213, 0.15);
+  --s1: #74dc8b;
+  --s1b: rgba(116, 220, 139, 0.15);
+  --sx: #ffd59d;
+  --sxb: rgba(255, 213, 157, 0.15);
+  --sz: #b39ddb;
+  --szb: rgba(179, 157, 219, 0.15);
+
+  --r: 4px;
+  --fd: "Fira Code", "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
+  --fb: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --fh: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --hh: 48px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f4f7f8;
+    --surface: #ffffff;
+    --surface-ct: #f7fafb;
+    --surface-hi: #e8eef0;
+    --surface-highest: #dbe4e7;
+    --fg: #142026;
+    --muted: #4f5d5a;
+    --outline: #4f5d5a;
+    --ov: #c2cecb;
+    --accent: #00756c;
+    --accent-ct: #00857a;
+    --accent-dim: #00695f;
+    --accent-lt: rgba(0, 117, 108, 0.1);
+    --accent-bd: rgba(0, 117, 108, 0.25);
+    --accent-hv: #005f57;
+    --on-accent: #ffffff;
+    --danger: #b3261e;
+    --danger-bg: rgba(179, 38, 30, 0.08);
+    --on-danger: #ffffff;
+    --hover: rgba(0, 0, 0, 0.04);
+    --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
+    --s0: #2f6fae;
+    --s0b: rgba(47, 111, 174, 0.12);
+    --s1: #2b7f41;
+    --s1b: rgba(43, 127, 65, 0.12);
+    --sx: #8f5600;
+    --sxb: rgba(143, 86, 0, 0.12);
+    --sz: #6a4fa3;
+    --szb: rgba(106, 79, 163, 0.12);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f7f8;
+  --surface: #ffffff;
+  --surface-ct: #f7fafb;
+  --surface-hi: #e8eef0;
+  --surface-highest: #dbe4e7;
+  --fg: #142026;
+  --muted: #4f5d5a;
+  --outline: #4f5d5a;
+  --ov: #c2cecb;
+  --accent: #00756c;
+  --accent-ct: #00857a;
+  --accent-dim: #00695f;
+  --accent-lt: rgba(0, 117, 108, 0.1);
+  --accent-bd: rgba(0, 117, 108, 0.25);
+  --accent-hv: #005f57;
+  --on-accent: #ffffff;
+  --danger: #b3261e;
+  --danger-bg: rgba(179, 38, 30, 0.08);
+  --on-danger: #ffffff;
+  --hover: rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
+  --s0: #2f6fae;
+  --s0b: rgba(47, 111, 174, 0.12);
+  --s1: #2b7f41;
+  --s1b: rgba(43, 127, 65, 0.12);
+  --sx: #8f5600;
+  --sxb: rgba(143, 86, 0, 0.12);
+  --sz: #6a4fa3;
+  --szb: rgba(106, 79, 163, 0.12);
+}

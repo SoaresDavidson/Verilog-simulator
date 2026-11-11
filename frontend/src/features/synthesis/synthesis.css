@@ -1,0 +1,63 @@
+/* Tela 2 (#s2) — seleção e síntese. Estilos locais da feature. */
+
+.syn-meta { font-size: 11px; }
+.syn-empty { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; font-size: 12px; }
+.syn-empty p { margin: 0; }
+
+/* Árvore de arquivos */
+.syn-tree { max-height: 360px; overflow: auto; }
+.syn-tree__list { list-style: none; margin: 0; padding: 0; }
+.syn-tree__list .syn-tree__list { padding-left: 12px; border-left: 1px solid var(--ov); margin-left: 4px; }
+.syn-tree__dirname { display: block; overflow-wrap: anywhere; }
+.syn-tree .f { padding-left: 4px; flex-wrap: nowrap; }
+.syn-tree__file--source .nm { color: var(--fg); }
+.syn-tree__file--other .nm { color: var(--muted); }
+.syn-tree__legend { font-size: 10px; margin-top: 8px; }
+.syn-tree__legend code { font-family: var(--fd); }
+
+.syn-tag {
+  font-family: var(--fd); font-size: 9px; font-weight: 700; padding: 0 5px; border-radius: var(--r);
+  line-height: 1.6; white-space: nowrap; flex-shrink: 0; border: 1px solid var(--ov);
+}
+.syn-tag--ext { color: var(--accent); }
+.syn-tag--source { color: var(--s1); }
+.syn-tag--testbench { color: var(--sx); }
+.syn-tag--top { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+
+/* Síntese */
+.syn-run__status { font-size: 12px; margin: 0; }
+.syn-log { max-height: 220px; margin-top: 8px; }
+.syn-log__title { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 8px; }
+.syn-error { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.syn-error p { margin: 0; }
+.syn-stat-report { max-height: 200px; }
+.syn-details summary { cursor: pointer; font-size: 11px; color: var(--muted); margin-top: 8px; }
+.ns.syn-stats { margin-top: 0; }
+@media (max-width: 420px) {
+  .ns.syn-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Módulo top */
+.syn-modules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-family: var(--fd); font-size: 12px; }
+.syn-modules li { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.syn-modules .nm { overflow-wrap: anywhere; min-width: 0; }
+.syn-note { font-size: 11px; margin: 8px 0 0; }
+
+/* Seleção de sinais */
+.syn-sig__tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.syn-sig__search {
+  flex: 1 1 160px; min-width: 0; background: var(--bg); color: var(--fg); border: 1px solid var(--ov);
+  border-radius: var(--r); padding: 6px 8px; font-size: 12px; font-family: var(--fd);
+}
+.syn-sig__search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.syn-sig__fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.syn-sig__list { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; font-family: var(--fd); font-size: 11px; }
+.syn-sig__item label { display: flex; align-items: center; gap: 6px; padding: 4px 2px; cursor: pointer; min-width: 0; }
+.syn-sig__item input { flex-shrink: 0; accent-color: var(--accent); }
+.syn-sig__ref { overflow-wrap: anywhere; min-width: 0; flex: 1; }
+.syn-sig__meta { color: var(--muted); font-size: 10px; white-space: nowrap; flex-shrink: 0; }
+.syn-sig__more { margin-top: 6px; }
+.syn-sig__count { font-size: 11px; }
+.syn-sig__warn { color: var(--sx); font-size: 11px; margin-top: 6px; }
+
+.syn-block-reason { font-size: 11px; color: var(--muted); align-self: center; }

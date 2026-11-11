@@ -1,0 +1,72 @@
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tb $end
+$var wire 4 ! q [3:0] $end
+$var reg 1 " clk $end
+$var reg 1 # rst $end
+$scope module dut $end
+$var wire 1 " clk $end
+$var wire 1 # rst $end
+$var reg 4 $ q [3:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+bx $
+1#
+0"
+bx !
+$end
+#5000
+b0 !
+b0 $
+1"
+#10000
+0"
+#12000
+0#
+#15000
+b1 !
+b1 $
+1"
+#20000
+0"
+#25000
+b10 !
+b10 $
+1"
+#30000
+0"
+#35000
+b11 !
+b11 $
+1"
+#40000
+0"
+#45000
+b100 !
+b100 $
+1"
+#50000
+0"
+#55000
+b101 !
+b101 $
+1"
+#60000
+0"
+#65000
+b110 !
+b110 $
+1"
+#70000
+0"
+#72000

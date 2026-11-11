@@ -1,0 +1,99 @@
+/* Diagrama SVG do caminho de dados (#30), reutilizado na tela 4 (#32). */
+.dpd { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+.dpd-legend__mode { margin-left: auto; }
+/* Classes do protótipo (.cw/.ctb/.mm/.pp), escopadas ao diagrama. */
+.dpd .cw { position: relative; overflow: hidden; border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface); }
+.dpd .ctb { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; z-index: 5; }
+.dpd .ctb .bi { background: var(--surface-ct); border: 1px solid var(--ov); }
+.dpd .mm { position: absolute; bottom: 8px; right: 8px; width: 160px; height: 100px; border: 1px solid var(--ov); border-radius: var(--r); background: var(--surface); overflow: hidden; z-index: 5; }
+.dpd .pp { position: absolute; top: 8px; right: 8px; z-index: 6; }
+.dpd-stage { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.dpd-canvas { height: clamp(320px, 62vh, 760px); touch-action: none; user-select: none; -webkit-user-select: none; }
+.dpd-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dpd-svg { display: block; cursor: grab; }
+.dpd-svg:active { cursor: grabbing; }
+.dpd-tb { flex-wrap: wrap; align-items: center; max-width: calc(100% - 16px); }
+.dpd-tb .bi { display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+.dpd-search { display: flex; align-items: center; gap: 4px; background: var(--surface-ct); border: 1px solid var(--ov); border-radius: var(--r); padding: 2px 4px; }
+.dpd-search input { width: 150px; max-width: 40vw; background: transparent; border: none; color: var(--fg); padding: 4px; font-family: var(--fd); font-size: 12px; }
+.dpd-search input:focus-visible { outline: none; }
+.dpd-search:focus-within { border-color: var(--accent); }
+.dpd-search__n { font-family: var(--fd); font-size: 10px; color: var(--muted); min-width: 28px; }
+.dpd-fallback { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+/* Minimapa */
+.dpd-mm { cursor: crosshair; }
+.dpd-mm svg { display: block; touch-action: none; }
+.mm-node { fill: var(--surface-highest); }
+.mmv-rect { fill: var(--accent-lt); stroke: var(--accent); stroke-width: 1.5; }
+
+/* Painel de propriedades */
+.dpd-pp { max-height: calc(100% - 16px); overflow: auto; width: 260px; font-size: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow); }
+.pp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pp-head h3 { font-size: 13px; word-break: break-all; }
+.pp-dl { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.pp-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 6px; }
+.pp-row dt { color: var(--muted); font-size: 11px; }
+.pp-row dd { margin: 0; word-break: break-all; }
+.pp-sub { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.pp-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+
+/* SVG */
+.dp-toplabel { fill: var(--accent); font: 700 11px var(--fd); letter-spacing: 0.5px; }
+.dp-wire { fill: none; stroke: var(--outline); stroke-width: 1.4; }
+.dp-wire-hit { fill: none; stroke: transparent; stroke-width: 10; cursor: pointer; }
+.dp-edge--bus .dp-wire { stroke-width: 3; }
+.dp-edge:hover .dp-wire { stroke: var(--fg); }
+.dp-busmark line { stroke: var(--outline); stroke-width: 1.2; }
+.dp-busmark text { fill: var(--muted); font: 9px var(--fd); text-anchor: middle; }
+.dp-wlabel { fill: var(--muted); font: 9px var(--fd); pointer-events: none; }
+.dp-edge--const .dp-wire { stroke-dasharray: 4 3; }
+
+.dp-v--0 .dp-wire { stroke: var(--s0); }
+.dp-v--1 .dp-wire { stroke: var(--s1); }
+.dp-v--x .dp-wire { stroke: var(--sx); }
+.dp-v--z .dp-wire { stroke: var(--sz); stroke-dasharray: 2 3; }
+.dp-v--0 .dp-wlabel { fill: var(--s0); }
+.dp-v--1 .dp-wlabel { fill: var(--s1); }
+.dp-v--x .dp-wlabel { fill: var(--sx); }
+.dp-v--z .dp-wlabel { fill: var(--sz); }
+
+.dp-edge--sig .dp-wire { stroke-width: 3.5; filter: drop-shadow(0 0 2px var(--accent)); }
+.dp-edge--sig:not([class*="dp-v--"]) .dp-wire { stroke: var(--accent); }
+.dp-edge.dp-hit .dp-wire { stroke: var(--sx); stroke-width: 3.5; }
+.dp-edge.dp-on .dp-wire { stroke: var(--accent); stroke-width: 4; }
+.dp-edge.dp-on .dp-wlabel, .dp-edge.dp-hit .dp-wlabel { fill: var(--fg); font-weight: 700; }
+
+.dp-node { cursor: pointer; }
+.dp-node:focus { outline: none; }
+.dp-node:focus-visible .dp-box { stroke: var(--accent); stroke-width: 2.5; }
+.dp-box { fill: var(--surface-hi); stroke: var(--ov); stroke-width: 1.2; }
+.dp-box2 { fill: none; stroke: var(--accent-bd); stroke-width: 1; }
+.dp-node--input .dp-box, .dp-node--output .dp-box, .dp-node--inout .dp-box { fill: var(--surface-ct); }
+.dp-node--instance .dp-box { fill: var(--accent-lt); stroke: var(--accent-bd); }
+.dp-node--top .dp-box { stroke: var(--accent-bd); }
+.dp-node--const .dp-box { fill: var(--surface); stroke-dasharray: 3 2; }
+.dp-node--const.dp-v--0 .dp-box { stroke: var(--s0); fill: var(--s0b); }
+.dp-node--const.dp-v--1 .dp-box { stroke: var(--s1); fill: var(--s1b); }
+.dp-node--const.dp-v--x .dp-box { stroke: var(--sx); fill: var(--sxb); }
+.dp-node--const.dp-v--z .dp-box { stroke: var(--sz); fill: var(--szb); }
+.dp-node--sig .dp-box { stroke: var(--accent); stroke-width: 2; }
+.dp-node.dp-hit .dp-box { stroke: var(--sx); stroke-width: 2.5; }
+.dp-node.dp-on .dp-box { stroke: var(--accent); stroke-width: 3; }
+.dp-node:hover .dp-box { filter: brightness(1.15); }
+.dp-name { fill: var(--fg); font: 600 11px var(--fd); }
+.dp-name--c { text-anchor: middle; }
+.dp-type { fill: var(--muted); font: 9px var(--fd); }
+.dp-pin { fill: var(--muted); font: 8.5px var(--fd); }
+.dp-pin--out { text-anchor: end; }
+
+/* Nível de detalhe: afastado demais, esconde textos pequenos. */
+.dpd--far .dp-pin, .dpd--far .dp-type, .dpd--far .dp-wlabel, .dpd--far .dp-busmark text { display: none; }
+
+@media (max-width: 768px) {
+  .dpd-canvas { height: 56vh; min-height: 280px; }
+  .dpd .dpd-tb { top: auto; bottom: 8px; left: 8px; }
+  .dpd .dpd-mm { display: none; }
+  .dpd .dpd-pp { position: static; width: auto; max-height: none; box-shadow: none; }
+  .dpd-legend__mode { margin-left: 0; width: 100%; }
+}

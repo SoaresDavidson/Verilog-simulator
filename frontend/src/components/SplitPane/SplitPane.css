@@ -1,0 +1,21 @@
+/* Split pane genérico (#35) */
+.split-pane { display: flex; min-width: 0; min-height: 0; }
+.split-pane--horizontal { flex-direction: row; }
+.split-pane--vertical { flex-direction: column; }
+.split-pane__pane { flex-grow: 0; flex-shrink: 0; min-width: 0; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+.split-pane__pane--second { flex: 1 1 0; }
+.split-pane__sep {
+  flex: 0 0 8px; position: relative; background: var(--ov); border-radius: 3px; touch-action: none; user-select: none;
+}
+.split-pane--horizontal > .split-pane__sep { cursor: col-resize; margin: 0 2px; }
+.split-pane--vertical > .split-pane__sep { cursor: row-resize; margin: 2px 0; }
+.split-pane__sep::after {
+  content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--muted); border-radius: 1px;
+}
+.split-pane--horizontal > .split-pane__sep::after { width: 2px; height: 24px; }
+.split-pane--vertical > .split-pane__sep::after { width: 24px; height: 2px; }
+.split-pane__sep:hover, .split-pane--dragging > .split-pane__sep { background: var(--accent); }
+.split-pane__sep:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Área de toque maior sem mudar o visual. */
+.split-pane__sep::before { content: ""; position: absolute; inset: -6px; }
+.split-pane--dragging { user-select: none; }
