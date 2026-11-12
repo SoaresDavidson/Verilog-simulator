@@ -41,6 +41,7 @@ export function ThemeToggle() {
       type="button"
       className="btn bi bs theme-toggle"
       onClick={toggle}
+      aria-pressed={theme === 'dark'}
       aria-label={next === 'light' ? 'Ativar tema claro' : 'Ativar tema escuro'}
       title={next === 'light' ? 'Tema claro' : 'Tema escuro'}
     >
