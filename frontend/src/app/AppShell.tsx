@@ -88,21 +88,16 @@ export function AppShell({ headerActions }: AppShellProps) {
   }, [landing])
 
   const header = (
-    <header className={landing ? 'nav app-header' : 'app-header module'}>
+    <header className={landing ? 'nav app-header' : 'app-header'}>
       <div className={landing ? 'wrap app-header__bar' : 'app-header__bar'}>
         <a className="skip-link" href="#main">
           Pular para o conteúdo
         </a>
         <div className="brand logo">
           <span className="brand__plaque">
-            <BrandMark size={46} lit={progress} />
+            <BrandMark size={40} lit={progress} />
           </span>
-          <span className="brand__text">
-            <span className="brand__name">Verilog Classroom</span>
-            <span className="brand__tag" aria-hidden="true">
-              Kit de síntese e simulação
-            </span>
-          </span>
+          <span className="brand__name">Verilog Classroom</span>
         </div>
         <Stepper nav={nav} />
         <div className="header-actions">

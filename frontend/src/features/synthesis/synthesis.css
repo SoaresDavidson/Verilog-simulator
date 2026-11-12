@@ -33,7 +33,7 @@
 .syn-run__status[data-status="success"] { color: var(--s1); }
 .syn-run__status[data-status="error"] { color: var(--danger); }
 .syn-log { max-height: 240px; margin-top: 6px; }
-.syn-log__title { font-family: var(--fd); font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.syn-log__title { font-family: var(--fd); font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 10px; }
 .syn-error { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
 .syn-error p { margin: 0; }
 .syn-stat-report { max-height: 240px; }
@@ -42,14 +42,14 @@
 .ns.syn-stats { margin-top: 0; }
 
 /* Ilustração da síntese: código vira porta */
-.synth-art__code { fill: #0d1d17; }
-.synth-art__line { fill: #2f5a49; }
+.synth-art__code { fill: #1a1238; }
+.synth-art__line { fill: #4a3d86; }
 .synth-art__line--1 { fill: var(--copper-2); }
 .synth-art__line--3 { fill: var(--gold); opacity: 0.85; }
 .synth-art__arrow { fill: none; stroke: var(--ov-strong); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.synth-art__and { fill: var(--pcb); }
-.synth-art__wire { fill: none; stroke: var(--copper); stroke-width: 4; stroke-linecap: round; }
-.synth-art__pad { fill: var(--gold); }
+.synth-art__and { fill: var(--gate); stroke: #1a1238; stroke-width: 4; stroke-linejoin: round; }
+.synth-art__wire { fill: none; stroke: var(--w1); stroke-width: 5; stroke-linecap: round; }
+.synth-art__pad { fill: var(--w1); }
 .synth-art.is-running .synth-art__line { animation: syn-type 1.2s var(--ease-in-out) infinite; transform-box: fill-box; transform-origin: left; }
 .synth-art.is-running .synth-art__line--1 { animation-delay: 0.15s; }
 .synth-art.is-running .synth-art__line--2 { animation-delay: 0.3s; }

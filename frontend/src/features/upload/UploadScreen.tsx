@@ -2,9 +2,10 @@ import { useEffect, useReducer, useRef, useState, type DragEvent } from 'react'
 import { useApi } from '../../api/context'
 import { isAbortError, toUserMessage } from '../../api/errors'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { KitCaseArt, WaveArt } from '../../components/art'
+import { Art, WaveArt } from '../../components/art'
 import { GlyphSourceFile, GlyphTestbenchFile, IconArrowRight, IconSwap, IconUpload } from '../../components/icons'
 import { MiniArt } from '../../components/Explainer'
+import { LiveDemo } from '../../components/LiveDemo'
 import { MAX_UPLOAD_BYTES } from '../../config'
 import { formatBytes } from '../../lib/format'
 import { useSession } from '../../state/hooks'
@@ -164,9 +165,6 @@ export function UploadScreen() {
 
   const hasValidFile = upload.file !== null && upload.preview !== null
 
-  const chipLabel = upload.file?.name ?? session.session?.fileName ?? 'projeto.zip'
-  const seated = uploaded || hasValidFile
-
   const statusLine = (
     <p role="status" className="upload-status" data-phase={uploaded ? 'UPLOADED' : upload.phase}>
       <span
@@ -177,31 +175,37 @@ export function UploadScreen() {
     </p>
   )
 
-  let picture
-  if (uploaded) picture = <KitCaseArt label={chipLabel} state="seated" />
-  else if (!upload.file) {
-    picture = (
-      <button
-        type="button"
-        className={`uz${dragging ? ' dg' : ''}`}
-        onClick={openPicker}
-        onDragOver={onDragOver}
-        onDragEnter={onDragOver}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        disabled={busy}
-        aria-describedby="upload-hint"
-      >
-        <span className="uz__art">
-          <KitCaseArt label="projeto.zip" state={dragging ? 'drag' : 'idle'} />
-        </span>
-        <span className="uz__title">Arraste um arquivo .zip aqui</span>
-        <span id="upload-hint" className="uz__hint">
-          ou <b>clique para escolher</b> · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
-        </span>
-      </button>
-    )
-  } else picture = <KitCaseArt label={chipLabel} state={seated ? 'seated' : 'idle'} />
+  const dropzone = !uploaded && !upload.file && (
+    <button
+      type="button"
+      className={`uz${dragging ? ' dg' : ''}`}
+      onClick={openPicker}
+      onDragOver={onDragOver}
+      onDragEnter={onDragOver}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+      disabled={busy}
+      aria-describedby="upload-hint"
+    >
+      <span className="uz__art" aria-hidden="true">
+        <Art
+          name="upload-zip"
+          fallback={
+            <svg viewBox="0 0 96 96" width="96" height="96">
+              <path className="uz-art__file" d="M22 10h34l18 18v52a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V16a6 6 0 0 1 6-6z" />
+              <path className="uz-art__fold" d="M56 10v18h18" />
+              <path className="uz-art__zip" d="M36 16h8M36 26h8M36 36h8M36 46h8" />
+              <path className="uz-art__arrow" d="M48 76V56M39 64l9-9 9 9" />
+            </svg>
+          }
+        />
+      </span>
+      <span className="uz__title">{dragging ? 'Pode soltar o arquivo' : 'Arraste um arquivo .zip aqui'}</span>
+      <span id="upload-hint" className="uz__hint">
+        ou <b>clique para escolher</b> · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
+      </span>
+    </button>
+  )
 
   return (
     <>
@@ -217,6 +221,10 @@ export function UploadScreen() {
                 Envie um .zip com seus módulos Verilog e o testbench. O Yosys monta o circuito, o Icarus roda a simulação
                 e você vê cada sinal mudar.
               </p>
+              <label htmlFor="upload-zip-input" className="sr-only">
+                Arquivo .zip do projeto
+              </label>
+              {dropzone}
 
               {upload.error && (
                 <div role="alert" className="state-error">
@@ -311,10 +319,7 @@ export function UploadScreen() {
               />
             </div>
             <div className="hero__picture">
-              <label htmlFor="upload-zip-input" className="silk hero__picture-label">
-                Arquivo .zip do projeto
-              </label>
-              {picture}
+              <LiveDemo />
             </div>
           </div>
         </section>
@@ -326,23 +331,31 @@ export function UploadScreen() {
             </h2>
             <ol className="how__steps">
               <li className="how__step">
-                <MiniArt kind="code" />
-                <b>1 · Envie o projeto</b>
+                <span className="how__art" aria-hidden="true">
+                  <Art name="passo-1-codigo" fallback={<MiniArt kind="code" />} />
+                </span>
+                <b>Envie o projeto</b>
                 <p>Um .zip com os módulos e o testbench. A lista de arquivos aparece antes do envio.</p>
               </li>
               <li className="how__step">
-                <MiniArt kind="netlist" />
-                <b>2 · Sintetize</b>
+                <span className="how__art" aria-hidden="true">
+                  <Art name="passo-2-portas" fallback={<MiniArt kind="netlist" />} />
+                </span>
+                <b>Sintetize</b>
                 <p>O Yosys converte o código em portas e fios. Você escolhe os sinais que quer acompanhar.</p>
               </li>
               <li className="how__step">
-                <MiniArt kind="mux" />
-                <b>3 · Veja o circuito</b>
+                <span className="how__art" aria-hidden="true">
+                  <Art name="passo-3-circuito" fallback={<MiniArt kind="mux" />} />
+                </span>
+                <b>Veja o circuito</b>
                 <p>O caminho de dados aparece com os símbolos do livro, com zoom, busca e a explicação de cada bloco.</p>
               </li>
               <li className="how__step">
-                <MiniArt kind="clock" />
-                <b>4 · Simule</b>
+                <span className="how__art" aria-hidden="true">
+                  <Art name="passo-4-sinais" fallback={<MiniArt kind="clock" />} />
+                </span>
+                <b>Simule</b>
                 <p>O Icarus roda o testbench. Os valores acendem nos fios e viram formas de onda.</p>
               </li>
             </ol>
@@ -389,7 +402,7 @@ export function UploadScreen() {
             </h2>
             <p className="hero__lead">Escolha o .zip do projeto e siga as quatro etapas até a simulação.</p>
             <div className="closing__art" aria-hidden="true">
-              <WaveArt />
+              <Art name="fechamento" fallback={<WaveArt />} />
             </div>
             <div className="btn-row">
               <button

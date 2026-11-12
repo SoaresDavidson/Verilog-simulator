@@ -20,11 +20,11 @@
 .sim-warn { border: 1px solid color-mix(in srgb, var(--sx) 40%, transparent); background: var(--sxb); color: var(--sx); border-radius: var(--r); padding: 10px 12px; font-size: 13.5px; }
 
 /* Ilustração */
-.wave-art__screen { fill: #0d1d17; }
+.wave-art__screen { fill: #1a1238; }
 .wave-art__grid { stroke: rgba(238, 245, 241, 0.07); stroke-width: 1; }
-.wave-art__clk { fill: none; stroke: #7fdc9a; stroke-width: 2.5; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 0; }
-.wave-art__bus { fill: none; stroke: var(--gold); stroke-width: 2.2; stroke-linejoin: round; }
-.sim-run__intro.is-running .wave-art__clk { animation: wave-draw 1.6s linear infinite; }
+.wave-art__clk { fill: none; stroke: #2fd683; stroke-width: 3.5; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 0; }
+.wave-art__bus { fill: none; stroke: #ffd23f; stroke-width: 3; stroke-linejoin: round; }
+.wave-art__clk { animation: wave-draw 2.4s linear infinite; }
 @keyframes wave-draw { from { stroke-dashoffset: 520; } to { stroke-dashoffset: 0; } }
 
 /* Doca do rodapé: voltar + controles da timeline */
@@ -35,9 +35,9 @@
 .sim-tl__buttons { display: flex; gap: 4px; align-items: center; }
 .sim-tl__buttons .btn { background: var(--surface-hi); color: var(--fg); }
 .sim-tl__buttons .btn:hover:not(:disabled) { background: var(--surface-highest); }
-.sim-tl__buttons .sim-tl__play { background: var(--pcb); color: #fff; width: 42px; height: 42px; }
-.sim-tl__buttons .sim-tl__play:hover:not(:disabled) { background: var(--pcb-2); }
-.sim-tl__buttons .sim-tl__play[aria-pressed="true"] { background: var(--copper); }
+.sim-tl__buttons .sim-tl__play { background: var(--copper); color: var(--on-copper); width: 52px; height: 52px; border-radius: 50%; }
+.sim-tl__buttons .sim-tl__play:hover:not(:disabled) { background: var(--copper-hv); }
+.sim-tl__buttons .sim-tl__play[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 .sim-tl__range { flex: 1 1 180px; min-width: 120px; }
 .sim-tl__time {
   font-family: var(--fd); font-size: 13px; color: var(--fg); font-weight: 700; white-space: nowrap;
@@ -76,7 +76,7 @@
 .sim-sigs > .lg { padding-top: 10px; border-top: 1px solid var(--ov); }
 
 /* Waveform (#33): uma tela de osciloscópio de bancada */
-.sim-wf { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; border: 1px solid var(--ov); border-radius: var(--r-lg); background: var(--surface); padding: 12px 14px; }
+.sim-wf { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; box-shadow: var(--shadow-sm); border-radius: var(--r-lg); background: var(--surface); padding: 12px 14px; }
 .sim-wf__bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 .sim-wf__title { margin-right: auto; font-family: var(--fb); font-size: var(--fs-h2); font-weight: 700; color: var(--fg); }
 .sim-wf__bar input[type="range"] { width: 140px; max-width: 40vw; }
@@ -87,7 +87,7 @@
 
 /* Split diagrama | waveform (#35) */
 .sim-split { height: clamp(460px, 74vh, 940px); min-width: 0; }
-.sim-dp { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--ov); border-radius: var(--r-lg); background: var(--surface); overflow: auto; padding: 10px; }
+.sim-dp { flex: 1; min-height: 0; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); border-radius: var(--r-lg); background: var(--surface); overflow: auto; padding: 10px; }
 .sim-dp__placeholder { flex: 1; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .sim-split .sim-wf { flex: 1; }
 

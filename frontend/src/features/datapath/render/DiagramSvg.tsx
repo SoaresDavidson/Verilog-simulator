@@ -103,6 +103,7 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
               </title>
               <path className="dp-wire-hit" d={d} />
               <path className="dp-wire" d={d} />
+              {value !== undefined && <path className="dp-flow" d={d} />}
               {edge.width > 1 && (
                 <g className="dp-busmark" transform={`translate(${last.x - 14},${last.y})`}>
                   <line x1={-3} y1={5} x2={3} y2={-5} />

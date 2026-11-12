@@ -1,194 +1,199 @@
 /*
- * Identidade "Maleta Didática": os painéis de treinamento de hardware dos
- * laboratórios de engenharia. Alumínio escovado, tudo serigrafado em preto,
- * bornes coloridos, teclas, chaves e displays de 7 segmentos.
- * Claro = painel de alumínio (padrão); escuro = painel preto anodizado,
- * via `<html data-theme="dark">`.
+ * Identidade "Do código ao sinal": o próprio Verilog é o protagonista.
+ * Papel lavanda, tinta roxa bem escura, portas amarelas, ação em rosa.
+ * Verde e azul ficam reservados para o valor dos sinais (1 e 0).
+ * Claro é o padrão; escuro via `<html data-theme="dark">`.
  *
- * Os nomes antigos (--bg, --surface, --accent, --copper...) continuam valendo
- * porque as features e o renderizador da forma de onda leem esses nomes.
+ * Os nomes antigos (--bg, --surface, --accent, --copper, --jack-*...) continuam
+ * valendo porque as features e o renderizador da forma de onda leem esses nomes.
  */
 :root {
   color-scheme: light;
 
-  /* Painel e módulos */
-  --bg: #d6d9dc;              /* painel de alumínio */
-  --surface: #eef0f2;         /* placa do módulo */
-  --surface-ct: #e3e6e9;      /* área rebaixada */
-  --surface-hi: #d8dce0;
-  --surface-highest: #c9ced3;
-  --sunken: #e3e6e9;
-  --hole: #b9bfc5;
+  /* Papel e superfícies */
+  --bg: #f1eefb;
+  --surface: #ffffff;
+  --surface-ct: #f6f4fd;
+  --surface-hi: #ece8fa;
+  --surface-highest: #ddd7f3;
+  --sunken: #ece8fa;
+  --hole: #cfc8ec;
 
-  /* Serigrafia */
-  --fg: #16181b;
-  --muted: #444a51;
-  --faint: #656c74;
-  --outline: #7d848c;
-  --ov: #bcc2c8;
-  --ov-strong: #16181b;
-  --silk: #16181b;
-  --silk-w: 1.5px;
+  /* Tinta */
+  --fg: #1a1238;
+  --muted: #564e7a;
+  --faint: #6f6890;
+  --outline: #8e87b0;
+  --ov: #ddd7f0;
+  --ov-strong: #b5add8;
+  --silk: #1a1238;
+  --silk-w: 0px;
 
-  /* Faixa preta anodizada (cabeçalho dos módulos) */
-  --pcb: #1b1d20;
-  --pcb-2: #26292d;
-  --pcb-3: #33373c;
-  --pcb-ink: #f2f3f4;
-  --pcb-mute: #a9afb5;
-  --pcb-line: rgba(242, 243, 244, 0.14);
-  --glyph-ink: #16181b;
+  /* Faixa de tinta (cabeçalho, código, declaração) */
+  --pcb: #1a1238;
+  --pcb-2: #2c2157;
+  --pcb-3: #3d3170;
+  --pcb-ink: #ffffff;
+  --pcb-mute: #cfc8f5;
+  --pcb-line: rgba(255, 255, 255, 0.14);
+  --glyph-ink: #1a1238;
 
-  /* Seleção e foco: preto serigrafado com amarelo de borne */
-  --accent: #16181b;
-  --accent-ct: #26292d;
-  --accent-dim: #33373c;
-  --accent-lt: rgba(22, 24, 27, 0.07);
-  --accent-bd: rgba(22, 24, 27, 0.3);
-  --accent-hv: #000000;
+  /* Seleção e foco: tinta */
+  --accent: #1a1238;
+  --accent-ct: #2c2157;
+  --accent-dim: #3d3170;
+  --accent-lt: rgba(26, 18, 56, 0.07);
+  --accent-bd: rgba(26, 18, 56, 0.3);
+  --accent-hv: #0d0822;
   --on-accent: #ffffff;
 
-  /* Bornes (as cores do kit) */
-  --jack-red: #d42a20;
-  --jack-black: #1b1d20;
-  --jack-yellow: #f2c200;
-  --jack-blue: #1767c7;
-  --jack-green: #18904a;
+  /* Cores do sistema */
+  --jack-red: #e11d5b;
+  --jack-black: #1a1238;
+  --jack-yellow: #ffd23f;
+  --jack-blue: #2f5bea;
+  --jack-green: #0a8a4e;
 
-  /* Ação principal = tecla vermelha */
-  --copper: #d42a20;
-  --copper-hv: #b8211a;
-  --copper-2: #e85a50;
-  --copper-lt: #f8dcd9;
-  --copper-ink: #a01d16;
+  /* Ação principal = rosa */
+  --copper: #e11d5b;
+  --copper-hv: #c8144e;
+  --copper-2: #ff6e93;
+  --copper-lt: #ffe3eb;
+  --copper-ink: #b5103f;
   --on-copper: #ffffff;
-  --key-shadow: #8f1a13;
+  --key-shadow: #a80f3d;
 
-  /* Destaque = amarelo de borne */
-  --gold: #f2c200;
-  --gold-lt: #fbefbf;
-  --gold-ink: #6b5500;
+  /* Portas e destaque = amarelo */
+  --gold: #ffd23f;
+  --gold-lt: #fff4c7;
+  --gold-ink: #5e4700;
+  --gate: #ffd23f;
 
-  --tile-blue: #1767c7;
+  --tile-blue: #2f5bea;
 
-  /* Display de 7 segmentos */
-  --seg-bg: #142019;
-  --seg-on: #7dff8c;
-  --seg-dim: #6d8f74;
+  --seg-bg: #1a1238;
+  --seg-on: #ffd23f;
+  --seg-dim: #cfc8f5;
 
-  --danger: #c0261d;
-  --danger-bg: rgba(192, 38, 29, 0.08);
+  --danger: #c5162f;
+  --danger-bg: rgba(197, 22, 47, 0.08);
   --on-danger: #ffffff;
-  --hover: rgba(22, 24, 27, 0.05);
+  --hover: rgba(26, 18, 56, 0.06);
 
-  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 0 rgba(0, 0, 0, 0.08);
-  --shadow: 0 2px 0 rgba(0, 0, 0, 0.1), 0 10px 24px -14px rgba(20, 24, 28, 0.35);
-  --shadow-lg: 0 3px 0 rgba(0, 0, 0, 0.12), 0 24px 50px -22px rgba(20, 24, 28, 0.45);
+  --shadow-sm: 0 1px 2px rgba(26, 18, 56, 0.06), 0 4px 10px -6px rgba(26, 18, 56, 0.18);
+  --shadow: 0 2px 4px rgba(26, 18, 56, 0.06), 0 12px 28px -14px rgba(26, 18, 56, 0.3);
+  --shadow-lg: 0 4px 8px rgba(26, 18, 56, 0.08), 0 28px 56px -22px rgba(26, 18, 56, 0.42);
 
   /* Estados lógicos 0 / 1 / X / Z (azul, verde, laranja, roxo, como no README) */
-  --s0: #1767c7;
-  --s0b: rgba(23, 103, 199, 0.12);
-  --s1: #148241;
-  --s1b: rgba(20, 130, 65, 0.12);
+  --s0: #2f5bea;
+  --s0b: rgba(47, 91, 234, 0.12);
+  --s1: #0a8a4e;
+  --s1b: rgba(10, 138, 78, 0.13);
   --sx: #c25e00;
   --sxb: rgba(194, 94, 0, 0.13);
-  --sz: #6a51a8;
-  --szb: rgba(106, 81, 168, 0.12);
+  --sz: #7a4fd0;
+  --szb: rgba(122, 79, 208, 0.12);
+  /* Versões vivas para traços grossos (fios, pulsos) */
+  --w0: #3d6bff;
+  --w1: #0fb66b;
 
   /* Forma */
-  --r-xs: 6px;
-  --r-sm: 8px;
-  --r: 10px;
-  --r-md: 12px;
-  --r-lg: 16px;
-  --r-xl: 20px;
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r: 12px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
   --r-pill: 999px;
 
-  /* Tipografia: serigrafia condensada, texto Sofia Sans, dados em Fira Mono */
-  --fb: "Sofia Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --fh: "Sofia Sans Condensed", "Sofia Sans", "Arial Narrow", sans-serif;
-  --fd: "Fira Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  /* Tipografia: Bricolage Grotesque na interface, JetBrains Mono em código e dados */
+  --fb: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fh: "Bricolage Grotesque", system-ui, sans-serif;
+  --fd: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
 
-  --fs-display: clamp(40px, 3vw + 18px, 58px);
-  --fs-plate: clamp(26px, 1.2vw + 18px, 34px);
-  --fs-h2: 15px;
-  --fs-body: 15px;
-  --fs-sm: 13.5px;
-  --fs-xs: 12px;
+  --fs-display: clamp(36px, 2.4vw + 18px, 58px);
+  --fs-plate: 28px;
+  --fs-h2: 17px;
+  --fs-body: 16px;
+  --fs-sm: 14px;
+  --fs-xs: 12.5px;
   --fs-data: 13px;
 
-  /* Movimento: mecânico, curto */
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.3, 1.5, 0.6, 1);
-  --t-fast: 110ms;
-  --t: 200ms;
-  --t-slow: 420ms;
+  --t-fast: 120ms;
+  --t: 220ms;
+  --t-slow: 460ms;
 
-  --hh: 76px;
-
-  /* Parafuso Phillips para os cantos dos módulos */
-  --screw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.4' cy='.35' r='.7'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.6' stop-color='%23a3a9b0'/%3E%3Cstop offset='1' stop-color='%23737a82'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='6' cy='6' r='5.4' fill='url(%23g)' stroke='%23596068' stroke-width='.6'/%3E%3Cpath d='M3.6 6h4.8M6 3.6v4.8' stroke='%23464c53' stroke-width='1.1' stroke-linecap='round'/%3E%3C/svg%3E");
+  --hh: 72px;
+  --screw: none;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111315;
-  --surface: #1c1f22;
-  --surface-ct: #16191b;
-  --surface-hi: #262a2e;
-  --surface-highest: #30353a;
-  --sunken: #131517;
-  --hole: #2a2e33;
+  --bg: #120c2a;
+  --surface: #1d1540;
+  --surface-ct: #171034;
+  --surface-hi: #2a2057;
+  --surface-highest: #382c6e;
+  --sunken: #150e30;
+  --hole: #33285f;
 
-  --fg: #eef0f2;
-  --muted: #b3b9bf;
-  --faint: #8c939a;
-  --outline: #747b83;
-  --ov: #33383d;
-  --ov-strong: #d5d9dd;
-  --silk: #eef0f2;
+  --fg: #f3f0ff;
+  --muted: #bdb5e3;
+  --faint: #9c94c6;
+  --outline: #7d73b3;
+  --ov: #33285f;
+  --ov-strong: #6e64a3;
+  --silk: #8e84c4;
 
-  --pcb: #08090a;
-  --pcb-2: #141618;
-  --pcb-3: #22262a;
-  --pcb-ink: #f2f3f4;
-  --pcb-mute: #9aa1a8;
-  --glyph-ink: #eef0f2;
+  --pcb: #0b0720;
+  --pcb-2: #1d1540;
+  --pcb-3: #2a2057;
+  --glyph-ink: #f3f0ff;
 
-  --accent: #f2c200;
-  --accent-ct: #ffd426;
-  --accent-dim: #c9a200;
-  --accent-lt: rgba(242, 194, 0, 0.12);
-  --accent-bd: rgba(242, 194, 0, 0.35);
-  --accent-hv: #ffd426;
-  --on-accent: #16181b;
+  --accent: #ffd23f;
+  --accent-ct: #ffe07a;
+  --accent-dim: #d9ae1f;
+  --accent-lt: rgba(255, 210, 63, 0.13);
+  --accent-bd: rgba(255, 210, 63, 0.38);
+  --accent-hv: #ffe07a;
+  --on-accent: #1a1238;
 
-  --copper: #e33a2f;
-  --copper-hv: #f04a3f;
-  --copper-2: #f0776f;
-  --copper-lt: rgba(227, 58, 47, 0.16);
-  --copper-ink: #ff8a80;
-  --key-shadow: #7d140e;
+  --jack-red: #ff5c88;
+  --jack-black: #0b0720;
+  --jack-blue: #7c9bff;
+  --jack-green: #3fd98a;
 
-  --gold-lt: rgba(242, 194, 0, 0.14);
-  --gold-ink: #f2c200;
+  --copper: #ff5c88;
+  --copper-hv: #ff7a9e;
+  --copper-2: #ff9bb6;
+  --copper-lt: rgba(255, 92, 136, 0.16);
+  --copper-ink: #ff9bb6;
+  --on-copper: #24030f;
+  --key-shadow: #8a1239;
 
-  --danger: #ff8a80;
-  --danger-bg: rgba(255, 138, 128, 0.1);
-  --on-danger: #1f0806;
-  --hover: rgba(238, 240, 242, 0.05);
+  --gold-lt: rgba(255, 210, 63, 0.14);
+  --gold-ink: #ffd23f;
 
-  --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 3px 0 rgba(0, 0, 0, 0.5), 0 26px 52px -22px rgba(0, 0, 0, 0.8);
+  --danger: #ff8a9a;
+  --danger-bg: rgba(255, 138, 154, 0.1);
+  --on-danger: #24030f;
+  --hover: rgba(243, 240, 255, 0.06);
 
-  --s0: #5e9cf0;
-  --s0b: rgba(94, 156, 240, 0.16);
-  --s1: #4fd17d;
-  --s1b: rgba(79, 209, 125, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.45), 0 28px 56px -22px rgba(0, 0, 0, 0.8);
+
+  --s0: #7c9bff;
+  --s0b: rgba(124, 155, 255, 0.16);
+  --s1: #3fd98a;
+  --s1b: rgba(63, 217, 138, 0.15);
   --sx: #ff9f43;
   --sxb: rgba(255, 159, 67, 0.15);
-  --sz: #b49be6;
-  --szb: rgba(180, 155, 230, 0.15);
+  --sz: #b79cff;
+  --szb: rgba(183, 156, 255, 0.15);
+  --w0: #6f8dff;
+  --w1: #2fd683;
 }
