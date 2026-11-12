@@ -6,3 +6,7 @@
 .live-bus__item { display: inline-flex; gap: 6px; align-items: baseline; font-family: var(--fd); font-size: 12px; padding: 2px 6px; border: 1px solid var(--ov); border-radius: 4px; min-width: 0; }
 .live-bus__name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14ch; }
 .live-bus__item--none .live-bus__value { font-style: italic; color: var(--muted); }
+
+.live-dp .dpd-stage { flex: 1; min-height: 0; }
+.live-dp .dpd-canvas { height: 100%; min-height: 180px; }
+.live-dp .dpd-legend { flex-wrap: wrap; }

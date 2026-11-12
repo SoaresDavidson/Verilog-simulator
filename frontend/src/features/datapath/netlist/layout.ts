@@ -34,6 +34,21 @@ export interface EdgeRoute {
   points: Point[]
   /** Aresta de realimentação (destino numa camada anterior ou igual). */
   back: boolean
+  /** Ligação desenhada como etiqueta de rede (clock, reset, constante) em vez de fio. */
+  flag?: boolean
+}
+
+/** Etiqueta de rede: um toco curto com o nome do sinal na ponta livre. */
+export interface NetFlag {
+  id: string
+  /** Ponta livre do toco (onde fica a etiqueta). */
+  x: number
+  y: number
+  /** `in`: etiqueta à esquerda de um pino de entrada; `out`: à direita de uma saída. */
+  side: 'in' | 'out'
+  label: string
+  /** Aresta de origem (seleção e valores). */
+  edge: string
 }
 
 export interface DiagramLayout {
@@ -43,6 +58,8 @@ export interface DiagramLayout {
   edges: EdgeRoute[]
   nodeBox: ReadonlyMap<string, NodeBox>
   edgeRoute: ReadonlyMap<string, EdgeRoute>
+  /** Etiquetas de rede (só no layout ELK). */
+  flags?: NetFlag[]
 }
 
 export interface LayoutOptions {

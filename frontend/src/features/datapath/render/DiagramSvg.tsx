@@ -3,6 +3,8 @@ import type { DiagramLayout } from '../netlist/layout'
 import { routePath } from '../netlist/layout'
 import type { GraphEdge, GraphNode, NetlistGraph } from '../netlist/parse'
 import { formatValue, logicStateOf } from '../netlist/signals'
+import { gateShape } from '../netlist/symbols'
+import { GateSymbol } from './GateSymbol'
 
 export type DiagramSelection = { kind: 'node'; id: string } | { kind: 'net'; id: string } | { kind: 'edge'; id: string }
 
@@ -81,7 +83,7 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
           const value = edgeValues.get(edge.id)
           const d = routePath(route.points)
           const srcKey = `${edge.from.node}.${edge.from.pin}`
-          const showLabel = !labelled.has(srcKey) && !graph.nodeById.get(edge.from.node)?.hidden
+          const showLabel = !route.flag && !labelled.has(srcKey) && !graph.nodeById.get(edge.from.node)?.hidden
           labelled.add(srcKey)
           const p0 = route.points[0]
           const last = route.points[route.points.length - 1]
@@ -118,6 +120,38 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
           )
         })}
       </g>
+      {layout.flags && layout.flags.length > 0 && (
+        <g className="dp-flags">
+          {layout.flags.map((f) => {
+            const edge = graph.edgeById.get(f.edge)
+            const value = edgeValues.get(f.edge)
+            const text = truncate(value !== undefined && !edge?.constant ? `${f.label}=${formatValue(value, edge?.width ?? 1)}` : f.label, 18)
+            const w = Math.max(22, text.length * 6.3 + 14)
+            const x = f.side === 'in' ? f.x - w : f.x
+            const state = edge?.constant ? logicStateOf(edge.label.replace(/^\d+'b/, '')) : value !== undefined ? logicStateOf(value) : null
+            const cls = ['dp-flag', `dp-flag--${f.side}`, edge?.constant ? 'dp-flag--const' : 'dp-flag--net', state ? `dp-v--${state}` : '']
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <g
+                key={f.id}
+                className={cls}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (edge) onSelect(edge.net ? { kind: 'net', id: edge.net } : { kind: 'edge', id: edge.id })
+                }}
+              >
+                <title>{f.label}</title>
+                {f.side === 'out' && <path className="dp-wire" d={`M${f.x - 22},${f.y} L${f.x},${f.y}`} />}
+                <rect className="dp-flag__box" x={x} y={f.y - 8} width={w} height={16} rx={8} />
+                <text className="dp-flag__text" x={x + w / 2} y={f.y + 3.5}>
+                  {text}
+                </text>
+              </g>
+            )
+          })}
+        </g>
+      )}
       <g className="dp-nodes">
         {graph.nodes.map((node) => {
           const box = layout.nodeBox.get(node.id)
@@ -138,6 +172,7 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
             .join(' ')
           const select = () => onSelect({ kind: 'node', id: node.id })
           const isBlock = node.kind === 'cell' || node.kind === 'instance'
+          const symbol = node.kind === 'cell' && gateShape(node) !== 'box'
           return (
             <g
               key={node.id}
@@ -154,14 +189,16 @@ export const DiagramSvg = memo(function DiagramSvg({ graph, layout, highlights, 
               }}
               onKeyDown={onActivate(select)}
             >
-              <rect className="dp-box" width={box.w} height={box.h} rx={isBlock ? 7 : Math.min(box.h / 2, 12)} />
-              {node.kind === 'instance' && <rect className="dp-box2" x={3} y={3} width={box.w - 6} height={box.h - 6} rx={5} />}
-              {node.kind === 'instance' && <path className="dp-notch" d={`M${box.w / 2 - 6} 0a6 6 0 0 0 12 0`} />}
-              {isBlock &&
-                [...node.inputs.map((p) => box.pins[`in:${p.name}`]), ...node.outputs.map((p) => box.pins[`out:${p.name}`])]
-                  .filter(Boolean)
-                  .map((pt, i) => <circle key={i} className="dp-pinpad" cx={pt.x - box.x} cy={pt.y - box.y} r={2.6} />)}
-              {isBlock ? (
+              {symbol ? (
+                <GateSymbol node={node} box={box} />
+              ) : (
+                <>
+                  <rect className="dp-box" width={box.w} height={box.h} rx={isBlock ? 8 : Math.min(box.h / 2, 12)} />
+                  {node.kind === 'instance' && <rect className="dp-box2" x={3} y={3} width={box.w - 6} height={box.h - 6} rx={6} />}
+                  {node.kind === 'instance' && <path className="dp-notch" d={`M${box.w / 2 - 6} 0a6 6 0 0 0 12 0`} />}
+                </>
+              )}
+              {symbol ? null : isBlock ? (
                 <>
                   <text className="dp-name" x={8} y={13}>
                     {truncate(node.hidden ? node.type : node.name, 20)}

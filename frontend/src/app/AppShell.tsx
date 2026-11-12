@@ -84,15 +84,15 @@ export function AppShell({ headerActions }: AppShellProps) {
       <a className="skip-link" href="#main">
         Pular para o conteúdo
       </a>
-      <header className="app-header">
+      <header className="app-header module">
         <div className="brand logo">
           <span className="brand__plaque">
-            <BrandMark size={36} lit={progress} />
+            <BrandMark size={46} lit={progress} />
           </span>
           <span className="brand__text">
             <span className="brand__name">Verilog Classroom</span>
             <span className="brand__tag" aria-hidden="true">
-              Lab · Hardware digital
+              Kit de síntese e simulação
             </span>
           </span>
         </div>

@@ -27,7 +27,7 @@
 }
 .dpd-tb .bi { width: 36px; height: 36px; min-height: 36px; color: var(--fg); }
 .dpd-tb .bi:hover:not(:disabled) { background: var(--surface-hi); }
-.dpd-tb .bi[aria-expanded="true"] { background: var(--pcb); color: #fff; }
+.dpd-tb .bi[aria-expanded="true"] { background: var(--jack-black); color: #fff; }
 .dpd-search { display: flex; align-items: center; gap: 4px; padding: 0 4px 0 8px; }
 .dpd-search input[type="search"] { width: 170px; max-width: 40vw; min-height: 32px; padding: 4px 10px; font-family: var(--fd); font-size: 13px; border-radius: var(--r-pill); }
 .dpd-search__n { font-family: var(--fd); font-size: 12px; color: var(--muted); min-width: 32px; }
@@ -37,7 +37,7 @@
 .dpd-mm { cursor: crosshair; }
 .dpd-mm svg { display: block; touch-action: none; }
 .mm-node { fill: var(--surface-highest); }
-.mmv-rect { fill: rgba(176, 86, 29, 0.1); stroke: var(--copper); stroke-width: 1.5; rx: 3; }
+.mmv-rect { fill: rgba(242, 194, 0, 0.18); stroke: var(--fg); stroke-width: 1.5; rx: 3; }
 
 /* Painel de propriedades */
 .dpd-pp { max-height: calc(100% - 24px); overflow: auto; width: 290px; font-size: 13.5px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-lg); padding: 16px; animation: ti var(--t) var(--ease-out); }
@@ -52,11 +52,11 @@
 .pp-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------------- SVG ---------------- */
-.dp-toplabel { fill: var(--copper-ink); font: 700 12px var(--fd); letter-spacing: 0.08em; }
+.dp-toplabel { fill: var(--muted); font: 700 12px var(--fd); letter-spacing: 0.08em; }
 .dp-wire { fill: none; stroke: var(--outline); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; transition: stroke 160ms ease, stroke-width 160ms ease; }
 .dp-wire-hit { fill: none; stroke: transparent; stroke-width: 10; cursor: pointer; }
 .dp-edge--bus .dp-wire { stroke-width: 3.2; }
-.dp-edge:hover .dp-wire { stroke: var(--copper); }
+.dp-edge:hover .dp-wire { stroke: var(--jack-blue); }
 .dp-busmark line { stroke: var(--outline); stroke-width: 1.2; }
 .dp-busmark text { fill: var(--muted); font: 9.5px var(--fd); text-anchor: middle; }
 .dp-wlabel { fill: var(--muted); font: 9.5px var(--fd); pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
@@ -72,8 +72,8 @@
 .dp-v--z .dp-wlabel { fill: var(--sz); }
 
 /* Sinais escolhidos: trilha de cobre mais grossa */
-.dp-edge--sig .dp-wire { stroke-width: 3.4; }
-.dp-edge--sig:not([class*="dp-v--"]) .dp-wire { stroke: var(--copper); }
+.dp-edge--sig .dp-wire { stroke-width: 2.4; }
+.dp-edge--sig:not([class*="dp-v--"]) .dp-wire { stroke: var(--fg); }
 .dp-edge.dp-hit .dp-wire { stroke: var(--gold); stroke-width: 4; }
 .dp-edge.dp-on .dp-wire { stroke: var(--pcb); stroke-width: 4.2; }
 .dp-edge.dp-on .dp-wlabel, .dp-edge.dp-hit .dp-wlabel { fill: var(--fg); font-weight: 700; }
@@ -96,11 +96,11 @@
 .dp-node--const.dp-v--1 .dp-box { stroke: var(--s1); fill: var(--s1b); }
 .dp-node--const.dp-v--x .dp-box { stroke: var(--sx); fill: var(--sxb); }
 .dp-node--const.dp-v--z .dp-box { stroke: var(--sz); fill: var(--szb); }
-.dp-node--sig .dp-box { stroke: var(--copper); stroke-width: 2; }
+.dp-node--sig .dp-box { stroke: var(--fg); stroke-width: 2.2; }
 .dp-node.dp-hit .dp-box { stroke: var(--gold); stroke-width: 3; }
 .dp-node.dp-on .dp-box { stroke: var(--pcb); stroke-width: 3; }
 :root[data-theme="dark"] .dp-node.dp-on .dp-box { stroke: var(--accent); }
-.dp-node:hover .dp-box { stroke: var(--copper); }
+.dp-node:hover .dp-box { stroke: var(--jack-blue); }
 .dp-name { fill: var(--fg); font: 700 11px var(--fd); }
 .dp-name--c { text-anchor: middle; }
 .dp-type { fill: var(--muted); font: 9.5px var(--fd); }
@@ -117,3 +117,28 @@
   .dpd .dpd-pp { position: static; width: auto; max-height: none; box-shadow: none; }
   .dpd-legend__mode { margin-left: 0; width: 100%; }
 }
+
+/* Símbolos de porta (livro-texto) */
+.gs-stub, .gs-line { fill: none; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.gs .dp-box { fill: var(--surface); stroke: var(--fg); stroke-width: 1.8; }
+.gs-op { fill: var(--fg); font: 700 18px var(--fd); text-anchor: middle; pointer-events: none; }
+.gs-label { text-anchor: middle; }
+.dp-node:hover .gs .dp-box { stroke: var(--accent); }
+.dp-node.dp-on .gs .dp-box { stroke: var(--accent); stroke-width: 2.6; fill: var(--accent-lt); }
+.dp-node.dp-hit .gs .dp-box { stroke: var(--sx); stroke-width: 2.6; }
+
+/* Etiquetas de rede (clock, reset, constantes) */
+.dp-flag { cursor: pointer; }
+.dp-flag__box { fill: var(--surface); stroke: var(--outline); stroke-width: 1.2; }
+.dp-flag__text { font: 600 9.5px var(--fd); fill: var(--fg); text-anchor: middle; pointer-events: none; }
+.dp-flag--net .dp-flag__box { fill: var(--fg); stroke: var(--fg); }
+.dp-flag--net .dp-flag__text { fill: var(--surface); }
+.dp-flag--const .dp-flag__box { stroke-dasharray: 3 2; }
+.dp-flag.dp-v--0 .dp-flag__box { stroke: var(--s0); fill: var(--s0b); }
+.dp-flag.dp-v--1 .dp-flag__box { stroke: var(--s1); fill: var(--s1b); }
+.dp-flag.dp-v--x .dp-flag__box { stroke: var(--sx); fill: var(--sxb); }
+.dp-flag.dp-v--z .dp-flag__box { stroke: var(--sz); fill: var(--szb); }
+.dp-flag.dp-v--0 .dp-flag__text { fill: var(--s0); } .dp-flag.dp-v--1 .dp-flag__text { fill: var(--s1); }
+.dp-flag.dp-v--x .dp-flag__text { fill: var(--sx); } .dp-flag.dp-v--z .dp-flag__text { fill: var(--sz); }
+.dp-flag:hover .dp-flag__box { stroke-width: 2; }
+.dpd--far .dp-flag__text { display: none; }

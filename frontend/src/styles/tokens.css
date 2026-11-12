@@ -1,184 +1,194 @@
 /*
- * Identidade "Bancada no Campus".
- * Material: protoboard (fundo claro com furos), placa de circuito (verde de
- * máscara de solda), cobre e pinos dourados. Da arquitetura modernista do campus
- * vêm os grandes blocos de cor, os números de placa e o azulejo modular de
- * portas lógicas. Tema claro é o padrão (laboratório de dia, projetor em sala);
- * o escuro é a "bancada à noite", via `<html data-theme="dark">`.
+ * Identidade "Maleta Didática": os painéis de treinamento de hardware dos
+ * laboratórios de engenharia. Alumínio escovado, tudo serigrafado em preto,
+ * bornes coloridos, teclas, chaves e displays de 7 segmentos.
+ * Claro = painel de alumínio (padrão); escuro = painel preto anodizado,
+ * via `<html data-theme="dark">`.
  *
- * Os nomes antigos (--bg, --surface, --accent...) continuam valendo: as features
- * e o renderizador da forma de onda leem esses nomes.
+ * Os nomes antigos (--bg, --surface, --accent, --copper...) continuam valendo
+ * porque as features e o renderizador da forma de onda leem esses nomes.
  */
 :root {
   color-scheme: light;
 
-  /* Chão e superfícies */
-  --bg: #eceee8;              /* protoboard / concreto claro */
-  --surface: #fbfbf8;         /* placa onde o conteúdo assenta */
-  --surface-ct: #f4f5f0;      /* área recuada dentro da placa */
-  --surface-hi: #e6e9e2;      /* controles secundários */
-  --surface-highest: #dbe0d7;
-  --sunken: #e9ece5;
-  --hole: #c9cfc4;            /* furo da protoboard */
+  /* Painel e módulos */
+  --bg: #d6d9dc;              /* painel de alumínio */
+  --surface: #eef0f2;         /* placa do módulo */
+  --surface-ct: #e3e6e9;      /* área rebaixada */
+  --surface-hi: #d8dce0;
+  --surface-highest: #c9ced3;
+  --sunken: #e3e6e9;
+  --hole: #b9bfc5;
 
-  /* Tinta */
-  --fg: #15221c;
-  --muted: #4f5d55;
-  --faint: #6f7c74;
-  --outline: #8a958d;
-  --ov: #d6dbd1;              /* linha fina */
-  --ov-strong: #b9c1b5;
+  /* Serigrafia */
+  --fg: #16181b;
+  --muted: #444a51;
+  --faint: #656c74;
+  --outline: #7d848c;
+  --ov: #bcc2c8;
+  --ov-strong: #16181b;
+  --silk: #16181b;
+  --silk-w: 1.5px;
 
-  /* Placa (verde de máscara de solda) */
-  --pcb: #0f4d3a;
-  --pcb-2: #16674e;
-  --pcb-3: #1f7d60;
-  --pcb-ink: #eef5f1;
-  --pcb-mute: #a9cbbd;
-  --pcb-line: rgba(238, 245, 241, 0.16);
-  --glyph-ink: #0f4d3a;
+  /* Faixa preta anodizada (cabeçalho dos módulos) */
+  --pcb: #1b1d20;
+  --pcb-2: #26292d;
+  --pcb-3: #33373c;
+  --pcb-ink: #f2f3f4;
+  --pcb-mute: #a9afb5;
+  --pcb-line: rgba(242, 243, 244, 0.14);
+  --glyph-ink: #16181b;
 
-  /* Acento de interface = verde de placa (seleção, foco, estado ativo) */
-  --accent: #0f5c45;
-  --accent-ct: #16674e;
-  --accent-dim: #1f7d60;
-  --accent-lt: rgba(15, 92, 69, 0.09);
-  --accent-bd: rgba(15, 92, 69, 0.28);
-  --accent-hv: #0b4635;
+  /* Seleção e foco: preto serigrafado com amarelo de borne */
+  --accent: #16181b;
+  --accent-ct: #26292d;
+  --accent-dim: #33373c;
+  --accent-lt: rgba(22, 24, 27, 0.07);
+  --accent-bd: rgba(22, 24, 27, 0.3);
+  --accent-hv: #000000;
   --on-accent: #ffffff;
 
-  /* Ação = cobre */
-  --copper: #b0561d;
-  --copper-hv: #96470f;
-  --copper-2: #d98b4f;
-  --copper-lt: #f6e7da;
-  --copper-ink: #84400f;
+  /* Bornes (as cores do kit) */
+  --jack-red: #d42a20;
+  --jack-black: #1b1d20;
+  --jack-yellow: #f2c200;
+  --jack-blue: #1767c7;
+  --jack-green: #18904a;
+
+  /* Ação principal = tecla vermelha */
+  --copper: #d42a20;
+  --copper-hv: #b8211a;
+  --copper-2: #e85a50;
+  --copper-lt: #f8dcd9;
+  --copper-ink: #a01d16;
   --on-copper: #ffffff;
+  --key-shadow: #8f1a13;
 
-  /* Pino dourado */
-  --gold: #e3b25a;
-  --gold-lt: #f8eed8;
-  --gold-ink: #7a5310;
+  /* Destaque = amarelo de borne */
+  --gold: #f2c200;
+  --gold-lt: #fbefbf;
+  --gold-ink: #6b5500;
 
-  /* Azul de azulejo (só ornamento) */
-  --tile-blue: #2a4fb8;
+  --tile-blue: #1767c7;
 
-  --danger: #b3261e;
-  --danger-bg: rgba(179, 38, 30, 0.07);
+  /* Display de 7 segmentos */
+  --seg-bg: #142019;
+  --seg-on: #7dff8c;
+  --seg-dim: #6d8f74;
+
+  --danger: #c0261d;
+  --danger-bg: rgba(192, 38, 29, 0.08);
   --on-danger: #ffffff;
-  --hover: rgba(15, 77, 58, 0.05);
+  --hover: rgba(22, 24, 27, 0.05);
 
-  /* Profundidade: deslocamento + desfoque, tingida de verde */
-  --shadow-sm: 0 1px 2px rgba(16, 40, 30, 0.06), 0 2px 6px -2px rgba(16, 40, 30, 0.08);
-  --shadow: 0 2px 4px rgba(16, 40, 30, 0.05), 0 12px 32px -12px rgba(16, 40, 30, 0.22);
-  --shadow-lg: 0 4px 8px rgba(16, 40, 30, 0.06), 0 28px 60px -24px rgba(16, 40, 30, 0.35);
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.1), 0 10px 24px -14px rgba(20, 24, 28, 0.35);
+  --shadow-lg: 0 3px 0 rgba(0, 0, 0, 0.12), 0 24px 50px -22px rgba(20, 24, 28, 0.45);
 
-  /* Estados lógicos 0 / 1 / X / Z (legenda do README: azul, verde, laranja, roxo) */
-  --s0: #2b62c4;
-  --s0b: rgba(43, 98, 196, 0.11);
-  --s1: #23873f;
-  --s1b: rgba(35, 135, 63, 0.11);
-  --sx: #b9630a;
-  --sxb: rgba(185, 99, 10, 0.12);
+  /* Estados lógicos 0 / 1 / X / Z (azul, verde, laranja, roxo, como no README) */
+  --s0: #1767c7;
+  --s0b: rgba(23, 103, 199, 0.12);
+  --s1: #148241;
+  --s1b: rgba(20, 130, 65, 0.12);
+  --sx: #c25e00;
+  --sxb: rgba(194, 94, 0, 0.13);
   --sz: #6a51a8;
-  --szb: rgba(106, 81, 168, 0.11);
+  --szb: rgba(106, 81, 168, 0.12);
 
   /* Forma */
   --r-xs: 6px;
-  --r-sm: 10px;
-  --r: 12px;
-  --r-md: 16px;
-  --r-lg: 22px;
-  --r-xl: 28px;
+  --r-sm: 8px;
+  --r: 10px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
   --r-pill: 999px;
 
-  /* Tipografia: Atkinson Hyperlegible (criada para leitura difícil — sala de aula, projetor) */
-  --fb: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Display: Big Shoulders, tipo municipal de sinalização — títulos e números de placa */
-  --fh: "Big Shoulders Display", "Atkinson Hyperlegible Next", "Arial Narrow", sans-serif;
-  --fd: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  /* Tipografia: serigrafia condensada, texto Sofia Sans, dados em Fira Mono */
+  --fb: "Sofia Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fh: "Sofia Sans Condensed", "Sofia Sans", "Arial Narrow", sans-serif;
+  --fd: "Fira Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
 
-  /* Movimento */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-  --t-fast: 140ms;
-  --t: 240ms;
-  --t-slow: 520ms;
-
-  /* Escala tipográfica */
-  --fs-display: clamp(40px, 3.2vw + 18px, 60px);
-  --fs-plate: clamp(34px, 1.6vw + 22px, 46px);
-  --fs-h2: 17px;
+  --fs-display: clamp(40px, 3vw + 18px, 58px);
+  --fs-plate: clamp(26px, 1.2vw + 18px, 34px);
+  --fs-h2: 15px;
   --fs-body: 15px;
   --fs-sm: 13.5px;
   --fs-xs: 12px;
   --fs-data: 13px;
 
-  --hh: 68px;
+  /* Movimento: mecânico, curto */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.3, 1.5, 0.6, 1);
+  --t-fast: 110ms;
+  --t: 200ms;
+  --t-slow: 420ms;
+
+  --hh: 76px;
+
+  /* Parafuso Phillips para os cantos dos módulos */
+  --screw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.4' cy='.35' r='.7'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.6' stop-color='%23a3a9b0'/%3E%3Cstop offset='1' stop-color='%23737a82'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='6' cy='6' r='5.4' fill='url(%23g)' stroke='%23596068' stroke-width='.6'/%3E%3Cpath d='M3.6 6h4.8M6 3.6v4.8' stroke='%23464c53' stroke-width='1.1' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0c1411;
-  --surface: #121c18;
-  --surface-ct: #0f1815;
-  --surface-hi: #1b2722;
-  --surface-highest: #24322c;
-  --sunken: #0a110e;
-  --hole: #24302b;
+  --bg: #111315;
+  --surface: #1c1f22;
+  --surface-ct: #16191b;
+  --surface-hi: #262a2e;
+  --surface-highest: #30353a;
+  --sunken: #131517;
+  --hole: #2a2e33;
 
-  --fg: #e4ede7;
-  --muted: #a3b5ab;
-  --faint: #7f9188;
-  --outline: #6c7d74;
-  --ov: #24322c;
-  --ov-strong: #35463f;
+  --fg: #eef0f2;
+  --muted: #b3b9bf;
+  --faint: #8c939a;
+  --outline: #747b83;
+  --ov: #33383d;
+  --ov-strong: #d5d9dd;
+  --silk: #eef0f2;
 
-  --pcb: #0e3d2f;
-  --pcb-2: #135340;
-  --pcb-3: #1b6a52;
-  --pcb-ink: #eef5f1;
-  --pcb-mute: #9fc2b3;
-  --pcb-line: rgba(238, 245, 241, 0.12);
-  --glyph-ink: #4bb892;
+  --pcb: #08090a;
+  --pcb-2: #141618;
+  --pcb-3: #22262a;
+  --pcb-ink: #f2f3f4;
+  --pcb-mute: #9aa1a8;
+  --glyph-ink: #eef0f2;
 
-  --accent: #5cc9a2;
-  --accent-ct: #4bb892;
-  --accent-dim: #3aa180;
-  --accent-lt: rgba(92, 201, 162, 0.12);
-  --accent-bd: rgba(92, 201, 162, 0.32);
-  --accent-hv: #7bd8b5;
-  --on-accent: #08130f;
+  --accent: #f2c200;
+  --accent-ct: #ffd426;
+  --accent-dim: #c9a200;
+  --accent-lt: rgba(242, 194, 0, 0.12);
+  --accent-bd: rgba(242, 194, 0, 0.35);
+  --accent-hv: #ffd426;
+  --on-accent: #16181b;
 
-  --copper: #e08a4f;
-  --copper-hv: #eb9f6a;
-  --copper-2: #e9a170;
-  --copper-lt: rgba(224, 138, 79, 0.14);
-  --copper-ink: #f0b088;
-  --on-copper: #1d0d03;
+  --copper: #e33a2f;
+  --copper-hv: #f04a3f;
+  --copper-2: #f0776f;
+  --copper-lt: rgba(227, 58, 47, 0.16);
+  --copper-ink: #ff8a80;
+  --key-shadow: #7d140e;
 
-  --gold: #e8bd6a;
-  --gold-lt: rgba(232, 189, 106, 0.13);
-  --gold-ink: #eec98a;
+  --gold-lt: rgba(242, 194, 0, 0.14);
+  --gold-ink: #f2c200;
 
-  --tile-blue: #5d7fe0;
-
-  --danger: #ff9e94;
-  --danger-bg: rgba(255, 158, 148, 0.1);
+  --danger: #ff8a80;
+  --danger-bg: rgba(255, 138, 128, 0.1);
   --on-danger: #1f0806;
-  --hover: rgba(228, 237, 231, 0.04);
+  --hover: rgba(238, 240, 242, 0.05);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
-  --shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3), 0 28px 60px -24px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 3px 0 rgba(0, 0, 0, 0.5), 0 26px 52px -22px rgba(0, 0, 0, 0.8);
 
-  --s0: #6f9ff0;
-  --s0b: rgba(111, 159, 240, 0.15);
-  --s1: #6fd28a;
-  --s1b: rgba(111, 210, 138, 0.14);
-  --sx: #f0a64e;
-  --sxb: rgba(240, 166, 78, 0.15);
+  --s0: #5e9cf0;
+  --s0b: rgba(94, 156, 240, 0.16);
+  --s1: #4fd17d;
+  --s1b: rgba(79, 209, 125, 0.15);
+  --sx: #ff9f43;
+  --sxb: rgba(255, 159, 67, 0.15);
   --sz: #b49be6;
   --szb: rgba(180, 155, 230, 0.15);
 }

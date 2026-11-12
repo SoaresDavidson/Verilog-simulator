@@ -117,7 +117,7 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
       )}
 
       <div className="scr__actions">
-        <div className="scr__actions-bar sim-dock">
+        <div className="scr__actions-bar module sim-dock">
           <button type="button" className="btn bs sim-dock__back" onClick={() => nav.goTo(3)}>
             <IconArrowLeft size={16} />
             Voltar ao Caminho de Dados

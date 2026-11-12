@@ -45,6 +45,7 @@ export {
 } from './netlist/parse'
 
 // Grafo -> posições (layout)
+export { useDiagramLayout } from './netlist/useDiagramLayout'
 export { layoutGraph, routePath, type DiagramLayout, type EdgeRoute, type LayoutOptions, type NodeBox, type Point } from './netlist/layout'
 
 // Sinais e valores simulados

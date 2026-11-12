@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { layoutGraph, type DiagramLayout } from '../netlist/layout'
+import type { DiagramLayout } from '../netlist/layout'
+import { useDiagramLayout } from '../netlist/useDiagramLayout'
 import type { NetlistGraph } from '../netlist/parse'
 import { bitValues, edgeValue, resolveSignalRefs, resolveValues, type SignalValues } from '../netlist/signals'
 import { DiagramSvg, type DiagramHighlights, type DiagramSelection } from './DiagramSvg'
@@ -64,7 +65,8 @@ export function DatapathDiagram({
   const tooLarge = graph.nodes.length > maxNodes || graph.edges.length > DEFAULT_MAX_EDGES
   const [forced, setForced] = useState<NetlistGraph | null>(null)
   const render = !tooLarge || forced === graph
-  const layout = useMemo(() => layoutProp ?? (render ? layoutGraph(graph) : null), [layoutProp, render, graph])
+  const computed = useDiagramLayout(graph, render && !layoutProp)
+  const layout = layoutProp ?? computed
 
   if (!layout) {
     return (

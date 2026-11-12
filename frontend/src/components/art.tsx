@@ -1,163 +1,42 @@
 /**
- * Arte da identidade: marca (chip-fachada), azulejo de portas lógicas e
- * ilustrações das telas. Tudo desenhado em SVG, sem imagens externas.
+ * Arte da identidade "Maleta Didática": marca (módulo do kit), protoboard do
+ * upload e ilustrações das telas. Tudo desenhado em SVG, sem imagens externas.
  */
-import { useId, useMemo, type CSSProperties } from 'react'
 
 /* ------------------------------------------------------------------ */
-/* Marca: chip DIP desenhado como fachada de universidade.             */
-/* As três colunas e o ponto do frontão energizam conforme as etapas.  */
+/* Marca: um módulo da maleta didática com uma porta AND serigrafada e  */
+/* o borne vermelho na saída. O LED acende quando a simulação roda.     */
 /* ------------------------------------------------------------------ */
 
 export interface BrandMarkProps {
   size?: number
-  /** Etapas concluídas (0–4): acende colunas da esquerda para a direita e, por fim, o frontão. */
+  /** Etapas concluídas (0–4); com 4 o LED do módulo acende. */
   lit?: number
   className?: string
   title?: string
 }
 
-const COLUMNS = [
-  { x: 434, top: 512, bottom: 799, rTop: 36, rBottom: 36 },
-  { x: 627, top: 543, bottom: 771, rTop: 36, rBottom: 28 },
-  { x: 820, top: 512, bottom: 799, rTop: 36, rBottom: 36 },
-]
-
 export function BrandMark({ size = 40, lit = 0, className, title }: BrandMarkProps) {
-  const mask = useId().replace(/:/g, '')
   return (
     <svg
       className={`brand-mark${className ? ` ${className}` : ''}`}
       width={size}
-      height={size * (782 / 902)}
-      viewBox="176 222 902 782"
+      height={size}
+      viewBox="0 0 52 52"
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
       data-lit={lit}
     >
-      <defs>
-        <mask id={mask} maskUnits="userSpaceOnUse" x="176" y="222" width="902" height="782">
-          <rect x="176" y="222" width="902" height="782" fill="#fff" />
-          <circle cx="627" cy="417" r="63" fill="#000" />
-          <path d="M571 884V864a55.5 55.5 0 0 1 111 0v20z" fill="#000" />
-        </mask>
-      </defs>
-      <g className="brand-mark__gold" fill="#EAB64E">
-        {[506, 620, 734].map((y) => (
-          <g key={y}>
-            <rect x="188" y={y} width="150" height="52" rx="26" />
-            <rect x="916" y={y} width="150" height="52" rx="26" />
-          </g>
-        ))}
-        <rect x="328" y="891" width="598" height="25" rx="12.5" />
-        <rect x="285" y="922" width="684" height="29" rx="14.5" />
-        <rect x="246" y="958" width="762" height="36" rx="18" />
-      </g>
-      <path d="M286 401L627 237L968 401Z" fill="#B95D1C" stroke="#B95D1C" strokeWidth="24" strokeLinejoin="round" />
-      <circle className={`brand-mark__oculus${lit >= 4 ? ' is-lit' : ''}`} cx="627" cy="315" r="26" />
-      <rect x="303" y="430" width="648" height="450" rx="46" fill="#134E3F" mask={`url(#${mask})`} />
-      {COLUMNS.map((c, i) => (
-        <g key={c.x} className={`brand-mark__col${lit > i ? ' is-lit' : ''}`} style={{ '--i': i } as CSSProperties}>
-          <rect x={c.x - 15} y={c.top} width="30" height={c.bottom - c.top} />
-          <circle cx={c.x} cy={c.top} r={c.rTop} />
-          <circle cx={c.x} cy={c.bottom} r={c.rBottom} />
-        </g>
+      <rect className="brand-mark__plate" x="1.5" y="1.5" width="49" height="49" rx="12" />
+      <path className="brand-mark__silk" d="M14 15h10.5a10.5 10.5 0 0 1 0 21H14z" fill="none" />
+      <path className="brand-mark__silk" d="M5.5 20.5h8.5M5.5 30.5h8.5M35 25.5h5" fill="none" />
+      <circle className="brand-mark__jack" cx="43.5" cy="25.5" r="5.6" />
+      <circle className="brand-mark__hole" cx="43.5" cy="25.5" r="2" />
+      <circle className={`brand-mark__led${lit >= 4 ? ' is-lit' : ''}`} cx="43.5" cy="10" r="2.6" />
+      {[0, 1, 2].map((i) => (
+        <rect key={i} className={`brand-mark__step${lit > i ? ' is-lit' : ''}`} x={14 + i * 7} y="42" width="5" height="3" rx="1.5" />
       ))}
-    </svg>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/* Azulejo modular de portas lógicas (à maneira dos painéis modernistas */
-/* de campus). Determinístico por `seed`, para cada etapa ter o seu.    */
-/* ------------------------------------------------------------------ */
-
-type TileShape = 'and' | 'quarter' | 'buf' | 'half' | 'dot' | 'empty'
-const SHAPES: TileShape[] = ['and', 'quarter', 'buf', 'half', 'dot', 'and', 'quarter', 'empty', 'empty', 'empty']
-const TONES = ['var(--tile-a)', 'var(--tile-a)', 'var(--tile-b)', 'var(--tile-b)', 'var(--tile-c)', 'var(--tile-d)']
-
-function rng(seed: number) {
-  let s = seed >>> 0 || 1
-  return () => {
-    s ^= s << 13
-    s ^= s >>> 17
-    s ^= s << 5
-    return ((s >>> 0) % 10000) / 10000
-  }
-}
-
-function tilePath(shape: TileShape, s: number): string | null {
-  const h = s / 2
-  switch (shape) {
-    case 'and': // porta AND: meio retângulo + meio círculo
-      return `M0 0H${h}A${h} ${h} 0 0 1 ${h} ${s}H0Z`
-    case 'quarter': // quarto de círculo
-      return `M0 0H${s}A${s} ${s} 0 0 1 0 ${s}Z`
-    case 'buf': // buffer: triângulo
-      return `M0 0L${s} ${h}L0 ${s}Z`
-    case 'half':
-      return `M0 0H${s}V${h}H0Z`
-    case 'dot':
-      return null
-    case 'empty':
-      return null
-  }
-}
-
-export interface GateTilesProps {
-  cols: number
-  rows: number
-  seed?: number
-  /** Tamanho de cada módulo em px. */
-  cell?: number
-  className?: string
-}
-
-export function GateTiles({ cols, rows, seed = 7, cell = 44, className }: GateTilesProps) {
-  const tiles = useMemo(() => {
-    const r = rng(seed * 9973 + cols * 31 + rows)
-    const out: { x: number; y: number; shape: TileShape; rot: number; tone: string; delay: number }[] = []
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        const shape = SHAPES[Math.floor(r() * SHAPES.length)]
-        out.push({
-          x,
-          y,
-          shape,
-          rot: Math.floor(r() * 4) * 90,
-          tone: TONES[Math.floor(r() * TONES.length)],
-          delay: (x + (rows - y)) * 35,
-        })
-      }
-    }
-    return out
-  }, [cols, rows, seed])
-
-  const s = cell
-  return (
-    <svg
-      className={`gate-tiles${className ? ` ${className}` : ''}`}
-      width={cols * s}
-      height={rows * s}
-      viewBox={`0 0 ${cols * s} ${rows * s}`}
-      aria-hidden="true"
-    >
-      {tiles.map((t) => {
-        const d = tilePath(t.shape, s)
-        return (
-          <g
-            key={`${t.x}-${t.y}`}
-            className="gate-tiles__cell"
-            style={{ '--d': `${t.delay}ms`, transformOrigin: `${t.x * s + s / 2}px ${t.y * s + s / 2}px` } as CSSProperties}
-          >
-            <g transform={`translate(${t.x * s} ${t.y * s}) rotate(${t.rot} ${s / 2} ${s / 2})`}>
-              {d && <path d={d} fill={t.tone} />}
-              {t.shape === 'dot' && <circle cx={s / 2} cy={s / 2} r={s / 4} fill={t.tone} />}
-            </g>
-          </g>
-        )
-      })}
     </svg>
   )
 }
