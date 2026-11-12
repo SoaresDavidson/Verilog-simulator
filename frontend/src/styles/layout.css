@@ -98,7 +98,7 @@
 /* Área principal e telas                                               */
 /* ------------------------------------------------------------------ */
 main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: relative; }
-main:focus { outline: none; }
+main:focus:not(:focus-visible) { outline: none; }
 
 .scr {
   position: relative; z-index: 1;

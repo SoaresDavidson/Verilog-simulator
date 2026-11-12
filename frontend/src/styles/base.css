@@ -161,7 +161,7 @@ input[type="range"]::-moz-range-thumb {
 }
 input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
 input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
-input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible { outline: 3px solid var(--jack-yellow); outline-offset: 3px; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--jack-yellow); }
 input[type="range"]:disabled { opacity: 0.45; cursor: not-allowed; }
 

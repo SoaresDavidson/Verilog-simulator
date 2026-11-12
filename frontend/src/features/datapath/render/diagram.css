@@ -80,7 +80,7 @@
 
 /* Nós: células como chips, portas como pílulas */
 .dp-node { cursor: pointer; }
-.dp-node:focus { outline: none; }
+.dp-node:focus:not(:focus-visible) { outline: none; }
 .dp-node:focus-visible .dp-box { stroke: var(--copper); stroke-width: 2.5; }
 .dp-box { fill: var(--surface); stroke: var(--ov-strong); stroke-width: 1.3; transition: stroke 160ms ease, fill 160ms ease; }
 .dp-box2 { fill: none; stroke: var(--accent-bd); stroke-width: 1; }

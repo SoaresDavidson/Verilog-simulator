@@ -229,7 +229,11 @@ export function UploadScreen() {
               )}
             </>
           )}
+          <label htmlFor="upload-zip-input" className="sr-only">
+            Arquivo ZIP do projeto
+          </label>
           <input
+            id="upload-zip-input"
             ref={inputRef}
             type="file"
             accept=".zip,application/zip,application/x-zip-compressed"
