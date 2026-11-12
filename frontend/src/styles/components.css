@@ -30,7 +30,7 @@
 .bd:disabled { opacity: 0.5; }
 
 .bsm { padding: 8px 14px; font-size: 13px; min-height: 38px; }
-.bi { width: 40px; height: 40px; min-height: 40px; padding: 0; display: inline-grid; place-items: center; }
+.bi { width: 42px; height: 42px; min-height: 42px; padding: 0; display: inline-grid; place-items: center; }
 .bi:hover:not(:disabled) { background: var(--surface-ct); }
 .bi:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -374,7 +374,7 @@
 
 /* chip: paira, desce ao arrastar, encaixa quando aceito */
 .kit__chip { transform: translateY(-44px); transition: transform 520ms var(--ease-spring); }
-.kit--idle .kit__chip { animation: chip-hover 3s var(--ease-in-out) infinite; }
+.kit--idle .kit__chip { animation: chip-hover 1.6s var(--ease-in-out) 3; }
 @keyframes chip-hover { 50% { transform: translateY(-50px); } }
 .kit--drag .kit__chip { transform: translateY(-10px); }
 .kit--seated .kit__chip { transform: none; }
@@ -388,7 +388,7 @@
 .kit--seated .kit__led { fill: #2fe063; }
 .kit--drag .kit__seg-text { fill: #ffd84d; }
 .kit--seated .kit__seg-text { fill: var(--seg-on); }
-.uz:hover .kit--idle .kit__chip { animation-duration: 1.4s; }
+.uz:hover .kit--idle .kit__chip { animation: chip-hover 1.2s var(--ease-in-out) 2; }
 .uz__art { width: min(100%, 520px); }
 .up__seated .kit { max-width: 520px; }
 

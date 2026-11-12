@@ -76,15 +76,23 @@ export function AppShell({ headerActions }: AppShellProps) {
       firstRender.current = false
       return
     }
-    mainRef.current?.querySelector<HTMLElement>('h1')?.focus()
+    const root = mainRef.current ?? document.getElementById('main')
+    root?.querySelector<HTMLElement>('h1')?.focus()
   }, [nav.step])
 
-  return (
-    <div id="app">
-      <a className="skip-link" href="#main">
-        Pular para o conteúdo
-      </a>
-      <header className="app-header module">
+  // A etapa 1 é a página de entrada (navegação fixa, seções de uma tela e rodapé);
+  // as etapas 2 a 4 são a bancada de trabalho, com rolagem interna.
+  const landing = nav.step === 1
+  useEffect(() => {
+    document.documentElement.dataset.layout = landing ? 'landing' : 'app'
+  }, [landing])
+
+  const header = (
+    <header className={landing ? 'nav app-header' : 'app-header module'}>
+      <div className={landing ? 'wrap app-header__bar' : 'app-header__bar'}>
+        <a className="skip-link" href="#main">
+          Pular para o conteúdo
+        </a>
         <div className="brand logo">
           <span className="brand__plaque">
             <BrandMark size={46} lit={progress} />
@@ -108,7 +116,22 @@ export function AppShell({ headerActions }: AppShellProps) {
           {headerActions}
           <ThemeToggle />
         </div>
-      </header>
+      </div>
+    </header>
+  )
+
+  if (landing) {
+    return (
+      <>
+        {header}
+        <UploadScreen />
+      </>
+    )
+  }
+
+  return (
+    <div id="app">
+      {header}
       <main id="main" ref={mainRef} tabIndex={-1}>
         {SCREENS[nav.step]()}
       </main>

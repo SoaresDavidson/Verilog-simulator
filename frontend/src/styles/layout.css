@@ -15,9 +15,7 @@
 /* Cabeçalho: um módulo do kit com a marca e os bornes das etapas       */
 /* ------------------------------------------------------------------ */
 .app-header {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px 24px;
-  margin: 12px 16px 0; padding: 0 30px; min-height: var(--hh);
-  flex-shrink: 0; z-index: 10; position: relative;
+  margin: 12px 16px 0; padding: 0 30px; flex-shrink: 0; z-index: 10; position: relative;
 }
 .app-header.module { border-radius: var(--r-lg); }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -98,7 +96,6 @@
 /* Área principal e telas                                               */
 /* ------------------------------------------------------------------ */
 main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: relative; }
-main:focus:not(:focus-visible) { outline: none; }
 
 .scr {
   position: relative; z-index: 1;
@@ -170,7 +167,7 @@ main:focus:not(:focus-visible) { outline: none; }
 .sp { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 @media (max-width: 1180px) {
-  .app-header { grid-template-columns: auto auto; padding-top: 10px; }
+  .app-header__bar { grid-template-columns: auto auto; padding-top: 10px; }
   .stepper { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; padding-bottom: 12px; overflow-x: auto; }
   .stepper__list { justify-content: center; }
 }
@@ -184,7 +181,9 @@ main:focus:not(:focus-visible) { outline: none; }
   .split, .splitw { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
-  .app-header { margin: 8px 8px 0; padding: 10px 16px 0; gap: 8px 10px; grid-template-columns: minmax(0, 1fr) auto; }
+  .app-header { margin: 8px 8px 0; padding: 10px 16px 0; }
+  .app-header__bar { gap: 8px 10px; grid-template-columns: minmax(0, 1fr) auto; }
+  header.nav .app-header__bar { padding-top: 0; }
   .brand { overflow: hidden; }
   .brand__tag { display: none; }
   .brand__name { font-size: 18px; white-space: normal; max-width: 9ch; line-height: 0.95; }

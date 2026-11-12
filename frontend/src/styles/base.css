@@ -29,7 +29,7 @@ a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness:
 h1, h2, h3 { text-wrap: balance; }
 p { text-wrap: pretty; }
 
-:focus-visible { outline: 3px solid var(--jack-yellow); outline-offset: 2px; box-shadow: 0 0 0 5px var(--jack-black); border-radius: var(--r-sm); }
+:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; border-radius: var(--r-sm); }
 
 .sr-only {
   position: absolute !important;
@@ -40,12 +40,12 @@ p { text-wrap: pretty; }
 }
 
 .skip-link {
-  position: absolute; left: 12px; top: -48px; z-index: 200;
+  position: absolute; left: 0; top: 8px; transform: translateY(-300%); z-index: 200;
   padding: 8px 14px; border-radius: var(--r-pill);
   background: var(--copper); color: var(--on-copper); font-weight: 700; text-decoration: none;
-  transition: top var(--t) var(--ease-out);
+  transition: transform var(--t) var(--ease-out);
 }
-.skip-link:focus { top: 12px; }
+.skip-link:focus { transform: none; }
 
 /* ------------------------------------------------------------------ */
 /* Controles nativos redesenhados: a semântica fica, o visual é nosso. */
@@ -69,7 +69,7 @@ input[type="checkbox"]:checked::after { transform: translateX(16px); background:
 input[type="checkbox"]:indeterminate::after { transform: translateX(8px); background: var(--outline); }
 input[type="checkbox"]:hover:not(:disabled)::after { box-shadow: 0 0 0 1.5px var(--silk), 0 0 0 4px var(--accent-lt); }
 input[type="checkbox"]:disabled { opacity: 0.45; cursor: not-allowed; }
-input[type="checkbox"]:focus-visible { outline: 3px solid var(--jack-yellow); outline-offset: 2px; }
+input[type="checkbox"]:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 
 /* Rádio = borne: anel serigrafado, miolo vermelho quando escolhido. */
 input[type="radio"] {
@@ -161,7 +161,7 @@ input[type="range"]::-moz-range-thumb {
 }
 input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
 input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
-input[type="range"]:focus-visible { outline: 3px solid var(--jack-yellow); outline-offset: 3px; }
+input[type="range"]:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--jack-yellow); }
 input[type="range"]:disabled { opacity: 0.45; cursor: not-allowed; }
 

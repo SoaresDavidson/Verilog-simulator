@@ -2,9 +2,9 @@ import { useEffect, useReducer, useRef, useState, type DragEvent } from 'react'
 import { useApi } from '../../api/context'
 import { isAbortError, toUserMessage } from '../../api/errors'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { KitCaseArt } from '../../components/art'
+import { KitCaseArt, WaveArt } from '../../components/art'
 import { GlyphSourceFile, GlyphTestbenchFile, IconArrowRight, IconSwap, IconUpload } from '../../components/icons'
-import { ActionBar, Screen } from '../../components/Screen'
+import { MiniArt } from '../../components/Explainer'
 import { MAX_UPLOAD_BYTES } from '../../config'
 import { formatBytes } from '../../lib/format'
 import { useSession } from '../../state/hooks'
@@ -71,6 +71,27 @@ export function UploadScreen() {
   const uploaded = session.session !== null
   const uploading = upload.phase === 'UPLOADING'
   const busy = uploading || upload.phase === 'VALIDATING'
+
+  // Momento da página de entrada (word-highlight, sorteado pela taste skill): a
+  // declaração acende palavra por palavra conforme a rolagem.
+  useEffect(() => {
+    if (import.meta.env.MODE === 'test') return
+    const el = document.querySelector<HTMLElement>('[data-moment="word-highlight"]')
+    if (!el) return
+    const w = window as unknown as { __momentsManual?: boolean; __mountMoment?: (el: HTMLElement) => unknown }
+    if (w.__mountMoment) {
+      w.__mountMoment(el)
+      return
+    }
+    if (document.getElementById('moments-loader')) return
+    w.__momentsManual = true
+    // O kit de momentos fica em public/: carrega como módulo do HTML, não pelo bundler.
+    const script = document.createElement('script')
+    script.type = 'module'
+    script.id = 'moments-loader'
+    script.textContent = `import { mount } from '${import.meta.env.BASE_URL}assets/moments/moments.js'; window.__mountMoment = mount; const el = document.querySelector('[data-moment="word-highlight"]'); if (el) mount(el);`
+    document.body.appendChild(script)
+  }, [])
 
   // Cancela envio pendente ao desmontar.
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -146,194 +167,261 @@ export function UploadScreen() {
   const chipLabel = upload.file?.name ?? session.session?.fileName ?? 'projeto.zip'
   const seated = uploaded || hasValidFile
 
-  return (
-    <Screen
-      title="Novo Projeto"
-      description="Envie um ZIP com seus módulos Verilog/SystemVerilog e o testbench. Daqui até a simulação são quatro etapas."
-    >
-      <div className="up">
-        <div className="up__main">
-          <p role="status" className="upload-status" data-phase={uploaded ? 'UPLOADED' : upload.phase}>
-            <span
-              className={`led ${uploaded ? 'led--ok' : busy ? 'led--run' : upload.phase === 'ERROR' ? 'led--err' : hasValidFile ? 'led--ok' : ''}`}
-              aria-hidden="true"
-            />
-            {status}
-          </p>
+  const statusLine = (
+    <p role="status" className="upload-status" data-phase={uploaded ? 'UPLOADED' : upload.phase}>
+      <span
+        className={`led ${uploaded ? 'led--ok' : busy ? 'led--run' : upload.phase === 'ERROR' ? 'led--err' : hasValidFile ? 'led--ok' : ''}`}
+        aria-hidden="true"
+      />
+      {status}
+    </p>
+  )
 
-          {uploaded && session.session ? (
-            <>
-              <div className="up__seated">
-                <KitCaseArt label={chipLabel} state="seated" />
-              </div>
-              <FilePreview
-                title={session.session.fileName}
-                files={session.files?.items ?? []}
-                note={
-                  session.files?.origin === 'client-preview'
-                    ? 'Lista lida do ZIP no navegador; a síntese usa os arquivos enviados ao servidor.'
-                    : undefined
-                }
-              />
-              <p className="muted upload-session">
-                Sessão: <code>{session.session.projectId}</code>
+  let picture
+  if (uploaded) picture = <KitCaseArt label={chipLabel} state="seated" />
+  else if (!upload.file) {
+    picture = (
+      <button
+        type="button"
+        className={`uz${dragging ? ' dg' : ''}`}
+        onClick={openPicker}
+        onDragOver={onDragOver}
+        onDragEnter={onDragOver}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        disabled={busy}
+        aria-describedby="upload-hint"
+      >
+        <span className="uz__art">
+          <KitCaseArt label="projeto.zip" state={dragging ? 'drag' : 'idle'} />
+        </span>
+        <span className="uz__title">Arraste um arquivo .zip aqui</span>
+        <span id="upload-hint" className="uz__hint">
+          ou <b>clique para escolher</b> · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
+        </span>
+      </button>
+    )
+  } else picture = <KitCaseArt label={chipLabel} state={seated ? 'seated' : 'idle'} />
+
+  return (
+    <>
+      <main id="main" tabIndex={-1} className="landing">
+        <section className="section hero" id="top" aria-labelledby="hero-title" data-enter>
+          <div className="wrap hero__grid">
+            <div className="hero-text">
+              {statusLine}
+              <h1 id="hero-title" tabIndex={-1} className="hero__title">
+                Novo Projeto
+              </h1>
+              <p className="hero__lead">
+                Envie um .zip com seus módulos Verilog e o testbench. O Yosys monta o circuito, o Icarus roda a simulação
+                e você vê cada sinal mudar.
               </p>
-            </>
-          ) : (
-            <>
-              {!upload.file ? (
-                <button
-                  type="button"
-                  className={`uz${dragging ? ' dg' : ''}`}
-                  onClick={openPicker}
-                  onDragOver={onDragOver}
-                  onDragEnter={onDragOver}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={onDrop}
-                  disabled={busy}
-                  aria-describedby="upload-hint"
-                >
-                  <span className="uz__art">
-                    <KitCaseArt label="projeto.zip" state={dragging ? 'drag' : 'idle'} />
-                  </span>
-                  <span className="uz__title">Arraste um arquivo .zip aqui</span>
-                  <span id="upload-hint" className="uz__hint">
-                    ou <b>clique para escolher</b> · somente .zip até {formatBytes(MAX_UPLOAD_BYTES)}
-                  </span>
-                </button>
-              ) : (
-                <div className="up__seated">
-                  <KitCaseArt label={chipLabel} state={seated ? 'seated' : 'idle'} />
-                </div>
-              )}
 
               {upload.error && (
                 <div role="alert" className="state-error">
                   {upload.error}
                 </div>
               )}
-
-              {hasValidFile && upload.file && upload.preview && (
-                <FilePreview
-                  title={upload.file.name}
-                  subtitle={formatBytes(upload.file.size)}
-                  files={upload.preview}
-                  note="Pré-visualização lida do ZIP no navegador."
-                />
-              )}
-
               {uploading && (
                 <div className="pb pb--indeterminate" role="progressbar" aria-label="Enviando projeto">
                   <div className="fl" />
                 </div>
               )}
-            </>
-          )}
-          <label htmlFor="upload-zip-input" className="sr-only">
-            Arquivo ZIP do projeto
-          </label>
-          <input
-            id="upload-zip-input"
-            ref={inputRef}
-            type="file"
-            accept=".zip,application/zip,application/x-zip-compressed"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label="Arquivo ZIP do projeto"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              event.target.value = ''
-              void selectFile(file)
-            }}
-          />
-        </div>
 
-        <aside className="up__guide card" aria-label="Como funciona">
-          <h2 className="up__guide-title">Como funciona</h2>
-          <ol className="up__steps">
-            <li className={uploaded ? 'is-done' : 'is-now'}>
-              <span className="up__step-n">1</span>
-              <div>
-                <b>Envie o projeto</b>
-                <p>Um .zip com os módulos e o testbench.</p>
-              </div>
-            </li>
-            <li>
-              <span className="up__step-n">2</span>
-              <div>
-                <b>Sintetize</b>
-                <p>O Yosys converte o código em portas e fios. Você escolhe os sinais.</p>
-              </div>
-            </li>
-            <li>
-              <span className="up__step-n">3</span>
-              <div>
-                <b>Veja o circuito</b>
-                <p>O caminho de dados aparece desenhado, com zoom e busca.</p>
-              </div>
-            </li>
-            <li>
-              <span className="up__step-n">4</span>
-              <div>
-                <b>Simule</b>
-                <p>O Icarus roda o testbench e os valores acendem nos fios.</p>
-              </div>
-            </li>
-          </ol>
-          <div className="up__zip">
-            <p className="up__zip-title">O que vai no .zip</p>
-            <ul className="up__zip-tree">
-              <li>
-                <GlyphSourceFile size={20} />
-                <code>rtl/meu_modulo.v</code>
-                <span className="tag tag--source">fonte</span>
+              {uploaded && session.session ? (
+                <>
+                  <div className="btn-row">
+                    <button type="button" className="btn bp" onClick={() => nav.goTo(2)} disabled={ending}>
+                      Criar Sessão e Continuar
+                      <IconArrowRight size={16} />
+                    </button>
+                    <button type="button" className="btn bd" onClick={() => void endSession()} disabled={ending}>
+                      {ending ? 'Descartando…' : 'Descartar sessão'}
+                    </button>
+                  </div>
+                  <FilePreview
+                    title={session.session.fileName}
+                    files={session.files?.items ?? []}
+                    note={
+                      session.files?.origin === 'client-preview'
+                        ? 'Lista lida do ZIP no navegador; a síntese usa os arquivos enviados ao servidor.'
+                        : undefined
+                    }
+                  />
+                  <p className="muted upload-session">
+                    Sessão: <code>{session.session.projectId}</code>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="btn-row">
+                    <button type="button" className="btn bp" onClick={() => void submit()} disabled={!hasValidFile || uploading}>
+                      <IconUpload size={16} />
+                      {uploading ? 'Enviando…' : upload.phase === 'ERROR' && hasValidFile ? 'Tentar novamente' : 'Enviar projeto'}
+                    </button>
+                    {uploading ? (
+                      <button type="button" className="btn bs" onClick={() => abortRef.current?.abort()}>
+                        Cancelar envio
+                      </button>
+                    ) : (
+                      <button type="button" className="btn bs" onClick={openPicker} disabled={busy}>
+                        <IconSwap size={16} />
+                        {hasValidFile ? 'Trocar arquivo' : 'Escolher arquivo .zip'}
+                      </button>
+                    )}
+                  </div>
+                  {hasValidFile && upload.file && upload.preview && (
+                    <FilePreview
+                      title={upload.file.name}
+                      subtitle={formatBytes(upload.file.size)}
+                      files={upload.preview}
+                      note="Pré-visualização lida do ZIP no navegador."
+                    />
+                  )}
+                </>
+              )}
+              <dl className="hero__facts">
+                <div>
+                  <dt>Síntese</dt>
+                  <dd>Yosys</dd>
+                </div>
+                <div>
+                  <dt>Simulação</dt>
+                  <dd>Icarus Verilog</dd>
+                </div>
+                <div>
+                  <dt>Projeto</dt>
+                  <dd>.zip até {formatBytes(MAX_UPLOAD_BYTES)}</dd>
+                </div>
+              </dl>
+              <input
+                id="upload-zip-input"
+                ref={inputRef}
+                type="file"
+                accept=".zip,application/zip,application/x-zip-compressed"
+                className="sr-only"
+                tabIndex={-1}
+                aria-label="Arquivo ZIP do projeto"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ''
+                  void selectFile(file)
+                }}
+              />
+            </div>
+            <div className="hero__picture">
+              <label htmlFor="upload-zip-input" className="silk hero__picture-label">
+                Arquivo .zip do projeto
+              </label>
+              {picture}
+            </div>
+          </div>
+        </section>
+
+        <section className="section how" id="como-funciona" aria-labelledby="how-title">
+          <div className="wrap">
+            <h2 id="how-title" className="section__title">
+              Como funciona
+            </h2>
+            <ol className="how__steps">
+              <li className="how__step">
+                <MiniArt kind="code" />
+                <b>1 · Envie o projeto</b>
+                <p>Um .zip com os módulos e o testbench. A lista de arquivos aparece antes do envio.</p>
               </li>
-              <li>
-                <GlyphTestbenchFile size={20} />
-                <code>tb/tb_meu_modulo.v</code>
-                <span className="tag tag--testbench">testbench</span>
+              <li className="how__step">
+                <MiniArt kind="netlist" />
+                <b>2 · Sintetize</b>
+                <p>O Yosys converte o código em portas e fios. Você escolhe os sinais que quer acompanhar.</p>
               </li>
-            </ul>
-            <p className="up__zip-note">
-              Testbench: nome começando com <code>tb_</code> ou caminho com <code>testbench</code>.
+              <li className="how__step">
+                <MiniArt kind="mux" />
+                <b>3 · Veja o circuito</b>
+                <p>O caminho de dados aparece com os símbolos do livro, com zoom, busca e a explicação de cada bloco.</p>
+              </li>
+              <li className="how__step">
+                <MiniArt kind="clock" />
+                <b>4 · Simule</b>
+                <p>O Icarus roda o testbench. Os valores acendem nos fios e viram formas de onda.</p>
+              </li>
+            </ol>
+            <div className="how__zip">
+              <div>
+                <b className="how__zip-title">O que vai no .zip</b>
+                <p>
+                  Os módulos do projeto e um testbench que grave as ondas com <code>$dumpfile</code> e{' '}
+                  <code>$dumpvars</code>. O testbench é o arquivo com nome começando em <code>tb_</code> ou com{' '}
+                  <code>testbench</code> no caminho.
+                </p>
+              </div>
+              <ul className="up__zip-tree">
+                <li>
+                  <GlyphSourceFile size={20} />
+                  <code>rtl/meu_modulo.v</code>
+                  <span className="tag tag--source">fonte</span>
+                </li>
+                <li>
+                  <GlyphTestbenchFile size={20} />
+                  <code>tb/tb_meu_modulo.v</code>
+                  <span className="tag tag--testbench">testbench</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="section statement" id="ideia" data-moment="word-highlight" aria-label="A ideia">
+          <div className="wrap">
+            <p className="mo-wh__text">
+              Simular hardware não precisa ser decifrar ondas. Aqui você escreve o Verilog, vê o circuito que ele vira e
+              acompanha <strong>cada sinal mudando</strong> no próprio desenho, passo a passo, no navegador.
             </p>
           </div>
-        </aside>
-      </div>
+        </section>
+      </main>
 
-      {uploaded && session.session ? (
-        <ActionBar tone="ok" hint="Projeto na bancada. Próximo: sintetizar com o Yosys.">
-          <button type="button" className="btn bd" onClick={() => void endSession()} disabled={ending}>
-            {ending ? 'Descartando…' : 'Descartar sessão'}
-          </button>
-          <button type="button" className="btn bp" onClick={() => nav.goTo(2)} disabled={ending}>
-            Criar Sessão e Continuar
-            <IconArrowRight size={16} />
-          </button>
-        </ActionBar>
-      ) : (
-        <ActionBar
-          tone={hasValidFile ? 'ok' : 'wait'}
-          hint={hasValidFile ? 'Arquivo conferido. Envie para criar a sessão.' : 'Escolha um .zip para começar.'}
-        >
-          {uploading ? (
-            <button type="button" className="btn bs" onClick={() => abortRef.current?.abort()}>
-              Cancelar envio
-            </button>
-          ) : (
-            hasValidFile && (
-              <button type="button" className="btn bs" onClick={openPicker}>
-                <IconSwap size={16} />
-                Trocar arquivo
+      <footer className="closing" aria-labelledby="close-title">
+        <div className="wrap">
+          <div className="closing__close">
+            <h2 id="close-title" className="section__title">
+              Ligue o seu circuito
+            </h2>
+            <p className="hero__lead">Escolha o .zip do projeto e siga as quatro etapas até a simulação.</p>
+            <div className="closing__art" aria-hidden="true">
+              <WaveArt />
+            </div>
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn bp"
+                onClick={() => {
+                  window.scrollTo({ top: 0 })
+                  openPicker()
+                }}
+                disabled={busy || uploaded}
+              >
+                <IconUpload size={16} />
+                Escolher o arquivo
               </button>
-            )
-          )}
-          <button type="button" className="btn bp" onClick={() => void submit()} disabled={!hasValidFile || uploading}>
-            <IconUpload size={16} />
-            {uploading ? 'Enviando…' : upload.phase === 'ERROR' && hasValidFile ? 'Tentar novamente' : 'Enviar projeto'}
-          </button>
-        </ActionBar>
-      )}
-    </Screen>
+            </div>
+          </div>
+          <div className="closing__links">
+            <nav aria-label="Ferramentas">
+              <a className="link" href="https://github.com/SoaresDavidson/Verilog-simulator">
+                Código no GitHub
+              </a>
+              <a className="link" href="https://yosyshq.net/yosys/">
+                Yosys
+              </a>
+              <a className="link" href="https://steveicarus.github.io/iverilog/">
+                Icarus Verilog
+              </a>
+            </nav>
+            <p className="muted">Verilog Classroom. Síntese com Yosys e simulação com Icarus Verilog.</p>
+          </div>
+        </div>
+      </footer>
+    </>
   )
 }
