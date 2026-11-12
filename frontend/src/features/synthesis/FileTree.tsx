@@ -2,7 +2,7 @@ import { useId, useMemo } from 'react'
 import { GlyphOtherFile, GlyphSourceFile, GlyphTestbenchFile, IconFolder } from '../../components/icons'
 import { formatBytes } from '../../lib/format'
 import type { IdentifiedFiles, ProjectFileKind } from '../../state/session'
-import { buildFileTree, summarizeTree, type DirNode } from './fileTree'
+import { buildFileTree, summarizeTree, type DirNode } from './fileTreeModel'
 
 const KIND_LABEL: Record<ProjectFileKind, string> = {
   source: 'sintetizável',
