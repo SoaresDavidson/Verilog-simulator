@@ -1,5 +1,6 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useStepNavigation } from '../../app/useStepNavigation'
+import { Explainer, MiniArt } from '../../components/Explainer'
 import { IconArrowLeft, IconArrowRight, IconFit, IconLayers } from '../../components/icons'
 import { ActionBar, Screen, type ScreenFigure } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
@@ -149,7 +150,26 @@ export function DatapathScreen() {
       description="O circuito que o Yosys montou, desenhado. Arraste para mover, use a roda para aproximar e clique em um bloco para ver as ligações."
       figures={figures}
     >
-      {content}
+      <div className={`dp-layout${netlist !== null && model.modules.length > 0 ? ' dp-layout--legend' : ''}`}>
+        <div className="dp-layout__main">{content}</div>
+        {netlist !== null && model.modules.length > 0 && (
+          <Explainer
+            id="caminho"
+            className="explainer--side"
+            title="Como ler o diagrama"
+            items={[
+              { art: <MiniArt kind="and" />, title: 'AND', text: '1 só quando todas as entradas são 1.' },
+              { art: <MiniArt kind="or" />, title: 'OR', text: '1 quando pelo menos uma entrada é 1.' },
+              { art: <MiniArt kind="xor" />, title: 'XOR', text: '1 quando as entradas são diferentes.' },
+              { art: <MiniArt kind="not" />, title: 'NOT', text: 'Inverte: 0 vira 1, 1 vira 0. A bolinha indica a inversão.' },
+              { art: <MiniArt kind="mux" />, title: 'MUX', text: 'Escolhe uma das entradas conforme o seletor S.' },
+              { art: <MiniArt kind="dff" />, title: 'Flip-flop', text: 'Guarda o valor na borda do clock (o triângulo). É a memória.' },
+              { art: <MiniArt kind="arith" />, title: 'Aritmética', text: 'Blocos com +, −, ×, = e < fazem contas e comparações.' },
+              { art: <MiniArt kind="flag" />, title: 'Etiquetas', text: 'Clock, reset e constantes aparecem como etiqueta no pino, sem fio longo.' },
+            ]}
+          />
+        )}
+      </div>
       <ActionBar tone="ok" hint="Circuito montado. Próximo: rodar o testbench e ver os valores nos fios.">
         <button type="button" className="btn bs" onClick={() => nav.goTo(2)}>
           <IconArrowLeft size={16} />

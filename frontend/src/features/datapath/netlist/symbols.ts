@@ -107,3 +107,49 @@ export function pinYs(node: GraphNode, h: number, count: number): number[] {
   }
   return Array.from({ length: count }, (_, i) => (body * (i + 1)) / (count + 1))
 }
+
+/** Explicação curta, em linguagem de aula, do que o bloco faz. */
+export function describeNode(node: GraphNode): string | null {
+  if (node.kind === 'input') return 'Entrada do módulo: o valor vem de fora (do testbench ou de quem instancia o módulo).'
+  if (node.kind === 'output') return 'Saída do módulo: é o resultado que o circuito entrega para fora.'
+  if (node.kind === 'inout') return 'Porta bidirecional: pode receber e enviar valores pelo mesmo fio.'
+  if (node.kind === 'const') return 'Valor fixo, escrito direto no código.'
+  if (node.kind === 'instance') return `Instância do módulo ${node.submodule ?? node.type}: uma "caixa" com outro circuito dentro. Abra para ver o interior.`
+  const t = node.type.replace(/^\$_?|_$/g, '').toLowerCase()
+  const text: Record<string, string> = {
+    and: 'Porta AND: a saída é 1 só quando todas as entradas são 1.',
+    nand: 'Porta NAND: o inverso da AND; a saída é 0 só quando todas as entradas são 1.',
+    or: 'Porta OR: a saída é 1 quando pelo menos uma entrada é 1.',
+    nor: 'Porta NOR: o inverso da OR; a saída é 1 só quando todas as entradas são 0.',
+    xor: 'Porta XOR: a saída é 1 quando as entradas são diferentes.',
+    xnor: 'Porta XNOR: a saída é 1 quando as entradas são iguais.',
+    not: 'Inversor (NOT): troca 0 por 1 e 1 por 0.',
+    logic_not: 'NOT lógico: a saída é 1 quando a entrada inteira vale zero.',
+    logic_and: 'AND lógico (&&): 1 quando as duas entradas são diferentes de zero.',
+    logic_or: 'OR lógico (||): 1 quando alguma entrada é diferente de zero.',
+    reduce_and: 'Redução AND (&x): 1 se todos os bits da entrada forem 1.',
+    reduce_or: 'Redução OR (|x): 1 se algum bit da entrada for 1.',
+    reduce_bool: 'Teste de "diferente de zero": 1 se algum bit da entrada for 1.',
+    reduce_xor: 'Redução XOR (^x): paridade, 1 se a quantidade de bits 1 for ímpar.',
+    mux: 'Multiplexador: escolhe qual entrada passa para a saída. Com S = 0 passa A; com S = 1 passa B.',
+    pmux: 'Multiplexador paralelo: vem de um case/if-else; a entrada escolhida é a do bit de S que estiver em 1.',
+    dff: 'Flip-flop D: guarda o valor de D a cada borda de subida do clock. É a memória do circuito.',
+    adff: 'Flip-flop D com reset assíncrono: guarda D a cada borda do clock e volta ao valor inicial assim que o reset é ativado.',
+    sdff: 'Flip-flop D com reset síncrono: o reset só tem efeito na borda do clock.',
+    dffe: 'Flip-flop D com enable: só guarda D quando EN = 1.',
+    adffe: 'Flip-flop D com reset assíncrono e enable.',
+    add: 'Somador: a saída é A + B.',
+    sub: 'Subtrator: a saída é A − B.',
+    mul: 'Multiplicador: a saída é A × B.',
+    shl: 'Deslocamento à esquerda (<<): empurra os bits de A para a esquerda B posições.',
+    shr: 'Deslocamento à direita (>>): empurra os bits de A para a direita B posições.',
+    sshr: 'Deslocamento aritmético à direita (>>>): mantém o sinal.',
+    eq: 'Comparador de igualdade (==): 1 quando A e B são iguais.',
+    ne: 'Comparador de diferença (!=): 1 quando A e B são diferentes.',
+    lt: 'Comparador (<): 1 quando A é menor que B.',
+    le: 'Comparador (<=): 1 quando A é menor ou igual a B.',
+    gt: 'Comparador (>): 1 quando A é maior que B.',
+    ge: 'Comparador (>=): 1 quando A é maior ou igual a B.',
+  }
+  return text[t] ?? null
+}

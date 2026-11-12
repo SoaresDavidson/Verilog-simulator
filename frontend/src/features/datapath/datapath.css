@@ -98,3 +98,18 @@
   font-family: var(--fd); font-size: 13.5px; max-width: 60vw; min-width: 200px;
 }
 .dp-panel { display: flex; flex-direction: column; min-width: 0; }
+
+/* Diagrama + legenda didática ao lado */
+.dp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.dp-layout--legend { grid-template-columns: minmax(0, 1fr) 300px; }
+.dp-layout__main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.explainer--side .explainer__list { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 14px 14px; }
+.explainer--side .explainer__sum { padding: 16px 20px; }
+.explainer--side .explainer__item { grid-template-columns: 60px minmax(0, 1fr); padding: 10px; }
+.explainer--side .explainer__art { width: 60px; height: 42px; }
+@media (min-width: 1181px) { .explainer--side { position: sticky; top: 0; max-height: calc(100vh - 220px); overflow: auto; } }
+@media (max-width: 1180px) {
+  .dp-layout--legend { grid-template-columns: minmax(0, 1fr); }
+  .explainer--side .explainer__list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+.explainer--side .explainer__hint { display: none; }

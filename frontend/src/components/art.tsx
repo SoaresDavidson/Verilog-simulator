@@ -42,58 +42,6 @@ export function BrandMark({ size = 40, lit = 0, className, title }: BrandMarkPro
 }
 
 /* ------------------------------------------------------------------ */
-/* Upload: protoboard com um chip pairando, que encaixa ao arrastar.    */
-/* ------------------------------------------------------------------ */
-
-export function BreadboardArt({ label = 'projeto.zip', seated = false }: { label?: string; seated?: boolean }) {
-  const W = 360
-  const holes: { x: number; y: number }[] = []
-  for (let c = 0; c < 22; c++) {
-    for (let r = 0; r < 5; r++) {
-      holes.push({ x: 26 + c * 14.6, y: 104 + r * 12 })
-      holes.push({ x: 26 + c * 14.6, y: 184 + r * 12 })
-    }
-  }
-  return (
-    <svg className={`bb-art${seated ? ' bb-art--seated' : ''}`} viewBox={`0 0 ${W} 280`} width="100%" aria-hidden="true">
-      {/* placa */}
-      <rect x="6" y="70" width={W - 12} height="200" rx="22" className="bb-art__board" />
-      {/* trilhos de alimentação */}
-      <path d={`M26 84H${W - 26}`} className="bb-art__rail bb-art__rail--pos" />
-      <path d={`M26 256H${W - 26}`} className="bb-art__rail bb-art__rail--neg" />
-      {/* canal central */}
-      <rect x="20" y="166" width={W - 40} height="8" rx="4" className="bb-art__channel" />
-      {holes.map((h) => (
-        <rect key={`${h.x}-${h.y}`} x={h.x - 2.6} y={h.y - 2.6} width="5.2" height="5.2" rx="1.6" className="bb-art__hole" />
-      ))}
-      {/* jumpers */}
-      <path d="M40.6 116C40 60 92 54 99 128" className="bb-art__wire bb-art__wire--a" />
-      <path d="M318 244C322 292 260 296 260 208" className="bb-art__wire bb-art__wire--b" />
-      <path d="M289 104C292 70 318 66 318 84" className="bb-art__wire bb-art__wire--c" />
-      {/* chip (desce e encaixa no canal quando há arquivo sobre a área) */}
-      <g className="bb-art__chip">
-        <g className="bb-art__legs">
-          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-            <g key={i}>
-              <rect x={128 + i * 14.6 - 2.5} y="140" width="5" height="14" rx="2.5" />
-              <rect x={128 + i * 14.6 - 2.5} y="186" width="5" height="14" rx="2.5" />
-            </g>
-          ))}
-        </g>
-        <rect x="114" y="146" width="116" height="48" rx="10" className="bb-art__body" />
-        <path d="M114 162a8 8 0 010 16" className="bb-art__notch" />
-        <circle cx="126" cy="185" r="3" className="bb-art__pin1" />
-        <text x="172" y="175" textAnchor="middle" className="bb-art__label">
-          {label.length > 12 ? `${label.slice(0, 11)}…` : label}
-        </text>
-      </g>
-      {/* sombra que encolhe quando o chip encaixa */}
-      <ellipse cx="172" cy="214" rx="56" ry="5" className="bb-art__shadow" />
-    </svg>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 /* Síntese em espera: código → portas. Uma linha de Verilog vira AND.   */
 /* ------------------------------------------------------------------ */
 
@@ -132,6 +80,97 @@ export function WaveArt() {
       <path d="M20 52h20V30h20v22h20V30h20v22h20V30h20v22h20V30h20v22h20V30h20v22h20V30h20v22h20" className="wave-art__clk" />
       <path d="M20 90h10l6-12h68l6 12h40l6-12h96l6 12h52" className="wave-art__bus" />
       <path d="M20 78h10l6 12h68l6-12h40l6 12h96l6-12h52" className="wave-art__bus" />
+    </svg>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Upload: a maleta didática aberta. Tampa com espuma e plaqueta; base  */
+/* com protoboard, display de 7 segmentos, bornes, chaves e LEDs.       */
+/* `state`: idle (chip pairando), drag (arquivo sobre a área), seated   */
+/* (arquivo aceito: chip encaixado, LEDs verdes).                       */
+/* ------------------------------------------------------------------ */
+
+export type KitState = 'idle' | 'drag' | 'seated'
+
+export function KitCaseArt({ label = 'projeto.zip', state = 'idle' }: { label?: string; state?: KitState }) {
+  const holes: Array<[number, number]> = []
+  for (let c = 0; c < 17; c++) for (let r = 0; r < 4; r++) holes.push([62 + c * 12, 180 + r * 10], [62 + c * 12, 236 + r * 10])
+  const foam: Array<[number, number]> = []
+  for (let c = 0; c < 26; c++) for (let r = 0; r < 3; r++) foam.push([58 + c * 16 + (r % 2) * 8, 36 + r * 16])
+  const display = state === 'seated' ? ' OK' : state === 'drag' ? 'SOLTE' : '- - -'
+  const chip = label.length > 12 ? `${label.slice(0, 11)}…` : label
+  return (
+    <svg className={`kit kit--${state}`} viewBox="0 0 520 320" width="100%" aria-hidden="true">
+      {/* tampa */}
+      <g className="kit__lid">
+        <rect x="18" y="8" width="484" height="104" rx="16" className="kit__shell" />
+        <rect x="34" y="20" width="452" height="72" rx="10" className="kit__foam" />
+        {foam.map(([x, y]) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="5" className="kit__foam-dot" />
+        ))}
+        <rect x="186" y="44" width="148" height="30" rx="6" className="kit__nameplate" />
+        <text x="260" y="64" textAnchor="middle" className="kit__nameplate-text">
+          VERILOG CLASSROOM
+        </text>
+      </g>
+      {/* dobradiças */}
+      <rect x="120" y="110" width="44" height="10" rx="3" className="kit__hinge" />
+      <rect x="356" y="110" width="44" height="10" rx="3" className="kit__hinge" />
+      {/* base */}
+      <rect x="18" y="118" width="484" height="196" rx="16" className="kit__shell" />
+      <rect x="32" y="130" width="456" height="172" rx="10" className="kit__panel" />
+      {/* protoboard */}
+      <rect x="48" y="166" width="216" height="118" rx="8" className="kit__bb" />
+      <path d="M58 172H254M58 278H254" className="kit__rail" />
+      <rect x="54" y="221" width="204" height="7" rx="3.5" className="kit__channel" />
+      {holes.map(([x, y]) => (
+        <rect key={`${x}-${y}`} x={x - 2.2} y={y - 2.2} width="4.4" height="4.4" rx="1.2" className="kit__hole" />
+      ))}
+      <path d="M74 190C70 150 118 146 122 196" className="kit__wire kit__wire--r" />
+      <path d="M230 262C236 300 196 302 194 246" className="kit__wire kit__wire--b" />
+      {/* chip */}
+      <g className="kit__chip">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <g key={i}>
+            <rect x={108 + i * 12 - 2} y="206" width="4" height="12" rx="2" className="kit__leg" />
+            <rect x={108 + i * 12 - 2} y="232" width="4" height="12" rx="2" className="kit__leg" />
+          </g>
+        ))}
+        <rect x="96" y="212" width="86" height="26" rx="6" className="kit__chip-body" />
+        <path d="M96 219a6 6 0 0 1 0 12" className="kit__chip-notch" />
+        <text x="140" y="229" textAnchor="middle" className="kit__chip-text">
+          {chip}
+        </text>
+      </g>
+      {/* display de 7 segmentos */}
+      <rect x="282" y="146" width="190" height="56" rx="8" className="kit__seg" />
+      <text x="377" y="185" textAnchor="middle" className="kit__seg-text">
+        {display}
+      </text>
+      <text x="290" y="216" className="kit__silk">
+        DISPLAY
+      </text>
+      {/* bornes */}
+      {[
+        ['var(--jack-red)', 296],
+        ['var(--jack-black)', 330],
+        ['var(--jack-yellow)', 364],
+        ['var(--jack-blue)', 398],
+      ].map(([c, x]) => (
+        <g key={String(x)}>
+          <circle cx={Number(x)} cy="244" r="12" style={{ fill: String(c) }} className="kit__jack" />
+          <circle cx={Number(x)} cy="244" r="4.5" className="kit__jack-hole" />
+        </g>
+      ))}
+      {/* chaves e LEDs */}
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i}>
+          <rect x={290 + i * 34} y="268" width="26" height="14" rx="7" className="kit__sw" />
+          <circle cx={297 + i * 34 + (state === 'seated' ? 12 : 0)} cy="275" r="5" className="kit__sw-knob" />
+          <circle cx={448} cy={226 + i * 16} r="5" className={`kit__led kit__led--${i}`} />
+        </g>
+      ))}
     </svg>
   )
 }

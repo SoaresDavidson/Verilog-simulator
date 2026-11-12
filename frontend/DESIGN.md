@@ -1,70 +1,78 @@
-# Identidade visual — Bancada no Campus
+# Identidade visual: Maleta Didática
 
-O Verilog Classroom mistura dois mundos que o aluno conhece de cor: a **bancada de
-eletrônica** (protoboard, placa de circuito, cobre, pinos dourados) e o **campus
-modernista** (blocos grandes de cor, números de placa de edifício, azulejo modular,
-carimbo de prancha técnica). É uma ferramenta de trabalho (modo *Operate*): a marca
-aparece nos detalhes precisos, e a leitura e o fluxo vêm primeiro.
+O Verilog Classroom é desenhado como os **kits de treinamento de hardware** dos
+laboratórios de engenharia: painel de alumínio, módulos serigrafados em preto,
+bornes coloridos, teclas, chaves alavanca e displays de 7 segmentos. A interface
+é uma ferramenta de aula: cada tela explica o que está acontecendo.
 
 ## Marca
 
-`public/favicon.svg` e `BrandMark` (`src/components/art.tsx`) desenham um chip DIP
-como fachada de universidade: frontão de cobre, corpo verde de placa, chanfro do
-pino 1 virando arco, trilhas de cobre como colunas e pinos dourados como base.
-As três colunas e o ponto do frontão **energizam** (ficam douradas) conforme as
-etapas são concluídas: projeto enviado, síntese, caminho de dados e simulação.
+`BrandMark` (`src/components/art.tsx`) e `public/favicon.svg`: um módulo do kit
+com uma porta AND serigrafada e o borne vermelho na saída. Os três traços da
+base marcam as etapas concluídas, e o LED acende quando a simulação roda.
 
-## Cor (`src/styles/tokens.css`)
+## Material e cor (`src/styles/tokens.css`)
 
-| Papel | Claro | Uso |
+| Papel | Claro (alumínio) | Escuro (anodizado preto) |
 |---|---|---|
-| Chão (protoboard) | `#eceee8` | fundo com malha de furos |
-| Placa | `#fbfbf8` | cartões |
-| Verde de máscara de solda | `#0f4d3a` | placa da etapa, seleção, foco, etapa ativa |
-| Cobre | `#b0561d` | ação principal, trilhas, foco do teclado |
-| Pino dourado | `#e3b25a` | destaque, etapa atual, seleção de texto |
-| Estados lógicos | 0 `#2b62c4` · 1 `#23873f` · X `#b9630a` · Z `#6a51a8` | fios e formas de onda |
-
-O tema claro é o padrão (laboratório de dia, projetor em sala). O escuro ("bancada
-à noite") é ativado por `<html data-theme="dark">`.
+| Painel | `#d6d9dc` | `#111315` |
+| Módulo | `#eef0f2` | `#1c1f22` |
+| Serigrafia | `#16181b` | `#eef0f2` |
+| Ação (tecla) | borne vermelho `#d42a20` | `#e33a2f` |
+| Destaque e foco | borne amarelo `#f2c200` | `#f2c200` |
+| Bornes | vermelho, preto, amarelo, azul `#1767c7`, verde `#18904a` | os mesmos |
+| Display de 7 segmentos | fundo `#142019`, dígito `#7dff8c` | o mesmo |
+| Estados lógicos | 0 azul, 1 verde, X laranja, Z roxo (como no README) | versões claras |
 
 ## Tipografia
 
-- **Big Shoulders Display**: títulos de etapa e números de placa. É o tipo
-  municipal de sinalização de Chicago, com voz arquitetônica.
-- **Atkinson Hyperlegible Next**: interface e texto. Foi criada pelo Braille
-  Institute para máxima legibilidade.
-- **Atkinson Hyperlegible Mono**: código, sinais, valores e caminhos.
+- **Sofia Sans Condensed** 800–900 em caixa alta: títulos, rótulos e teclas.
+  É a voz da serigrafia.
+- **Sofia Sans**: texto corrido e interface.
+- **Fira Mono**: código, sinais, valores e displays.
 
-Escala: display `clamp(40–60px)`, placa `clamp(34–46px)`, título de cartão 17px,
-corpo 15px, dados 13px.
+## Componentes
 
-## Forma e componentes
+- **Módulo** (`.module`, `.card`): placa com contorno serigrafado e parafusos
+  Phillips nos quatro cantos.
+- **Etapas**: bornes. Verde = concluída, vermelho = atual, amarelo = liberada,
+  cinza = bloqueada. Entre eles, **cabos banana** que plugam com animação.
+- **Teclas** (`.btn`): primária vermelha, secundária branca serigrafada; afundam
+  3 px ao apertar.
+- **Chave alavanca** (checkbox), **borne** (rádio), **knob** (range), select
+  com menu próprio (`appearance: base-select`).
+- **Displays de 7 segmentos** (`.figure`): os números de cada etapa. Na
+  simulação mostram as saídas do módulo top no instante da timeline.
+- **Barra de comando** (`ActionBar`): fixa no rodapé, com LED e o que falta
+  para avançar.
+- **Entenda esta etapa** (`Explainer`): módulo didático com mini-desenhos. Fica
+  em faixa na Síntese e na Simulação e em coluna ao lado do diagrama no Caminho
+  de Dados.
+- **Maleta** (`KitCaseArt`) no upload: a tampa abre ao entrar, o chip desce ao
+  arrastar o .zip e encaixa quando o arquivo é aceito.
 
-- Cantos: 6 / 10 / 12 / 16 / 22 / 28px e pílula. Nada tem canto vivo.
-- **Placa da etapa** (`Screen`): bloco verde com título, números da etapa,
-  azulejo de portas lógicas (`GateTiles`, gerado por etapa) e carimbo de prancha
-  (folha, projeto e top).
-- **Barra de avanço** (`ActionBar`): fixa no rodapé, sempre diz o que falta para
-  avançar e oferece o próximo passo.
-- **Stepper**: pads de solda ligados por uma trilha de cobre que se preenche,
-  com um pulso de sinal correndo por ela.
-- Controles nativos redesenhados (checkbox, rádio, select com `base-select`,
-  range, busca, details, scrollbar, seleção de texto). A semântica continua
-  nativa e acessível.
-- Ícones: grade 20×20, traço 1.8, pontas redondas (`src/components/icons.tsx`).
-  Glifos de hardware em duas cores para as estatísticas e os arquivos.
+## Diagrama do caminho de dados
+
+- Layout pelo **ELK Layered** (`netlist/elk.ts`): algoritmo de Sugiyama com
+  posições de pino fixas, camadas por network simplex, cruzamentos minimizados
+  por varredura de camadas e fios ortogonais com espaçamento mínimo. O layout
+  próprio (`netlist/layout.ts`) continua como fallback síncrono e nos testes.
+- **Símbolos de livro-texto** (`render/GateSymbol.tsx`): AND, OR, XOR, NOT
+  (com bolinha de inversão), MUX, flip-flop com triângulo de clock, somador e
+  comparador.
+- **Etiquetas de rede**: clock e reset que chegam a registradores, e as
+  constantes, viram etiqueta no pino em vez de fio longo.
+- Clicar num bloco abre as propriedades com uma explicação em linguagem de
+  aula (`describeNode`).
 
 ## Movimento
 
-Curva de saída exponencial (`--ease-out`) e mola (`--ease-spring`) só em
-encaixes. Os momentos são estes: entrada da tela, azulejo em cascata (cada peça
-gira ao passar o mouse), trilha que energiza, colunas da marca acendendo, chip
-que encaixa na protoboard ao arrastar o .zip, estatísticas em sequência e onda
-desenhando durante a simulação. Tudo é desligado em `prefers-reduced-motion`.
+Mecânico e curto: tampa da maleta, chip encaixando, cabos plugando, bornes
+acendendo, teclas afundando, LEDs em sequência e dígitos dos displays piscando
+ao mudar. Tudo é desligado em `prefers-reduced-motion`.
 
 ## Evitar
 
-Cinza neutro sem tinta, fontes de interface genéricas (Inter, Space Grotesk),
-glifos Unicode como ícone, `confirm()` e outros diálogos do navegador, e acento
-neon com brilho.
+Cobre, laranja e terracota como cor de marca; gradientes e brilho decorativo;
+fontes de interface genéricas (Inter, Space Grotesk); glifos Unicode como
+ícone; diálogos nativos do navegador.

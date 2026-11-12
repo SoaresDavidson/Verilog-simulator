@@ -41,7 +41,7 @@ export function Screen({ title, description, children, className, figures }: Scr
             <div className="plate__figures">
               {figures.map((f) => (
                 <div key={f.label} className={`figure${f.accent ? ' figure--accent' : ''}`}>
-                  <b>{f.value}</b>
+                  <b key={String(f.value)}>{f.value}</b>
                   <span>{f.label}</span>
                 </div>
               ))}

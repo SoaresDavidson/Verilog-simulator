@@ -1,5 +1,6 @@
 import { useStepNavigation } from '../../app/useStepNavigation'
 import { useMemo } from 'react'
+import { Explainer, MiniArt } from '../../components/Explainer'
 import { IconArrowLeft, IconArrowRight } from '../../components/icons'
 import { ActionBar, Screen, type ScreenFigure } from '../../components/Screen'
 import { isSynthesisConfirmed } from '../../state/session'
@@ -45,6 +46,16 @@ export function SynthesisScreen() {
       description="O Yosys transforma seu Verilog em portas e fios. Depois, escolha quais sinais você quer acompanhar."
       figures={figures}
     >
+      <Explainer
+        id="sintese"
+        title="Entenda esta etapa"
+        items={[
+          { art: <MiniArt kind="code" />, title: 'Seu Verilog', text: 'Você descreve o comportamento do circuito em código: always, assign, if, case.' },
+          { art: <MiniArt kind="yosys" />, title: 'O Yosys', text: 'A ferramenta de síntese lê o código e descobre que hardware ele precisa: portas, registradores, somadores.' },
+          { art: <MiniArt kind="netlist" />, title: 'A netlist', text: 'O resultado é uma lista de células ligadas por fios. É ela que vira o desenho da próxima etapa.' },
+          { art: <MiniArt kind="select" />, title: 'Os sinais', text: 'Escolha os fios que você quer acompanhar: eles ganham destaque no diagrama e na simulação.' },
+        ]}
+      />
       <div className="split splitw">
         <div className="sp">
           <FileTree files={state.files} onReupload={() => nav.goTo(1)} />

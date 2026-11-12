@@ -142,3 +142,7 @@
 .dp-flag.dp-v--x .dp-flag__text { fill: var(--sx); } .dp-flag.dp-v--z .dp-flag__text { fill: var(--sz); }
 .dp-flag:hover .dp-flag__box { stroke-width: 2; }
 .dpd--far .dp-flag__text { display: none; }
+.pp-explain {
+  font-size: 14px; line-height: 1.45; padding: 10px 12px; border-radius: var(--r);
+  background: var(--gold-lt); color: var(--fg); box-shadow: inset 0 0 0 1.5px var(--silk);
+}

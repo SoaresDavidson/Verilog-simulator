@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState, type DragEvent } from 'react'
 import { useApi } from '../../api/context'
 import { isAbortError, toUserMessage } from '../../api/errors'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { BreadboardArt } from '../../components/art'
+import { KitCaseArt } from '../../components/art'
 import { GlyphSourceFile, GlyphTestbenchFile, IconArrowRight, IconSwap, IconUpload } from '../../components/icons'
 import { ActionBar, Screen } from '../../components/Screen'
 import { MAX_UPLOAD_BYTES } from '../../config'
@@ -164,7 +164,7 @@ export function UploadScreen() {
           {uploaded && session.session ? (
             <>
               <div className="up__seated">
-                <BreadboardArt label={chipLabel} seated />
+                <KitCaseArt label={chipLabel} state="seated" />
               </div>
               <FilePreview
                 title={session.session.fileName}
@@ -194,7 +194,7 @@ export function UploadScreen() {
                   aria-describedby="upload-hint"
                 >
                   <span className="uz__art">
-                    <BreadboardArt label={dragging ? 'solte aqui' : 'projeto.zip'} />
+                    <KitCaseArt label="projeto.zip" state={dragging ? 'drag' : 'idle'} />
                   </span>
                   <span className="uz__title">Arraste um arquivo .zip aqui</span>
                   <span id="upload-hint" className="uz__hint">
@@ -203,7 +203,7 @@ export function UploadScreen() {
                 </button>
               ) : (
                 <div className="up__seated">
-                  <BreadboardArt label={chipLabel} seated={seated} />
+                  <KitCaseArt label={chipLabel} state={seated ? 'seated' : 'idle'} />
                 </div>
               )}
 

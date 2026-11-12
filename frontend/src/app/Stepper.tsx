@@ -2,8 +2,8 @@ import { IconCheck } from '../components/icons'
 import type { StepNavigation } from './useStepNavigation'
 
 /**
- * Stepper do cabeçalho: pads de solda ligados por uma trilha de cobre que
- * "energiza" (preenche) quando a etapa anterior é concluída.
+ * Stepper do cabeçalho: cada etapa é um borne do kit. Quando a etapa seguinte
+ * fica disponível, um cabo banana "pluga" de um borne ao outro.
  */
 export function Stepper({ nav }: { nav: StepNavigation }) {
   return (
@@ -17,7 +17,14 @@ export function Stepper({ nav }: { nav: StepNavigation }) {
           const live = prev !== undefined && (prev.status === 'done' || (prev.status === 'active' && step.status !== 'locked'))
           return (
             <li key={step.id} className="stepper__item">
-              {index > 0 && <span className={`trace${live ? ' is-live' : ''}`} aria-hidden="true" />}
+              {index > 0 && (
+                <svg className={`trace cable cable--${index}${live ? ' is-live' : ''}`} viewBox="0 0 44 30" aria-hidden="true">
+                  <path className="cable__rest" d="M2 12H42" />
+                  <path className="cable__wire" pathLength={100} d="M2 12C12 30 32 30 42 12" />
+                  <circle className="cable__plug" cx="2" cy="12" r="3.2" />
+                  <circle className="cable__plug cable__plug--end" cx="42" cy="12" r="3.2" />
+                </svg>
+              )}
               <button
                 type="button"
                 className={`step ${step.status}`}

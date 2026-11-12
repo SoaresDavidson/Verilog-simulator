@@ -334,3 +334,99 @@
   .up { grid-template-columns: minmax(0, 1fr); }
   .up__guide { position: static; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Maleta didática do upload                                            */
+/* ------------------------------------------------------------------ */
+.kit { display: block; overflow: visible; }
+.kit__shell { fill: #a8afb6; stroke: var(--jack-black); stroke-width: 2; }
+:root[data-theme="dark"] .kit__shell { fill: #2b3035; stroke: #000; }
+.kit__foam { fill: #2a2d31; }
+.kit__foam-dot { fill: #3a3e43; }
+.kit__nameplate { fill: #e9ecef; stroke: var(--jack-black); stroke-width: 1.5; }
+.kit__nameplate-text { font: 900 13px var(--fh); letter-spacing: 0.14em; fill: #16181b; }
+.kit__hinge { fill: #7c838a; stroke: var(--jack-black); stroke-width: 1.5; }
+.kit__panel { fill: var(--surface); stroke: var(--jack-black); stroke-width: 1.5; }
+.kit__bb { fill: #f7f8f9; stroke: #9aa1a8; stroke-width: 1.5; }
+:root[data-theme="dark"] .kit__bb { fill: #e3e6e9; }
+.kit__rail { stroke: var(--jack-red); stroke-width: 2; }
+.kit__channel { fill: #dfe3e6; }
+.kit__hole { fill: #b9bfc5; }
+.kit__wire { fill: none; stroke-width: 4.5; stroke-linecap: round; }
+.kit__wire--r { stroke: var(--jack-red); }
+.kit__wire--b { stroke: var(--jack-blue); }
+.kit__leg { fill: #c9ced3; stroke: #7d848c; stroke-width: 0.8; }
+.kit__chip-body { fill: #1b1d20; }
+.kit__chip-notch { fill: #f7f8f9; }
+.kit__chip-text { font: 700 10.5px var(--fd); fill: #f2f3f4; }
+.kit__seg { fill: var(--seg-bg); stroke: var(--jack-black); stroke-width: 1.5; }
+.kit__seg-text { font: 500 28px var(--fd); letter-spacing: 0.12em; fill: var(--seg-dim); transition: fill var(--t) var(--ease-out); }
+.kit__silk { font: 800 9px var(--fh); letter-spacing: 0.18em; fill: var(--muted); }
+.kit__jack { stroke: var(--jack-black); stroke-width: 2; }
+.kit__jack-hole { fill: var(--jack-black); }
+.kit__sw { fill: var(--jack-black); }
+.kit__sw-knob { fill: var(--jack-yellow); stroke: var(--jack-black); stroke-width: 1.2; transition: cx var(--t) var(--ease-spring); }
+.kit__led { fill: #5b6168; stroke: var(--jack-black); stroke-width: 1.5; transition: fill 160ms var(--ease-out); }
+
+/* tampa abre ao entrar */
+.kit__lid { transform-box: fill-box; transform-origin: 50% 100%; animation: lid-open 900ms var(--ease-out) 120ms backwards; }
+@keyframes lid-open { from { transform: scaleY(0.12); opacity: 0.6; } to { transform: none; opacity: 1; } }
+
+/* chip: paira, desce ao arrastar, encaixa quando aceito */
+.kit__chip { transform: translateY(-44px); transition: transform 520ms var(--ease-spring); }
+.kit--idle .kit__chip { animation: chip-hover 3s var(--ease-in-out) infinite; }
+@keyframes chip-hover { 50% { transform: translateY(-50px); } }
+.kit--drag .kit__chip { transform: translateY(-10px); }
+.kit--seated .kit__chip { transform: none; }
+
+/* LEDs: sequência ao arrastar; verdes quando aceito */
+.kit--drag .kit__led { animation: led-chase 0.9s steps(1) infinite; }
+.kit--drag .kit__led--1 { animation-delay: 0.22s; }
+.kit--drag .kit__led--2 { animation-delay: 0.44s; }
+.kit--drag .kit__led--3 { animation-delay: 0.66s; }
+@keyframes led-chase { 0% { fill: #ffb020; } 30% { fill: #5b6168; } }
+.kit--seated .kit__led { fill: #2fe063; }
+.kit--drag .kit__seg-text { fill: #ffd84d; }
+.kit--seated .kit__seg-text { fill: var(--seg-on); }
+.uz:hover .kit--idle .kit__chip { animation-duration: 1.4s; }
+.uz__art { width: min(100%, 520px); }
+.up__seated .kit { max-width: 520px; }
+
+/* ------------------------------------------------------------------ */
+/* Entenda esta etapa                                                   */
+/* ------------------------------------------------------------------ */
+.explainer { padding: 0; }
+.explainer__sum { display: flex; align-items: center; gap: 10px; padding: 18px 26px; border-radius: inherit; }
+.explainer__sum:hover { background-color: var(--hover); }
+.explainer__chev { transition: transform var(--t) var(--ease-out); flex-shrink: 0; }
+.explainer[open] .explainer__chev { transform: rotate(90deg); }
+.explainer__title { font: 900 17px/1 var(--fh); letter-spacing: 0.1em; text-transform: uppercase; }
+.explainer__title::before {
+  content: "?"; display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 10px; border-radius: 50%;
+  font: 800 13px/1 var(--fd); background: var(--jack-yellow); color: #16181b; box-shadow: 0 0 0 1.5px var(--silk); vertical-align: 2px;
+}
+.explainer__hint { margin-left: auto; font: 700 11px var(--fh); letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+.explainer__list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; padding: 0 22px 22px; }
+.explainer__item {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 12px; border-radius: var(--r); background: var(--surface-ct); box-shadow: inset 0 0 0 1px var(--ov);
+  animation: nst-in var(--t-slow) var(--ease-out) backwards;
+}
+.explainer__item b { display: block; font: 800 13.5px/1.2 var(--fh); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px; }
+.explainer__item p { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.explainer__art { width: 64px; height: 44px; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--surface); box-shadow: inset 0 0 0 1px var(--ov); color: var(--fg); }
+.mini-art { display: block; overflow: visible; }
+.mini-art .ma-fill { fill: var(--surface); }
+.mini-art .ma-ink { fill: var(--jack-black); }
+.mini-art .ma-knob { fill: var(--jack-yellow); }
+.mini-art .ma-line-a { fill: #7dff8c; }
+.mini-art .ma-line-b { fill: #ffd84d; }
+.mini-art .ma-txt { font: 700 9px var(--fd); fill: var(--fg); }
+.mini-art .ma-txt-inv { font: 700 9px var(--fd); fill: #fff; }
+.mini-art .ma-s0 { stroke: var(--s0); }
+.mini-art .ma-s1 { stroke: var(--s1); }
+.mini-art .ma-sx { stroke: var(--sx); }
+.mini-art .ma-sx-fill { fill: var(--sxb); }
+.mini-art .ma-sz { stroke: var(--sz); }
+.explainer__item:hover .mini-art { animation: art-nudge 600ms var(--ease-spring); }
+@keyframes art-nudge { 40% { transform: translateY(-3px); } }
