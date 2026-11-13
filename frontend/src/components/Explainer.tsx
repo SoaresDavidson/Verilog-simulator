@@ -4,6 +4,7 @@
  * Fica aberto por padrão; a escolha de recolher é lembrada por tela.
  */
 import { useState, type ReactNode } from 'react'
+import { Bit } from './illustrations'
 import { IconChevron } from './icons'
 
 export interface ExplainerItem {
@@ -14,16 +15,30 @@ export interface ExplainerItem {
 
 const KEY = 'verilog-classroom:explainer:'
 
-function readOpen(id: string): boolean {
+function readOpen(id: string, fallback: boolean): boolean {
   try {
-    return window.localStorage.getItem(KEY + id) !== 'closed'
+    const saved = window.localStorage.getItem(KEY + id)
+    return saved === null ? fallback : saved !== 'closed'
   } catch {
-    return true
+    return fallback
   }
 }
 
-export function Explainer({ id, title, items, className }: { id: string; title: string; items: ExplainerItem[]; className?: string }) {
-  const [open, setOpen] = useState(() => readOpen(id))
+export function Explainer({
+  id,
+  title,
+  items,
+  className,
+  defaultOpen = true,
+}: {
+  id: string
+  title: string
+  items: ExplainerItem[]
+  className?: string
+  /** Estado inicial quando o aluno ainda não escolheu abrir ou recolher. */
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(() => readOpen(id, defaultOpen))
   return (
     <details
       className={`card explainer${className ? ` ${className}` : ''}`}
@@ -40,6 +55,7 @@ export function Explainer({ id, title, items, className }: { id: string; title: 
     >
       <summary className="explainer__sum">
         <IconChevron size={16} className="explainer__chev" />
+        <Bit pose="lupa" className="explainer__bit" />
         <span className="explainer__title">{title}</span>
         <span className="explainer__hint">{open ? 'recolher' : 'mostrar'}</span>
       </summary>

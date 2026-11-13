@@ -72,7 +72,7 @@ export function TimelineControls({ playback, timescale, lastTime }: TimelineCont
         <select id={speedId} value={playback.speed} onChange={(e) => playback.setSpeed(Number(e.target.value))} disabled={disabled}>
           {PLAYBACK_SPEEDS.map((s) => (
             <option key={s} value={s}>
-              {String(s).replace('.', ',')}x
+              {String(s).replace('.', ',')}x{s === 0.1 ? ' · bem devagar' : s === 0.25 ? ' · devagar' : ''}
             </option>
           ))}
         </select>

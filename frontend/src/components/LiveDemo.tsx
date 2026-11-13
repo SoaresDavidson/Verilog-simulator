@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Bit } from './illustrations'
 
 /**
  * Demonstração viva da página de entrada: um meio-somador de exemplo em que o
@@ -145,6 +146,7 @@ export function LiveDemo() {
       </svg>
 
       <figcaption className="ld-say">
+        <Bit pose="apontando" className="ld-say__bit" />
         <span className="ld-say__t">t = {(t % SLOTS) * 10} ns</span>
         <span className="ld-say__txt" key={t % 4}>
           {SAY[t % 4]}

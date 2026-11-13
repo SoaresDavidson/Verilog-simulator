@@ -20,10 +20,10 @@
 .sim-warn { border: 1px solid color-mix(in srgb, var(--sx) 40%, transparent); background: var(--sxb); color: var(--sx); border-radius: var(--r); padding: 10px 12px; font-size: 13.5px; }
 
 /* Ilustração */
-.wave-art__screen { fill: #1a1238; }
+.wave-art__screen { fill: var(--on-gate); }
 .wave-art__grid { stroke: rgba(238, 245, 241, 0.07); stroke-width: 1; }
 .wave-art__clk { fill: none; stroke: #2fd683; stroke-width: 3.5; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 0; }
-.wave-art__bus { fill: none; stroke: #ffd23f; stroke-width: 3; stroke-linejoin: round; }
+.wave-art__bus { fill: none; stroke: var(--p-gate); stroke-width: 3; stroke-linejoin: round; }
 .wave-art__clk { animation: wave-draw 2.4s linear infinite; }
 @keyframes wave-draw { from { stroke-dashoffset: 520; } to { stroke-dashoffset: 0; } }
 
@@ -107,4 +107,30 @@
   .sim-tl__time { align-self: center; }
   .sim-tl__opts { justify-content: center; }
   .sim-sigs { max-height: 420px; }
+}
+
+/* ---------------- Depois de simular: circuito e ondas amplos, o resto recolhido ---------------- */
+.sim-run[data-status="success"] { padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: none; background: var(--surface-hi); }
+.sim-run__more { background: none; border: 0; }
+.sim-run__more > summary { padding: 6px 10px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.sim-main { grid-template-columns: minmax(210px, 250px) minmax(0, 1fr); gap: 14px; }
+.sim-split, .sim-sigs { height: clamp(560px, calc(100dvh - 235px), 1200px); max-height: none; }
+.sim-sig__meta { display: none; }
+.sim-sig { padding: 9px 10px; }
+.sim-sig__name { font-size: 14.5px; }
+.sim-sig .b0 { font-size: 13px; padding: 3px 10px 3px 8px; }
+/* O diagrama ao vivo fica limpo: sem minimapa e sem a faixa de valores repetidos da lista. */
+.live-dp .dpd-mm, .live-dp .live-bus, .live-dp .dpd-legend__mode { display: none; }
+.live-dp .dp-wire { stroke-width: 3.2; }
+.live-dp .dp-edge--bus .dp-wire { stroke-width: 5.5; }
+.live-dp .dp-wlabel { font-size: 11.5px; font-weight: 700; }
+.sim-dp { padding: 6px; }
+.sim-dp .cw { box-shadow: none; }
+.sim-scr .plate { padding-top: 16px; align-items: center; }
+.sim-scr .plate__figures { margin-top: 4px; }
+.sim-scr .figure b { font-size: 34px; }
+@media (max-width: 860px) {
+  .sim-main { grid-template-columns: minmax(0, 1fr); }
+  .sim-sigs { height: auto; max-height: 300px; }
+  .sim-split { height: 78vh; }
 }

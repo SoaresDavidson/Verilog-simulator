@@ -7,6 +7,7 @@ import { isSynthesisConfirmed } from '../../state/session'
 import { netlistStats } from './netlist'
 import { useSessionState } from '../../state/hooks'
 import { advanceBlockReason } from './advance'
+import { EditorPanel } from '../editor/EditorPanel'
 import { FileTree } from './FileTree'
 import { SignalSelector } from './SignalSelector'
 import { SynthesisPanel } from './SynthesisPanel'
@@ -61,6 +62,7 @@ export function SynthesisScreen() {
           <FileTree files={state.files} onReupload={() => nav.goTo(1)} />
         </div>
         <div className="sp">
+          <EditorPanel synthesis={synthesis} />
           <SynthesisPanel synthesis={synthesis} />
           <TopModulePanel synthesis={synthesis} />
           <SignalSelector />

@@ -1,5 +1,7 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { BrandMark } from '../components/art'
+import { PaletteSwitch } from '../components/PaletteSwitch'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { DatapathScreen } from '../features/datapath/DatapathScreen'
 import { LiveDatapath } from '../features/simulation/live/LiveDatapath'
@@ -95,9 +97,11 @@ export function AppShell({ headerActions }: AppShellProps) {
         </a>
         <div className="brand logo">
           <span className="brand__plaque">
-            <BrandMark size={40} lit={progress} />
+            <BrandMark size={46} lit={progress} />
           </span>
-          <span className="brand__name">Verilog Classroom</span>
+          <span className="brand__name">
+            Verilog <b>Classroom</b>
+          </span>
         </div>
         <Stepper nav={nav} />
         <div className="header-actions">
@@ -109,6 +113,7 @@ export function AppShell({ headerActions }: AppShellProps) {
             </div>
           )}
           {headerActions}
+          <PaletteSwitch />
           <ThemeToggle />
         </div>
       </div>
@@ -128,7 +133,9 @@ export function AppShell({ headerActions }: AppShellProps) {
     <div id="app">
       {header}
       <main id="main" ref={mainRef} tabIndex={-1}>
-        {SCREENS[nav.step]()}
+        <motion.div key={nav.step} className="scr-wrap" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 170, damping: 22 }}>
+          {SCREENS[nav.step]()}
+        </motion.div>
       </main>
     </div>
   )

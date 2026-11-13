@@ -1,11 +1,9 @@
 # Imagens do Verilog Classroom
 
-Briefs para gerar as ilustrações no ChatGPT. Cada imagem tem um encaixe pronto no app: basta salvar o
-arquivo com o nome indicado em `frontend/public/assets/img/` e ela substitui o desenho provisório em
-SVG. Enquanto o arquivo não existir, o app mostra o provisório.
-
-Formato de entrega: **WebP com fundo transparente** (peça PNG transparente ao ChatGPT e converta, por
-exemplo em squoosh.app). Nomes em minúsculas, exatamente como abaixo.
+**Situação em 2026-11-12:** as imagens geradas a partir destes briefs serviram de referência e foram
+redesenhadas em SVG animado em `frontend/src/components/illustrations.tsx` (mascote Bit, os quatro
+passos, a área de envio e o fechamento). O app não carrega mais arquivos raster. Os briefs ficam aqui
+para gerar novas referências no mesmo estilo.
 
 ## Estilo comum (cole no início de TODO prompt)
 

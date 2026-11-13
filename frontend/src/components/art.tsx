@@ -1,33 +1,11 @@
 /**
  * Arte da identidade "Do código ao sinal": marca (uma porta AND num selo
- * amarelo), encaixes para as ilustrações geradas pelo time e as artes em SVG
- * que servem de reserva enquanto a imagem não existe.
+ * amarelo) e as artes de espera da síntese e da simulação. O mascote e as
+ * cenas animadas ficam em `illustrations.tsx`.
  */
-import { useState, type ReactNode } from 'react'
-
 /* ------------------------------------------------------------------ */
-/* Ilustração raster em public/assets/img/<name>.webp. Se o arquivo     */
-/* ainda não existe, mostra a arte em SVG passada em `fallback`.        */
-/* ------------------------------------------------------------------ */
-
-export function Art({ name, fallback, className }: { name: string; fallback?: ReactNode; className?: string }) {
-  const [ok, setOk] = useState(true)
-  if (!ok) return <>{fallback}</>
-  return (
-    <img
-      className={`art${className ? ` ${className}` : ''}`}
-      src={`${import.meta.env.BASE_URL}assets/img/${name}.webp`}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      onError={() => setOk(false)}
-    />
-  )
-}
-
-/* ------------------------------------------------------------------ */
-/* Marca: porta AND em tinta sobre selo amarelo. A saída acende em      */
-/* verde quando a simulação roda.                                       */
+/* Marca: porta AND com o "< >" do código dentro, sobre selo amarelo.   */
+/* O ponto de saída acende em verde quando a simulação roda.            */
 /* ------------------------------------------------------------------ */
 
 export interface BrandMarkProps {
@@ -44,16 +22,17 @@ export function BrandMark({ size = 40, lit = 0, className, title }: BrandMarkPro
       className={`brand-mark${className ? ` ${className}` : ''}`}
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 44 44"
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
       data-lit={lit}
     >
-      <rect className="brand-mark__plate" width="40" height="40" rx="11" />
-      <path className="brand-mark__gate" d="M12 10h8a10 10 0 0 1 0 20h-8z" />
-      <path className="brand-mark__in" d="M4 15h8M4 25h8" />
-      <path className={`brand-mark__out${lit >= 4 ? ' is-lit' : ''}`} d="M30 20h6" />
+      <rect className="brand-mark__plate" width="44" height="44" rx="12" />
+      <path className="brand-mark__in" d="M5 17h9M5 27h9M36 22h3" />
+      <path className="brand-mark__gate" d="M13 9h10a13 13 0 0 1 0 26H13z" />
+      <path className="brand-mark__code" d="M21.5 17.5L17 22l4.5 4.5M26 17.5l4.5 4.5-4.5 4.5" />
+      <circle className={`brand-mark__out${lit >= 4 ? ' is-lit' : ''}`} cx="40" cy="22" r="2.8" />
     </svg>
   )
 }

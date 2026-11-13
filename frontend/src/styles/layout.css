@@ -14,22 +14,46 @@ ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position
   flex-shrink: 0; z-index: 10; position: relative; padding: 0 24px;
   background: var(--pcb); color: var(--pcb-ink);
   /* Quem mora no cabeçalho herda superfícies escuras. */
-  --surface: var(--pcb-2); --surface-ct: var(--pcb-2); --surface-hi: var(--pcb-3); --surface-highest: #4a3d86;
-  --fg: #ffffff; --muted: var(--pcb-mute); --faint: #a59dd0; --ov: #473a80; --ov-strong: #6e64a3;
-  --hover: rgba(255, 255, 255, 0.08); --silk: #6e64a3; --danger: #ff8a9a; --danger-bg: rgba(255, 138, 154, 0.12);
+  --surface: var(--pcb-2); --surface-ct: var(--pcb-2); --surface-hi: var(--pcb-3); --surface-highest: var(--pcb-edge);
+  --fg: #ffffff; --muted: var(--pcb-mute); --faint: var(--pcb-faint); --ov: var(--pcb-edge); --ov-strong: var(--pcb-faint);
+  --hover: rgba(255, 255, 255, 0.08); --silk: var(--pcb-faint); --danger: #ff8a9a; --danger-bg: rgba(255, 138, 154, 0.12);
   --s1: #3fd98a; --sx: #ffb35c;
 }
 .app-header__bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px 24px; min-height: var(--hh); }
 .app-header :focus-visible { outline-color: var(--gate); }
-.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.brand__plaque { display: grid; place-items: center; flex-shrink: 0; transition: transform var(--t) var(--ease-spring); }
-.brand:hover .brand__plaque { transform: rotate(-6deg) scale(1.06); }
-.brand__name { font: 800 21px/1 var(--fh); letter-spacing: -0.02em; white-space: nowrap; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand__plaque { display: grid; place-items: center; flex-shrink: 0; rotate: -4deg; transition: rotate var(--t) var(--ease-spring), scale var(--t) var(--ease-spring); }
+.brand:hover .brand__plaque { rotate: 4deg; scale: 1.08; }
+.brand__name { font: 800 22px/1 var(--fh); letter-spacing: -0.03em; white-space: nowrap; }
+.brand__name b { font-weight: 800; color: var(--gate); }
 
 .brand-mark__plate { fill: var(--gate); }
-.brand-mark__gate { fill: #1a1238; }
-.brand-mark__in, .brand-mark__out { fill: none; stroke: #1a1238; stroke-width: 3.5; stroke-linecap: round; transition: stroke var(--t-slow) var(--ease-out); }
-.brand-mark__out.is-lit { stroke: #0a8a4e; }
+.brand-mark__gate { fill: var(--on-gate); }
+.brand-mark__in { fill: none; stroke: var(--on-gate); stroke-width: 3.6; stroke-linecap: round; }
+.brand-mark__code { fill: none; stroke: var(--gate); stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.brand-mark__out { fill: var(--on-gate); transition: fill var(--t-slow) var(--ease-out); }
+.brand-mark__out.is-lit { fill: #0a8a4e; }
+
+/* A assinatura da barra: uma malha de furos de placa e um clock correndo na borda de baixo. */
+.app-header { background-image: radial-gradient(color-mix(in srgb, #fff 10%, transparent) 1px, transparent 1.3px); background-size: 18px 18px; }
+.app-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--gate); pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='8'%3E%3Cpath d='M0 7H14V1H42V7H56' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") 0 0 / 56px 8px repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='8'%3E%3Cpath d='M0 7H14V1H42V7H56' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") 0 0 / 56px 8px repeat-x;
+  animation: clock-run 2.8s linear infinite;
+}
+@keyframes clock-run { to { -webkit-mask-position: 56px 0; mask-position: 56px 0; } }
+
+/* Seletor de paleta */
+.palette { display: flex; gap: 4px; padding: 5px; border-radius: var(--r-pill); background: var(--surface); }
+.palette__opt {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 2px var(--pcb-edge);
+  transition: scale var(--t) var(--ease-spring), box-shadow var(--t) var(--ease-out);
+}
+.palette__opt:hover { scale: 1.15; }
+.palette__opt[aria-checked="true"] { box-shadow: 0 0 0 2.5px var(--gate); }
+.palette__dot { width: 10px; height: 10px; border-radius: 50%; }
+@media (max-width: 760px) { .palette { display: none; } }
 
 .header-actions { display: flex; align-items: center; gap: 8px; justify-self: end; }
 .sbadge {
@@ -47,36 +71,38 @@ ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position
 .stepper { justify-self: center; min-width: 0; }
 .stepper__list { display: flex; align-items: center; list-style: none; }
 .stepper__item { display: flex; align-items: center; }
-.trace { width: clamp(18px, 3vw, 56px); height: 6px; border-radius: 3px; background: #3d3170; flex-shrink: 0; margin: 0 2px; }
+.trace { width: clamp(18px, 3vw, 56px); height: 6px; border-radius: 3px; background: var(--pcb-3); flex-shrink: 0; margin: 0 2px; }
 .trace.is-live {
-  background: repeating-linear-gradient(90deg, #0fb66b 0 12px, #0a8f52 12px 24px); background-size: 24px 6px;
+  background: repeating-linear-gradient(90deg, var(--w1) 0 12px, var(--w1-deep) 12px 24px); background-size: 24px 6px;
   animation: trace-flow 0.9s linear infinite;
 }
 @keyframes trace-flow { to { background-position: 24px 0; } }
 
 .step {
   display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: var(--r-md);
-  font: 700 14.5px/1 var(--fb); color: #a59dd0; white-space: nowrap;
+  font: 700 14.5px/1 var(--fb); color: var(--pcb-faint); white-space: nowrap;
   transition: background var(--t) var(--ease-out), color var(--t) var(--ease-out);
 }
 .step .n {
   position: relative; width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0; display: grid; place-items: center;
-  background: #2c2157; color: #cfc8f5; box-shadow: inset 0 0 0 2px #473a80;
+  background: var(--pcb-2); color: var(--pcb-mute); box-shadow: inset 0 0 0 2px var(--pcb-edge);
   transition: transform var(--t) var(--ease-spring), background var(--t) var(--ease-out);
 }
 .n__ok {
   position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
-  background: #0fb66b; color: #fff; box-shadow: 0 0 0 2.5px var(--pcb);
+  background: var(--w1); color: #fff; box-shadow: 0 0 0 2.5px var(--pcb);
 }
 .step:hover:not(.locked):not(.active) { background: rgba(255, 255, 255, 0.08); color: #fff; }
 .step:hover:not(.locked):not(.active) .n { transform: translateY(-2px); }
-.step.available { color: #cfc8f5; }
+.step.available { color: var(--pcb-mute); }
 .step.available .n { box-shadow: inset 0 0 0 2px var(--gate); color: var(--gate); }
 .step.done { color: #fff; }
-.step.done .n { box-shadow: inset 0 0 0 2px #0fb66b; color: #fff; }
+.step.done .n { box-shadow: inset 0 0 0 2px var(--w1); color: #fff; }
 .step.active { color: #fff; cursor: default; }
-.step.active .n { background: var(--gate); color: #1a1238; box-shadow: none; transform: rotate(-4deg) scale(1.06); animation: step-on 520ms var(--ease-spring); }
-@keyframes step-on { from { transform: rotate(8deg) scale(0.8); } }
+.step.active .n { background: none; color: var(--on-gate); box-shadow: none; }
+/* O selo amarelo desliza de uma etapa para a outra (Motion layoutId). */
+.n__on { position: absolute; inset: -2px; border-radius: 14px; background: var(--gate); rotate: -4deg; }
+.step .n > svg { position: relative; }
 .step.locked { cursor: not-allowed; opacity: 0.6; }
 
 /* ------------------------------------------------------------------ */
@@ -88,9 +114,9 @@ main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: r
   position: relative; z-index: 1;
   display: flex; flex-direction: column; gap: 16px;
   padding: 0 24px; min-height: 100%; max-width: 1600px; margin: 0 auto; width: 100%;
-  animation: scr-in var(--t-slow) var(--ease-out) both;
 }
-@keyframes scr-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.scr-wrap { min-height: 100%; display: flex; flex-direction: column; }
+.scr-wrap > .scr { flex: 1; min-height: 0; }
 
 /* Abertura da etapa: título grande direto no papel, números e ficha do projeto */
 .plate {
@@ -109,7 +135,7 @@ main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: r
 .figure b { font: 800 var(--fs-plate)/1 var(--fh); letter-spacing: -0.02em; color: var(--fg); font-variant-numeric: tabular-nums; animation: fig-tick 320ms var(--ease-spring); }
 .figure span { font: 600 14px/1 var(--fb); color: var(--muted); }
 .figure--accent { background: var(--gate); }
-.figure--accent b, .figure--accent span { color: #1a1238; }
+.figure--accent b, .figure--accent span { color: var(--on-gate); }
 @keyframes fig-tick { from { transform: translateY(6px); opacity: 0; } }
 
 .carimbo { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font: 600 12.5px var(--fd); color: var(--fg); }
@@ -143,7 +169,7 @@ main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: r
 .sp { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
 /* Entre telas médias e grandes, só a etapa atual mostra o nome. */
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
   .step:not(.active) .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .step:not(.active) { padding: 6px; position: relative; }
 }

@@ -14,7 +14,7 @@ body {
 }
 
 /* Superfícies do navegador também levam a identidade. */
-::selection { background: var(--jack-yellow); color: #1a1238; }
+::selection { background: var(--jack-yellow); color: var(--on-gate); }
 html { accent-color: var(--accent); caret-color: var(--jack-red); scrollbar-color: var(--ov-strong) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }

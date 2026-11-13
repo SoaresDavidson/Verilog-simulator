@@ -119,9 +119,9 @@
 
 /* Símbolos de porta (livro-texto) */
 .gs-stub, .gs-line { fill: none; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.gs .dp-box { fill: var(--gate); stroke: var(--fg); stroke-width: 2; }
-:root[data-theme="dark"] .gs .dp-box { stroke: #0b0720; }
-.gs-op { fill: #1a1238; font: 700 18px var(--fd); text-anchor: middle; pointer-events: none; }
+.gs .dp-box { fill: var(--gate-fill); stroke: var(--fg); stroke-width: 2; }
+:root[data-theme="dark"] .gs .dp-box { stroke: var(--on-gate); }
+.gs-op { fill: var(--on-gate); font: 700 18px var(--fd); text-anchor: middle; pointer-events: none; }
 .gs-label { text-anchor: middle; }
 .dp-node:hover .gs .dp-box { stroke: var(--copper); }
 .dp-node.dp-on .gs .dp-box { stroke: var(--copper); stroke-width: 3.2; }

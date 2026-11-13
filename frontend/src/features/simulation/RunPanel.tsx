@@ -90,7 +90,16 @@ export function RunPanel({ simulation, unusableLog, canRun, onRun, onCancel }: R
           A resposta não contém um simulation_log utilizável; o playback foi desabilitado.
         </p>
       )}
-      {result && (
+      {result && status === 'success' && !unusableLog && (
+        <details className="disc sim-run__more">
+          <summary>Saída do simulador (stdout e stderr)</summary>
+          <div className="sim-run__outputs">
+            <OutputBlock label="stdout" raw={result.stdout} open={false} />
+            <OutputBlock label="stderr" raw={result.stderr} open={false} />
+          </div>
+        </details>
+      )}
+      {result && (status !== 'success' || unusableLog) && (
         <div className="sim-run__outputs">
           <OutputBlock label="stdout" raw={result.stdout} open={false} />
           <OutputBlock label="stderr" raw={result.stderr} open={status === 'error' && result.stderr !== ''} />

@@ -2,15 +2,24 @@ import { useEffect, useReducer, useRef, useState, type DragEvent } from 'react'
 import { useApi } from '../../api/context'
 import { isAbortError, toUserMessage } from '../../api/errors'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Art, WaveArt } from '../../components/art'
+import { motion } from 'motion/react'
 import { GlyphSourceFile, GlyphTestbenchFile, IconArrowRight, IconSwap, IconUpload } from '../../components/icons'
-import { MiniArt } from '../../components/Explainer'
+import {
+  Bit,
+  ClosingArt,
+  StepCode,
+  StepCircuit,
+  StepGates,
+  StepSignals,
+  UploadArt,
+} from '../../components/illustrations'
 import { LiveDemo } from '../../components/LiveDemo'
 import { MAX_UPLOAD_BYTES } from '../../config'
 import { formatBytes } from '../../lib/format'
 import { useSession } from '../../state/hooks'
 import type { ProjectFile } from '../../state/session'
 import { useEndSession } from '../session/useEndSession'
+import { setProjectZip } from '../editor/zip'
 import { FilePreview } from './FilePreview'
 import { validateProjectZip } from './validateProjectZip'
 
@@ -35,7 +44,13 @@ type UploadAction =
   | { type: 'UPLOAD_CANCELLED' }
   | { type: 'RESET' }
 
-const initialUpload: UploadState = { phase: 'IDLE', file: null, preview: null, error: null, notice: null }
+const initialUpload: UploadState = {
+  phase: 'IDLE',
+  file: null,
+  preview: null,
+  error: null,
+  notice: null,
+}
 
 function uploadReducer(state: UploadState, action: UploadAction): UploadState {
   switch (action.type) {
@@ -79,7 +94,10 @@ export function UploadScreen() {
     if (import.meta.env.MODE === 'test') return
     const el = document.querySelector<HTMLElement>('[data-moment="word-highlight"]')
     if (!el) return
-    const w = window as unknown as { __momentsManual?: boolean; __mountMoment?: (el: HTMLElement) => unknown }
+    const w = window as unknown as {
+      __momentsManual?: boolean
+      __mountMoment?: (el: HTMLElement) => unknown
+    }
     if (w.__mountMoment) {
       w.__mountMoment(el)
       return
@@ -128,10 +146,18 @@ export function UploadScreen() {
     abortRef.current = controller
     send({ type: 'UPLOAD' })
     try {
-      const response = await api.uploadProject(file, { signal: controller.signal, timeoutMs: 60_000 })
+      const response = await api.uploadProject(file, {
+        signal: controller.signal,
+        timeoutMs: 60_000,
+      })
+      setProjectZip(file)
       dispatch({
         type: 'SESSION_CREATED',
-        session: { projectId: response.project_id, sessionToken: response.session_token, fileName: file.name },
+        session: {
+          projectId: response.project_id,
+          sessionToken: response.session_token,
+          fileName: file.name,
+        },
         files: { origin: 'client-preview', items: preview },
       })
       send({ type: 'RESET' })
@@ -188,17 +214,7 @@ export function UploadScreen() {
       aria-describedby="upload-hint"
     >
       <span className="uz__art" aria-hidden="true">
-        <Art
-          name="upload-zip"
-          fallback={
-            <svg viewBox="0 0 96 96" width="96" height="96">
-              <path className="uz-art__file" d="M22 10h34l18 18v52a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V16a6 6 0 0 1 6-6z" />
-              <path className="uz-art__fold" d="M56 10v18h18" />
-              <path className="uz-art__zip" d="M36 16h8M36 26h8M36 36h8M36 46h8" />
-              <path className="uz-art__arrow" d="M48 76V56M39 64l9-9 9 9" />
-            </svg>
-          }
-        />
+        <UploadArt />
       </span>
       <span className="uz__title">{dragging ? 'Pode soltar o arquivo' : 'Arraste um arquivo .zip aqui'}</span>
       <span id="upload-hint" className="uz__hint">
@@ -214,12 +230,15 @@ export function UploadScreen() {
           <div className="wrap hero__grid">
             <div className="hero-text">
               {statusLine}
-              <h1 id="hero-title" tabIndex={-1} className="hero__title">
-                Novo Projeto
-              </h1>
+              <div className="hero__head">
+                <h1 id="hero-title" tabIndex={-1} className="hero__title">
+                  Novo Projeto
+                </h1>
+                <Bit pose={uploaded ? 'comemorando' : upload.error ? 'confuso' : 'acenando'} className="hero__bit" />
+              </div>
               <p className="hero__lead">
-                Envie um .zip com seus módulos Verilog e o testbench. O Yosys monta o circuito, o Icarus roda a simulação
-                e você vê cada sinal mudar.
+                Envie um .zip com seus módulos Verilog e o testbench. O Yosys monta o circuito, o Icarus roda a
+                simulação e você vê cada sinal mudar.
               </p>
               <label htmlFor="upload-zip-input" className="sr-only">
                 Arquivo .zip do projeto
@@ -264,9 +283,18 @@ export function UploadScreen() {
               ) : (
                 <>
                   <div className="btn-row">
-                    <button type="button" className="btn bp" onClick={() => void submit()} disabled={!hasValidFile || uploading}>
+                    <button
+                      type="button"
+                      className="btn bp"
+                      onClick={() => void submit()}
+                      disabled={!hasValidFile || uploading}
+                    >
                       <IconUpload size={16} />
-                      {uploading ? 'Enviando…' : upload.phase === 'ERROR' && hasValidFile ? 'Tentar novamente' : 'Enviar projeto'}
+                      {uploading
+                        ? 'Enviando…'
+                        : upload.phase === 'ERROR' && hasValidFile
+                          ? 'Tentar novamente'
+                          : 'Enviar projeto'}
                     </button>
                     {uploading ? (
                       <button type="button" className="btn bs" onClick={() => abortRef.current?.abort()}>
@@ -329,36 +357,72 @@ export function UploadScreen() {
             <h2 id="how-title" className="section__title">
               Como funciona
             </h2>
-            <ol className="how__steps">
-              <li className="how__step">
+            <motion.ol
+              className="how__steps"
+              initial="off"
+              whileInView="on"
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ staggerChildren: 0.12 }}
+            >
+              <motion.li
+                className="how__step"
+                variants={{
+                  off: { opacity: 0, y: 28 },
+                  on: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              >
                 <span className="how__art" aria-hidden="true">
-                  <Art name="passo-1-codigo" fallback={<MiniArt kind="code" />} />
+                  <StepCode />
                 </span>
                 <b>Envie o projeto</b>
                 <p>Um .zip com os módulos e o testbench. A lista de arquivos aparece antes do envio.</p>
-              </li>
-              <li className="how__step">
+              </motion.li>
+              <motion.li
+                className="how__step"
+                variants={{
+                  off: { opacity: 0, y: 28 },
+                  on: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              >
                 <span className="how__art" aria-hidden="true">
-                  <Art name="passo-2-portas" fallback={<MiniArt kind="netlist" />} />
+                  <StepGates />
                 </span>
                 <b>Sintetize</b>
                 <p>O Yosys converte o código em portas e fios. Você escolhe os sinais que quer acompanhar.</p>
-              </li>
-              <li className="how__step">
+              </motion.li>
+              <motion.li
+                className="how__step"
+                variants={{
+                  off: { opacity: 0, y: 28 },
+                  on: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              >
                 <span className="how__art" aria-hidden="true">
-                  <Art name="passo-3-circuito" fallback={<MiniArt kind="mux" />} />
+                  <StepCircuit />
                 </span>
                 <b>Veja o circuito</b>
-                <p>O caminho de dados aparece com os símbolos do livro, com zoom, busca e a explicação de cada bloco.</p>
-              </li>
-              <li className="how__step">
+                <p>
+                  O caminho de dados aparece com os símbolos do livro, com zoom, busca e a explicação de cada bloco.
+                </p>
+              </motion.li>
+              <motion.li
+                className="how__step"
+                variants={{
+                  off: { opacity: 0, y: 28 },
+                  on: { opacity: 1, y: 0 },
+                }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+              >
                 <span className="how__art" aria-hidden="true">
-                  <Art name="passo-4-sinais" fallback={<MiniArt kind="clock" />} />
+                  <StepSignals />
                 </span>
                 <b>Simule</b>
                 <p>O Icarus roda o testbench. Os valores acendem nos fios e viram formas de onda.</p>
-              </li>
-            </ol>
+              </motion.li>
+            </motion.ol>
             <div className="how__zip">
               <div>
                 <b className="how__zip-title">O que vai no .zip</b>
@@ -402,7 +466,7 @@ export function UploadScreen() {
             </h2>
             <p className="hero__lead">Escolha o .zip do projeto e siga as quatro etapas até a simulação.</p>
             <div className="closing__art" aria-hidden="true">
-              <Art name="fechamento" fallback={<WaveArt />} />
+              <ClosingArt />
             </div>
             <div className="btn-row">
               <button

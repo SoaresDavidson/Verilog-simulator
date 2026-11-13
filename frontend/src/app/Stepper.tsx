@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { IconCheck } from '../components/icons'
 import type { StepId } from '../state/session'
@@ -40,6 +41,7 @@ export function Stepper({ nav }: { nav: StepNavigation }) {
                 onClick={() => nav.goTo(step.id)}
               >
                 <span className="n" aria-hidden="true">
+                  {step.status === 'active' && <motion.span layoutId="step-active" className="n__on" transition={{ type: 'spring', stiffness: 380, damping: 30 }} />}
                   <svg width="22" height="22" viewBox="0 0 24 24">
                     {STEP_ICON[step.id]}
                   </svg>

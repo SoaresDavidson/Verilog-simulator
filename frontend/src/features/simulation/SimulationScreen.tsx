@@ -99,35 +99,25 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
     if (outputSignals.length === 0) figures.push({ value: signals.length, label: 'sinais gravados' })
   }
 
+  // Antes de rodar, o painel de execução abre a tela; depois, o circuito e as ondas vêm primeiro.
+  const runPanel = (
+    <RunPanel
+      simulation={state.simulation}
+      unusableLog={result !== null && !sim?.usable}
+      canRun={state.session !== null}
+      onRun={run.start}
+      onCancel={run.cancel}
+    />
+  )
+
   return (
     <Screen
       title="Simulação"
-      description="Rode o testbench e acompanhe cada sinal ao longo do tempo, no diagrama e nas formas de onda."
+      description={sim?.usable ? undefined : 'Rode o testbench e acompanhe cada sinal ao longo do tempo, no diagrama e nas formas de onda.'}
       className="sim-scr"
       figures={figures}
     >
-      <RunPanel
-        simulation={state.simulation}
-        unusableLog={result !== null && !sim?.usable}
-        canRun={state.session !== null}
-        onRun={run.start}
-        onCancel={run.cancel}
-      />
-
-      {sim?.usable && (
-        <Explainer
-          id="simulacao"
-          title="Como ler as formas de onda"
-          items={[
-            { art: <MiniArt kind="clock" />, title: 'Clock', text: 'O sinal que sobe e desce sem parar. Os flip-flops agem na subida.' },
-            { art: <MiniArt kind="w0" />, title: '0 · baixo', text: 'Linha embaixo, em azul.' },
-            { art: <MiniArt kind="w1" />, title: '1 · alto', text: 'Linha em cima, em verde.' },
-            { art: <MiniArt kind="wx" />, title: 'X · indefinido', text: 'Ninguém atribuiu valor ainda (por exemplo, antes do reset).' },
-            { art: <MiniArt kind="wz" />, title: 'Z · alta impedância', text: 'O fio não está ligado a nada que o dirija.' },
-            { art: <MiniArt kind="wbus" />, title: 'Barramento', text: 'Vários bits juntos; o valor aparece em hexadecimal.' },
-          ]}
-        />
-      )}
+      {!sim?.usable && runPanel}
 
       {sim?.usable && (
         <div className="sim-main">
@@ -142,7 +132,7 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
           <SplitPane
             className="sim-split"
             orientation="vertical"
-            defaultRatio={0.45}
+            defaultRatio={0.56}
             minFirst={120}
             minSecond={160}
             separatorLabel="Redimensionar diagrama e formas de onda"
@@ -150,6 +140,24 @@ export function SimulationScreen({ diagramSlot }: SimulationScreenProps = {}) {
             second={waveModel && <Waveform model={waveModel} onSeekTime={playback.seekTime} />}
           />
         </div>
+      )}
+
+      {sim?.usable && runPanel}
+
+      {sim?.usable && (
+        <Explainer
+          id="simulacao"
+          defaultOpen={false}
+          title="Como ler as formas de onda"
+          items={[
+            { art: <MiniArt kind="clock" />, title: 'Clock', text: 'O sinal que sobe e desce sem parar. Os flip-flops agem na subida.' },
+            { art: <MiniArt kind="w0" />, title: '0 · baixo', text: 'Linha embaixo, em azul.' },
+            { art: <MiniArt kind="w1" />, title: '1 · alto', text: 'Linha em cima, em verde.' },
+            { art: <MiniArt kind="wx" />, title: 'X · indefinido', text: 'Ninguém atribuiu valor ainda (por exemplo, antes do reset).' },
+            { art: <MiniArt kind="wz" />, title: 'Z · alta impedância', text: 'O fio não está ligado a nada que o dirija.' },
+            { art: <MiniArt kind="wbus" />, title: 'Barramento', text: 'Vários bits juntos; o valor aparece em hexadecimal.' },
+          ]}
+        />
       )}
 
       <div className="scr__actions">

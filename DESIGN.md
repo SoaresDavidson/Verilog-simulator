@@ -1,6 +1,6 @@
 # Design
 
-Identidade "Do código ao sinal" (2026-11-12). Substitui a "Maleta Didática".
+Identidade "Do código ao sinal" (2026-11-12, paleta Verilog fechada em 2026-11-13). Substitui a "Maleta Didática".
 
 ## Ideia
 
@@ -9,20 +9,31 @@ o mesmo sinal aparece com a mesma cor no código, no fio e na onda. Tudo que con
 
 ## Cor
 
-Tokens em `frontend/src/styles/tokens.css`. Os nomes antigos foram mantidos porque as features leem.
+Tokens em `frontend/src/styles/tokens.css`. Cada paleta define só quatro cores-semente (`--p-ink`,
+`--p-paper`, `--p-gate`, `--p-action`); o resto deriva delas com `color-mix`, no claro e no escuro.
+Os nomes antigos de token foram mantidos porque as features leem.
+
+Paleta padrão: **Verilog**, tirada do símbolo da linguagem (a elipse verde-lima).
 
 | Papel | Claro | Uso |
 |---|---|---|
-| Papel | `--bg` #F1EEFB | fundo lavanda |
-| Tinta | `--fg` / `--pcb` #1A1238 | texto, cabeçalho, blocos de código |
-| Porta | `--gate` #FFD23F | portas lógicas, etapa atual, destaques didáticos |
-| Ação | `--copper` #E11D5B | botão principal, cursor de tempo |
-| Sinal 1 | `--s1` texto, `--w1` traço | verde, só para valor 1 |
+| Papel | `--bg` #EEF6EC | fundo branco-esverdeado |
+| Tinta | `--fg` / `--pcb` #0C2018 | texto, cabeçalho, blocos de código |
+| Destaque | `--gate` #8FD645 | logo, etapa atual, narração, mascote |
+| Corpo das portas | `--gate-fill` | verde-lima clareado, com contorno de tinta |
+| Ação | `--copper` #0E6B3A | botão principal (no escuro vira o verde-lima) |
+| Sinal 1 | `--s1` texto, `--w1` traço | verde-esmeralda, só para valor 1 |
 | Sinal 0 | `--s0` texto, `--w0` traço | azul, só para valor 0 |
 | X / Z | `--sx` laranja, `--sz` roxo | indefinido e alta impedância |
 
-Regra: verde, azul, laranja e roxo são dado. Não usar como decoração.
-Tema escuro em `:root[data-theme="dark"]`, com o amarelo virando a cor de seleção.
+Regras:
+
+- Esmeralda, azul, laranja e roxo são dado. Não usar como decoração.
+- Sem amarelo na paleta padrão.
+- Tema escuro (`data-theme="dark"`): fundo quase preto e cinzas neutros em todas as paletas; a tinta
+  só tempera os cinzas.
+- Outras paletas (`data-palette`): `grafite`, `placa`, `tinta`. Escolha do aluno pelo seletor do
+  cabeçalho (`components/PaletteSwitch.tsx`), salva no navegador.
 
 ## Tipo
 
@@ -45,5 +56,7 @@ ilustrações têm contorno grosso de tinta.
 
 - Cabeçalho de tinta com a trilha de etapas (`app/Stepper.tsx`).
 - Demonstração viva da entrada (`components/LiveDemo.tsx`), conteúdo de exemplo.
-- Encaixe de ilustração com reserva em SVG (`Art` em `components/art.tsx`); briefs em
-  `docs/design/imagens.md`.
+- Ilustrações em SVG animadas com Motion (`components/illustrations.tsx`): o mascote Bit em seis poses
+  e as cenas do caminho. Briefs de referência em `docs/design/imagens.md`.
+- Motion (`motion/react`) cuida do selo da etapa que desliza, da troca de tela e das entradas em
+  lista; `MotionConfig reducedMotion="user"` fica em `app/AppProviders.tsx`.
