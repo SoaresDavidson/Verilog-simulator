@@ -4,7 +4,7 @@ import { floorIndex, type SimIndex } from './simlog'
 
 /** Intervalo base entre passos do playback em 1x. */
 export const PLAYBACK_BASE_MS = 500
-export const PLAYBACK_SPEEDS = [0.5, 1, 2, 5] as const
+export const PLAYBACK_SPEEDS = [0.1, 0.25, 0.5, 1, 2, 5] as const
 /** Quantos timestamps existentes cada passo avança. */
 export const PLAYBACK_INTERVALS = [1, 5, 10] as const
 

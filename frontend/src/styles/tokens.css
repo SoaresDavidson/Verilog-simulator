@@ -1,113 +1,252 @@
 /*
- * Design tokens (portados de prototype/styles.css).
- * Tema escuro = padrão do protótipo. Tema claro via preferência do sistema
- * ou `<html data-theme="light">` (ThemeToggle).
+ * Identidade "Do código ao sinal": o próprio Verilog é o protagonista.
+ *
+ * Cada paleta define só as cores-semente (--p-*): tinta, papel, porta e ação.
+ * Todo o resto deriva delas com color-mix, no claro e no escuro. Verde e azul
+ * ficam reservados para o valor dos sinais (1 e 0) em todas as paletas.
+ *
+ * Paleta: `<html data-palette="...">` (padrão: verilog). Escuro: `data-theme="dark"`.
+ * Os nomes antigos (--bg, --surface, --accent, --copper, --jack-*...) continuam
+ * valendo porque as features e o renderizador da forma de onda leem esses nomes.
  */
 :root {
-  color-scheme: dark;
-  --bg: #0b1519;
-  --surface: #131d22;
-  --surface-ct: #172126;
-  --surface-hi: #212b31;
-  --surface-highest: #2c363c;
-  --fg: #d9e4eb;
-  --muted: #859491;
-  --outline: #859491;
-  --ov: #3b4a47;
-  --accent: #51f3e3;
-  --accent-ct: #20d6c7;
-  --accent-dim: #2fddce;
-  --accent-lt: rgba(81, 243, 227, 0.1);
-  --accent-bd: rgba(81, 243, 227, 0.2);
-  --accent-hv: #3dd4c5;
-  --on-accent: #0b1519;
-  --danger: #ffb4ab;
-  --danger-bg: rgba(255, 180, 171, 0.12);
-  --on-danger: #0b1519;
-  --hover: rgba(255, 255, 255, 0.04);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-
-  /* Estados lógicos 0 / 1 / X / Z */
-  --s0: #5b9bd5;
-  --s0b: rgba(91, 155, 213, 0.15);
-  --s1: #74dc8b;
-  --s1b: rgba(116, 220, 139, 0.15);
-  --sx: #ffd59d;
-  --sxb: rgba(255, 213, 157, 0.15);
-  --sz: #b39ddb;
-  --szb: rgba(179, 157, 219, 0.15);
-
-  --r: 4px;
-  --fd: "Fira Code", "JetBrains Mono", "SF Mono", "Cascadia Code", monospace;
-  --fb: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --fh: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --hh: 48px;
+  /* Verilog (padrão): o verde-lima do símbolo da linguagem sobre tinta verde-escura */
+  --p-ink: #0c2018;
+  --p-paper: #eef6ec;
+  --p-gate: #8fd645;
+  --p-action: #0e6b3a;
+  --p-action-hv: #0a5630;
+  --p-action-ink: #0a5c31;
+}
+/* Tinta roxa */
+:root[data-palette="tinta"] {
+  --p-ink: #1a1238;
+  --p-paper: #f1eefb;
+  --p-gate: #ffd23f;
+  --p-action: #e11d5b;
+  --p-action-hv: #c8144e;
+  --p-action-ink: #b5103f;
+}
+/* Placa: verde-petróleo de máscara de solda com dourado de trilha */
+:root[data-palette="placa"] {
+  --p-ink: #0a2b30;
+  --p-paper: #e9f3f1;
+  --p-gate: #ffc23d;
+  --p-action: #cf3a1b;
+  --p-action-hv: #b32e12;
+  --p-action-ink: #a3290f;
+}
+/* Grafite: neutro, com o verde do Verilog só nos destaques */
+:root[data-palette="grafite"] {
+  --p-ink: #17181c;
+  --p-paper: #f1f2f4;
+  --p-gate: #8fd645;
+  --p-action: #17181c;
+  --p-action-hv: #000000;
+  --p-action-ink: #17181c;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --bg: #f4f7f8;
-    --surface: #ffffff;
-    --surface-ct: #f7fafb;
-    --surface-hi: #e8eef0;
-    --surface-highest: #dbe4e7;
-    --fg: #142026;
-    --muted: #4f5d5a;
-    --outline: #4f5d5a;
-    --ov: #c2cecb;
-    --accent: #00756c;
-    --accent-ct: #00857a;
-    --accent-dim: #00695f;
-    --accent-lt: rgba(0, 117, 108, 0.1);
-    --accent-bd: rgba(0, 117, 108, 0.25);
-    --accent-hv: #005f57;
-    --on-accent: #ffffff;
-    --danger: #b3261e;
-    --danger-bg: rgba(179, 38, 30, 0.08);
-    --on-danger: #ffffff;
-    --hover: rgba(0, 0, 0, 0.04);
-    --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
-    --s0: #2f6fae;
-    --s0b: rgba(47, 111, 174, 0.12);
-    --s1: #2b7f41;
-    --s1b: rgba(43, 127, 65, 0.12);
-    --sx: #8f5600;
-    --sxb: rgba(143, 86, 0, 0.12);
-    --sz: #6a4fa3;
-    --szb: rgba(106, 79, 163, 0.12);
-  }
-}
-
-:root[data-theme="light"] {
+:root {
   color-scheme: light;
-  --bg: #f4f7f8;
+
+  /* Papel e superfícies */
+  --bg: var(--p-paper);
   --surface: #ffffff;
-  --surface-ct: #f7fafb;
-  --surface-hi: #e8eef0;
-  --surface-highest: #dbe4e7;
-  --fg: #142026;
-  --muted: #4f5d5a;
-  --outline: #4f5d5a;
-  --ov: #c2cecb;
-  --accent: #00756c;
-  --accent-ct: #00857a;
-  --accent-dim: #00695f;
-  --accent-lt: rgba(0, 117, 108, 0.1);
-  --accent-bd: rgba(0, 117, 108, 0.25);
-  --accent-hv: #005f57;
+  --surface-ct: color-mix(in srgb, var(--p-paper) 50%, #fff);
+  --surface-hi: color-mix(in srgb, var(--p-ink) 5%, var(--p-paper));
+  --surface-highest: color-mix(in srgb, var(--p-ink) 13%, var(--p-paper));
+  --sunken: var(--surface-hi);
+  --hole: color-mix(in srgb, var(--p-ink) 20%, var(--p-paper));
+
+  /* Tinta */
+  --fg: var(--p-ink);
+  --muted: color-mix(in srgb, var(--p-ink) 72%, #fff);
+  --faint: color-mix(in srgb, var(--p-ink) 62%, #fff);
+  --outline: color-mix(in srgb, var(--p-ink) 46%, #fff);
+  --ov: color-mix(in srgb, var(--p-ink) 15%, #fff);
+  --ov-strong: color-mix(in srgb, var(--p-ink) 32%, #fff);
+  --silk: var(--p-ink);
+  --silk-w: 0px;
+  /* Tinta sobre amarelo e traço das ilustrações: escura nos dois temas */
+  --on-gate: var(--p-ink);
+
+  /* Faixa de tinta (cabeçalho, código, declaração) */
+  --pcb: var(--p-ink);
+  --pcb-2: color-mix(in srgb, var(--p-ink) 86%, #fff);
+  --pcb-3: color-mix(in srgb, var(--p-ink) 76%, #fff);
+  --pcb-edge: color-mix(in srgb, var(--p-ink) 66%, #fff);
+  --pcb-ink: #ffffff;
+  --pcb-mute: color-mix(in srgb, var(--p-ink) 22%, #fff);
+  --pcb-faint: color-mix(in srgb, var(--p-ink) 40%, #fff);
+  --pcb-line: rgba(255, 255, 255, 0.14);
+  --glyph-ink: var(--p-ink);
+
+  /* Seleção e foco: tinta */
+  --accent: var(--p-ink);
+  --accent-ct: var(--pcb-2);
+  --accent-dim: var(--pcb-3);
+  --accent-lt: color-mix(in srgb, var(--p-ink) 7%, transparent);
+  --accent-bd: color-mix(in srgb, var(--p-ink) 30%, transparent);
+  --accent-hv: color-mix(in srgb, var(--p-ink) 80%, #000);
   --on-accent: #ffffff;
-  --danger: #b3261e;
-  --danger-bg: rgba(179, 38, 30, 0.08);
+
+  /* Cores do sistema */
+  --jack-red: var(--p-action);
+  --jack-black: var(--p-ink);
+  --jack-yellow: var(--p-gate);
+  --jack-blue: #2f5bea;
+  --jack-green: #0a8a4e;
+
+  /* Ação principal */
+  --copper: var(--p-action);
+  --copper-hv: var(--p-action-hv);
+  --copper-2: color-mix(in srgb, var(--p-action) 62%, #fff);
+  --copper-lt: color-mix(in srgb, var(--p-action) 13%, #fff);
+  --copper-ink: var(--p-action-ink);
+  --on-copper: #ffffff;
+  --key-shadow: var(--p-action-hv);
+
+  /* Portas e destaque */
+  --gold: var(--p-gate);
+  --gold-lt: color-mix(in srgb, var(--p-gate) 30%, #fff);
+  --gold-ink: #5e4700;
+  --gate: var(--p-gate);
+  /* Corpo das portas lógicas: versão clara do destaque, para não brigar com fio em 1 */
+  --gate-fill: color-mix(in srgb, var(--p-gate) 42%, #fff);
+
+  --tile-blue: #2f5bea;
+
+  --seg-bg: var(--p-ink);
+  --seg-on: var(--p-gate);
+  --seg-dim: var(--pcb-mute);
+
+  --danger: #c5162f;
+  --danger-bg: rgba(197, 22, 47, 0.08);
   --on-danger: #ffffff;
-  --hover: rgba(0, 0, 0, 0.04);
-  --shadow: 0 4px 16px rgba(20, 32, 38, 0.15);
-  --s0: #2f6fae;
-  --s0b: rgba(47, 111, 174, 0.12);
-  --s1: #2b7f41;
-  --s1b: rgba(43, 127, 65, 0.12);
-  --sx: #8f5600;
-  --sxb: rgba(143, 86, 0, 0.12);
-  --sz: #6a4fa3;
-  --szb: rgba(106, 79, 163, 0.12);
+  --hover: color-mix(in srgb, var(--p-ink) 6%, transparent);
+
+  --sh: color-mix(in srgb, var(--p-ink) 30%, transparent);
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--p-ink) 7%, transparent), 0 4px 10px -6px color-mix(in srgb, var(--p-ink) 20%, transparent);
+  --shadow: 0 2px 4px color-mix(in srgb, var(--p-ink) 7%, transparent), 0 12px 28px -14px var(--sh);
+  --shadow-lg: 0 4px 8px color-mix(in srgb, var(--p-ink) 9%, transparent), 0 28px 56px -22px color-mix(in srgb, var(--p-ink) 42%, transparent);
+
+  /* Estados lógicos 0 / 1 / X / Z (azul, verde, laranja, roxo, como no README) */
+  --s0: #2f5bea;
+  --s0b: rgba(47, 91, 234, 0.12);
+  --s1: #0a8a4e;
+  --s1b: rgba(10, 138, 78, 0.13);
+  --sx: #c25e00;
+  --sxb: rgba(194, 94, 0, 0.13);
+  --sz: #7a4fd0;
+  --szb: rgba(122, 79, 208, 0.12);
+  /* Versões vivas para traços grossos (fios, pulsos) */
+  --w0: #3d6bff;
+  --w1: #0fb66b;
+  --w1-deep: #0a8f52;
+
+  /* Forma */
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r: 12px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
+  --r-pill: 999px;
+
+  /* Tipografia: Bricolage Grotesque na interface, JetBrains Mono em código e dados */
+  --fb: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fh: "Bricolage Grotesque", system-ui, sans-serif;
+  --fd: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+
+  --fs-display: clamp(36px, 2.4vw + 18px, 58px);
+  --fs-plate: 28px;
+  --fs-h2: 17px;
+  --fs-body: 16px;
+  --fs-sm: 14px;
+  --fs-xs: 12.5px;
+  --fs-data: 13px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.3, 1.5, 0.6, 1);
+  --t-fast: 120ms;
+  --t: 220ms;
+  --t-slow: 460ms;
+
+  --hh: 76px;
+  --screw: none;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Fundo quase preto em todas as paletas; a tinta só tempera os cinzas. */
+  --bg: color-mix(in srgb, var(--p-ink) 18%, #0a0b0c);
+  --surface: color-mix(in srgb, var(--p-ink) 18%, #1a1b1e);
+  --surface-ct: color-mix(in srgb, var(--p-ink) 18%, #131416);
+  --surface-hi: color-mix(in srgb, var(--p-ink) 18%, #26272b);
+  --surface-highest: color-mix(in srgb, var(--p-ink) 18%, #35373c);
+  --sunken: color-mix(in srgb, var(--p-ink) 18%, #0d0e0f);
+  --hole: color-mix(in srgb, var(--p-ink) 18%, #3a3c41);
+  --gate-fill: color-mix(in srgb, var(--p-gate) 78%, #fff);
+
+  --fg: color-mix(in srgb, var(--p-paper) 55%, #fff);
+  --muted: color-mix(in srgb, var(--p-paper) 30%, #b4b7be);
+  --faint: color-mix(in srgb, var(--p-paper) 15%, #8b8e96);
+  --outline: #71747c;
+  --ov: color-mix(in srgb, var(--p-ink) 18%, #2d2f34);
+  --ov-strong: color-mix(in srgb, var(--p-ink) 18%, #5a5d65);
+  --silk: color-mix(in srgb, var(--p-ink) 18%, #6a6d76);
+
+  --pcb: color-mix(in srgb, var(--p-ink) 22%, #050506);
+  --pcb-2: color-mix(in srgb, var(--p-ink) 18%, #1d1e21);
+  --pcb-3: color-mix(in srgb, var(--p-ink) 18%, #2b2c30);
+  --pcb-edge: color-mix(in srgb, var(--p-ink) 18%, #44464c);
+  --pcb-mute: #d7d9de;
+  --pcb-faint: #9a9da6;
+  --glyph-ink: var(--fg);
+
+  --accent: var(--p-gate);
+  --accent-ct: color-mix(in srgb, var(--p-gate) 75%, #fff);
+  --accent-dim: color-mix(in srgb, var(--p-gate) 80%, #000);
+  --accent-lt: color-mix(in srgb, var(--p-gate) 13%, transparent);
+  --accent-bd: color-mix(in srgb, var(--p-gate) 38%, transparent);
+  --accent-hv: color-mix(in srgb, var(--p-gate) 75%, #fff);
+  --on-accent: var(--p-ink);
+
+  --jack-red: var(--copper);
+  --jack-black: var(--pcb);
+  --jack-blue: #7c9bff;
+  --jack-green: #3fd98a;
+
+  /* No escuro a ação principal usa o destaque da paleta, com tinta escura por cima. */
+  --copper: var(--p-gate);
+  --copper-hv: color-mix(in srgb, var(--p-gate) 80%, #fff);
+  --copper-2: color-mix(in srgb, var(--p-gate) 70%, #fff);
+  --copper-lt: color-mix(in srgb, var(--p-gate) 16%, transparent);
+  --copper-ink: var(--p-gate);
+  --on-copper: var(--p-ink);
+  --key-shadow: var(--p-action-hv);
+
+  --gold-lt: color-mix(in srgb, var(--p-gate) 14%, transparent);
+  --gold-ink: var(--p-gate);
+
+  --danger: #ff8a9a;
+  --danger-bg: rgba(255, 138, 154, 0.1);
+  --on-danger: #24030f;
+  --hover: color-mix(in srgb, var(--p-paper) 7%, transparent);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 14px 30px -14px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.45), 0 28px 56px -22px rgba(0, 0, 0, 0.8);
+
+  --s0: #7c9bff;
+  --s0b: rgba(124, 155, 255, 0.16);
+  --s1: #3fd98a;
+  --s1b: rgba(63, 217, 138, 0.15);
+  --sx: #ff9f43;
+  --sxb: rgba(255, 159, 67, 0.15);
+  --sz: #b79cff;
+  --szb: rgba(183, 156, 255, 0.15);
+  --w0: #6f8dff;
+  --w1: #2fd683;
 }

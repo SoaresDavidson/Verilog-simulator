@@ -1,73 +1,220 @@
+/* Listas roláveis contêm seus textos ocultos (sr-only) — sem isso eles escapam
+   do recorte e esticam a rolagem da página. */
+ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position: relative; }
 #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
 
+/* Superfície padrão de painel (classe antiga `.module`) */
+.module { position: relative; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.silk { font: 700 13px/1.2 var(--fb); color: var(--muted); }
+
+/* ------------------------------------------------------------------ */
+/* Cabeçalho: faixa de tinta com a marca e a trilha código → sinais     */
+/* ------------------------------------------------------------------ */
 .app-header {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px;
-  padding: 0 20px; min-height: var(--hh);
-  background: var(--surface-hi); border-bottom: 1px solid var(--ov);
-  flex-shrink: 0; z-index: 10;
+  flex-shrink: 0; z-index: 10; position: relative; padding: 0 24px;
+  background: var(--pcb); color: var(--pcb-ink);
+  /* Quem mora no cabeçalho herda superfícies escuras. */
+  --surface: var(--pcb-2); --surface-ct: var(--pcb-2); --surface-hi: var(--pcb-3); --surface-highest: var(--pcb-edge);
+  --fg: #ffffff; --muted: var(--pcb-mute); --faint: var(--pcb-faint); --ov: var(--pcb-edge); --ov-strong: var(--pcb-faint);
+  --hover: rgba(255, 255, 255, 0.08); --silk: var(--pcb-faint); --danger: #ff8a9a; --danger-bg: rgba(255, 138, 154, 0.12);
+  --s1: #3fd98a; --sx: #ffb35c;
 }
-.logo { font-family: var(--fh); font-size: 15px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
-.logo span { color: var(--accent); }
+/* A trilha nunca encolhe abaixo do próprio conteúdo; quem cede espaço são as ações (o crachá da sessão). */
+.app-header__bar { display: grid; grid-template-columns: auto minmax(max-content, 1fr) minmax(0, auto); align-items: center; gap: 10px 24px; min-height: var(--hh); }
+.app-header :focus-visible { outline-color: var(--gate); }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand__plaque { display: grid; place-items: center; flex-shrink: 0; rotate: -4deg; transition: rotate var(--t) var(--ease-spring), scale var(--t) var(--ease-spring); }
+.brand:hover .brand__plaque { rotate: 4deg; scale: 1.08; }
+.brand__name { font: 800 22px/1 var(--fh); letter-spacing: -0.03em; white-space: nowrap; }
+.brand__name b { font-weight: 800; color: var(--gate); }
+
+.brand-mark__plate { fill: var(--gate); }
+.brand-mark__gate { fill: var(--on-gate); }
+.brand-mark__in { fill: none; stroke: var(--on-gate); stroke-width: 3.6; stroke-linecap: round; }
+.brand-mark__code { fill: none; stroke: var(--gate); stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.brand-mark__out { fill: var(--on-gate); transition: fill var(--t-slow) var(--ease-out); }
+.brand-mark__out.is-lit { fill: #0a8a4e; }
+
+/* A assinatura da barra: uma malha de furos de placa e um clock correndo na borda de baixo. */
+.app-header { background-image: radial-gradient(color-mix(in srgb, #fff 10%, transparent) 1px, transparent 1.3px); background-size: 18px 18px; }
+.app-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--gate); pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='8'%3E%3Cpath d='M0 7H14V1H42V7H56' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") 0 0 / 56px 8px repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='8'%3E%3Cpath d='M0 7H14V1H42V7H56' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") 0 0 / 56px 8px repeat-x;
+  animation: clock-run 2.8s linear infinite;
+}
+@keyframes clock-run { to { -webkit-mask-position: 56px 0; mask-position: 56px 0; } }
+
+/* Seletor de paleta */
+.palette { display: flex; gap: 4px; padding: 5px; border-radius: var(--r-pill); background: var(--surface); }
+.palette__opt {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 2px var(--pcb-edge);
+  transition: scale var(--t) var(--ease-spring), box-shadow var(--t) var(--ease-out);
+}
+.palette__opt:hover { scale: 1.15; }
+.palette__opt[aria-checked="true"] { box-shadow: 0 0 0 2.5px var(--gate); }
+.palette__dot { width: 10px; height: 10px; border-radius: 50%; }
+@media (max-width: 760px) { .palette { display: none; } }
+
+.header-actions { display: flex; align-items: center; gap: 8px; justify-self: end; min-width: 0; max-width: 100%; }
+.header-actions > * { flex-shrink: 0; }
+.header-actions > .sbadge { flex: 0 1 auto; }
 .sbadge {
-  font-family: var(--fd); font-size: 10px; padding: 2px 8px;
-  background: var(--accent-lt); color: var(--accent);
-  border-radius: var(--r); border: 1px solid var(--accent-bd);
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 240px;
+  font: 600 12px var(--fd); color: var(--muted); padding: 7px 12px; border-radius: var(--r-sm); background: var(--surface);
 }
-.header-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+.sbadge__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--w1); flex-shrink: 0; }
+.sbadge__txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+@media (max-width: 1770px) { .sbadge { display: none !important; } }
+header.nav .sbadge { display: none !important; }
 
-/* Stepper (STEPS / rStp do protótipo) */
-.stepper { margin-left: auto; flex-shrink: 0; }
-.stepper__list { display: flex; align-items: center; gap: 2px; list-style: none; }
-.stepper__item { display: flex; align-items: center; gap: 2px; }
+/* ------------------------------------------------------------------ */
+/* Trilha de etapas: o fio entre duas etapas conduz quando a seguinte   */
+/* está liberada. Amarelo = onde você está, verde = já passou.          */
+/* ------------------------------------------------------------------ */
+.stepper { justify-self: center; min-width: 0; }
+.stepper__list { display: flex; align-items: center; list-style: none; }
+.stepper__item { display: flex; align-items: center; }
+.trace { width: clamp(18px, 3vw, 56px); height: 6px; border-radius: 3px; background: var(--pcb-3); flex-shrink: 0; margin: 0 2px; }
+.trace.is-live {
+  background: repeating-linear-gradient(90deg, var(--w1) 0 12px, var(--w1-deep) 12px 24px); background-size: 24px 6px;
+  animation: trace-flow 0.9s linear infinite;
+}
+@keyframes trace-flow { to { background-position: 24px 0; } }
+
 .step {
-  display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted);
-  padding: 6px 12px; border-radius: var(--r); transition: all 0.2s; white-space: nowrap;
-  border-bottom: 2px solid transparent;
+  display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: var(--r-md);
+  font: 700 14.5px/1 var(--fb); color: var(--pcb-faint); white-space: nowrap;
+  transition: background var(--t) var(--ease-out), color var(--t) var(--ease-out);
 }
-.step:hover { background: var(--hover); }
-.step.active { color: var(--accent); font-weight: 600; border-bottom-color: var(--accent); cursor: default; }
-.step.done { color: var(--s1); }
-.step.done:hover, .step.available:hover { background: var(--accent-lt); }
 .step .n {
-  width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; border: 1.5px solid var(--ov); background: transparent; flex-shrink: 0;
+  position: relative; width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0; display: grid; place-items: center;
+  background: var(--pcb-2); color: var(--pcb-mute); box-shadow: inset 0 0 0 2px var(--pcb-edge);
+  transition: transform var(--t) var(--ease-spring), background var(--t) var(--ease-out);
 }
-.step.active .n { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-.step.done .n { border-color: var(--s1); background: var(--s1); color: var(--on-accent); }
-.step.locked { cursor: not-allowed; opacity: 0.45; }
-.step.locked:hover { opacity: 0.6; background: transparent; }
-.sep { width: 12px; height: 1px; background: var(--ov); flex-shrink: 0; }
+.n__ok {
+  position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--w1); color: #fff; box-shadow: 0 0 0 2.5px var(--pcb);
+}
+.step:hover:not(.locked):not(.active) { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.step:hover:not(.locked):not(.active) .n { transform: translateY(-2px); }
+.step.available { color: var(--pcb-mute); }
+.step.available .n { box-shadow: inset 0 0 0 2px var(--gate); color: var(--gate); }
+.step.done { color: #fff; }
+.step.done .n { box-shadow: inset 0 0 0 2px var(--w1); color: #fff; }
+.step.active { color: #fff; cursor: default; }
+.step.active .n { background: none; color: var(--on-gate); box-shadow: none; }
+/* O selo amarelo desliza de uma etapa para a outra (Motion layoutId). */
+.n__on { position: absolute; inset: -2px; border-radius: 14px; background: var(--gate); rotate: -4deg; }
+.step .n > svg { position: relative; }
+.step.locked { cursor: not-allowed; opacity: 0.6; }
 
+/* ------------------------------------------------------------------ */
+/* Área principal e telas                                               */
+/* ------------------------------------------------------------------ */
 main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: relative; }
-main:focus { outline: none; }
 
-/* Telas (.scr) */
-.scr { display: flex; flex-direction: column; gap: 12px; padding: 16px; min-height: 100%; }
-.scr__head { display: flex; flex-direction: column; gap: 4px; }
-.scr__title { font-family: var(--fd); font-size: 20px; }
-.scr__title:focus { outline: none; }
-.scr__title:focus-visible { outline: 2px solid var(--accent); }
-.scr__desc { color: var(--muted); font-size: 13px; }
-.scr__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.scr--center { max-width: 560px; width: 100%; margin: 0 auto; justify-content: center; gap: 20px; }
-.scr--center .scr__head { text-align: center; }
-
-.split { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; flex: 1; min-height: 0; }
-.splitw { grid-template-columns: 280px minmax(0, 1fr); }
-.sp { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-width: 0; }
-
-@media (max-width: 768px) {
-  .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-  .step { padding: 6px 8px; position: relative; }
-  .split, .splitw { grid-template-columns: minmax(0, 1fr); }
-  .sp { max-height: none; }
+.scr {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 0 24px; min-height: 100%; max-width: 1600px; margin: 0 auto; width: 100%;
 }
+.scr-wrap { min-height: 100%; display: flex; flex-direction: column; }
+.scr-wrap > .scr { flex: 1; min-height: 0; }
 
-@media (max-width: 640px) {
-  .app-header { padding: 6px 12px; }
-  .stepper { order: 10; width: 100%; margin-left: 0; }
+/* Abertura da etapa: título grande direto no papel, números e ficha do projeto */
+.plate {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 28px;
+  padding: 30px 4px 6px; background: none; box-shadow: none;
+}
+.plate__main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.scr__title { font: 800 var(--fs-display)/0.98 var(--fh); letter-spacing: -0.04em; color: var(--fg); }
+.scr__title:focus, .scr__title:focus-visible { outline: none; box-shadow: none; }
+.scr__desc { color: var(--muted); font-size: 17px; max-width: 62ch; }
+.plate__figures { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.figure {
+  display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-radius: var(--r-pill);
+  background: var(--surface); box-shadow: var(--shadow-sm);
+}
+.figure b { font: 800 var(--fs-plate)/1 var(--fh); letter-spacing: -0.02em; color: var(--fg); font-variant-numeric: tabular-nums; animation: fig-tick 320ms var(--ease-spring); }
+.figure span { font: 600 14px/1 var(--fb); color: var(--muted); }
+.figure--accent { background: var(--gate); }
+.figure--accent b, .figure--accent span { color: var(--on-gate); }
+@keyframes fig-tick { from { transform: translateY(6px); opacity: 0; } }
+
+.carimbo { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font: 600 12.5px var(--fd); color: var(--fg); }
+.carimbo > div { padding: 8px 12px; min-width: 0; max-width: 220px; border-radius: var(--r-sm); background: var(--surface-hi); }
+.carimbo dt { font: 600 12px/1.3 var(--fb); color: var(--muted); }
+.carimbo dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Barra de avanço: flutua no rodapé e diz o que falta */
+.scr__actions {
+  position: sticky; bottom: 0; z-index: 8; margin-top: auto;
+  padding: 12px 0 16px; background: linear-gradient(180deg, transparent, var(--bg) 30%);
+}
+.scr__actions-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; padding: 10px 12px 10px 22px;
+  border-radius: var(--r-xl); box-shadow: var(--shadow);
+}
+.scr__hint { margin-right: auto; display: flex; align-items: center; gap: 12px; font-size: 15.5px; font-weight: 600; color: var(--fg); min-width: 0; }
+.scr__hint svg { flex-shrink: 0; }
+.scr__hint b { font-weight: 800; }
+.led { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; display: inline-block; background: var(--ov-strong); }
+.led--ok { background: var(--w1); box-shadow: 0 0 0 4px var(--s1b); }
+.led--warn { background: #f5a300; box-shadow: 0 0 0 4px var(--gold-lt); }
+.led--err { background: var(--danger); box-shadow: 0 0 0 4px var(--danger-bg); }
+.led--run { background: #f5a300; animation: led-blink 0.9s var(--ease-in-out) infinite; }
+@keyframes led-blink { 50% { opacity: 0.25; } }
+
+.scr--center { max-width: 640px; }
+
+.split { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; flex: 1; min-height: 0; align-items: start; }
+.splitw { grid-template-columns: 320px minmax(0, 1fr); }
+.sp { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* O cabeçalho cede espaço em degraus, medidos com a barra cheia (sessão ativa):
+   some o crachá da sessão, depois os nomes das etapas que não são a atual,
+   depois o texto do botão de encerrar, e por fim a trilha desce para a segunda linha.
+   Na página de entrada a barra tem no máximo 1360px, então já começa compacta. */
+header.nav .step:not(.active) .step__label, header.nav .end-session__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+header.nav .step:not(.active) { padding: 6px; position: relative; }
+header.nav .end-session > .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; }
+@media (max-width: 1660px) {
+  .step:not(.active) .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .step:not(.active) { padding: 6px; position: relative; }
+}
+@media (max-width: 1430px) {
+  .end-session__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .end-session > .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; }
+}
+@media (max-width: 1300px) {
+  .app-header__bar { grid-template-columns: auto auto; padding-top: 10px; }
+  .stepper { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; padding-bottom: 12px; overflow-x: auto; }
   .stepper__list { justify-content: center; }
-  .header-actions { margin-left: auto; }
-  .scr { padding: 12px; }
 }
+@media (max-width: 900px) {
+  .plate { grid-template-columns: minmax(0, 1fr); }
+  .carimbo { justify-content: flex-start; }
+}
+@media (max-width: 860px) {
+  .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .step { padding: 6px; position: relative; }
+  .split, .splitw { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .app-header { padding: 0 16px; }
+  .app-header__bar { gap: 8px 10px; grid-template-columns: minmax(0, 1fr) auto; }
+  header.nav .app-header__bar { padding-top: 0; }
+  .brand { overflow: hidden; }
+  .brand__name { font-size: 17px; }
+  .scr { padding: 0 12px; gap: 12px; }
+  .plate { padding: 20px 2px 4px; }
+  .figure { padding: 8px 12px; }
+  .figure b { font-size: 22px; }
+  .scr__actions { padding: 8px 0 10px; }
+  .scr__actions-bar { padding: 14px 16px; gap: 8px; border-radius: var(--r-lg); }
+  .scr__hint { width: 100%; font-size: 14px; margin-bottom: 2px; }
+  .scr__actions-bar > .btn { flex: 1 1 0; min-width: 0; white-space: normal; padding-left: 10px; padding-right: 10px; }
+}
+
+@media (max-width: 640px) { .explainer__hint { display: none; } .explainer__sum { padding: 16px 20px; } .explainer__list { padding: 0 12px 14px; } }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type RefObject } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent, type RefObject, type CSSProperties } from 'react'
 import { formatTime } from '../simlog'
 import { createCanvasRenderer } from './canvasRenderer'
 import type { WaveformModel } from './model'
@@ -112,6 +112,7 @@ export function Waveform({ model, onSeekTime, rendererFactory = createCanvasRend
           step={1}
           value={zoom}
           onChange={(e) => setZoom(Number(e.target.value))}
+          style={{ '--fill': `${(zoom / MAX_ZOOM_LEVEL) * 100}%` } as CSSProperties}
           aria-valuetext={`${zoomFactor(zoom)}x`}
         />
         <span className="sim-wf__zoom">{zoomFactor(zoom)}x</span>

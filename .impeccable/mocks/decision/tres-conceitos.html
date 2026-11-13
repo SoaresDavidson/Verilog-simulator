@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Três conceitos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans+Condensed:wght@500;700;800;900&family=Sofia+Sans:wght@400;500;700&family=Overpass:wght@400;600;800;900&family=Overpass+Mono:wght@400;600&family=Kalam:wght@400;700&family=Lexend:wght@400;500;600;700&family=Fira+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaec;color:#111;font:400 15px/1.5 system-ui,sans-serif;padding:40px 16px 80px}
+.wrap{max-width:1180px;margin:0 auto}
+.intro h1{font:700 28px system-ui;letter-spacing:-.02em}
+.intro p{color:#555;max-width:72ch;margin:6px 0 32px}
+.dir{margin-bottom:64px}
+.dir__h{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.dir__h b{font:800 13px system-ui;background:#111;color:#fff;border-radius:99px;padding:5px 11px}
+.dir__h h2{font:700 24px system-ui;letter-spacing:-.02em}
+.dir__d{color:#555;max-width:96ch;margin-bottom:14px;font-size:14.5px}
+.frame{border-radius:22px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.4)}
+
+/* ====================== A · MALETA DIDÁTICA ====================== */
+.A{--panel:#d9dcdf;--panel2:#cfd3d7;--plate:#eceef0;--ink:#16181b;--mute:#4b5157;--red:#d42a20;--blk:#1b1d20;--yel:#f2c200;--blu:#1767c7;--grn:#18904a;
+  background:var(--panel);color:var(--ink);font-family:"Sofia Sans",sans-serif;padding:20px;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 1px,transparent 1px 3px)}
+.A .mod{position:relative;background:var(--plate);border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--ink),0 2px 0 rgba(0,0,0,.08);padding:18px 22px}
+.A .mod::before,.A .mod::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#9aa1a8 60%,#6d747b);top:9px;left:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.A .mod::after{left:auto;right:9px}
+.A .screws-b::before,.A .screws-b::after{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#9aa1a8 60%,#6d747b);bottom:9px;left:9px}
+.A .screws-b::after{left:auto;right:9px}
+.A .silk{font:800 12px "Sofia Sans Condensed";letter-spacing:.14em;text-transform:uppercase}
+.A .top{display:flex;align-items:center;gap:22px}
+.A .brand{display:flex;align-items:center;gap:12px}
+.A .brand b{font:900 26px/0.9 "Sofia Sans Condensed";text-transform:uppercase;letter-spacing:.01em}
+.A .brand small{display:block;font:700 10.5px "Sofia Sans Condensed";letter-spacing:.2em;color:var(--mute);margin-top:4px}
+.A .steps{margin-left:auto;display:flex;gap:10px}
+.A .step{display:flex;align-items:center;gap:8px;font:800 13px "Sofia Sans Condensed";letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.A .jack{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#111 0 4px,var(--c) 4.5px 9px,#0003 9.5px 10px,var(--c) 10.5px);box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.A .step.on{color:var(--ink)}
+.A .grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px;margin-top:16px}
+.A h3{font:900 46px/0.9 "Sofia Sans Condensed";text-transform:uppercase;letter-spacing:.005em}
+.A .sub{color:var(--mute);margin-top:8px;max-width:44ch}
+.A .readout{display:flex;gap:10px;margin-top:16px}
+.A .seg{background:#1c2a1f;border-radius:10px;padding:8px 12px;box-shadow:inset 0 2px 6px rgba(0,0,0,.6)}
+.A .seg b{font:500 30px/1 "Fira Mono";color:#7dff8c;letter-spacing:.06em;text-shadow:0 0 6px rgba(125,255,140,.35)}
+.A .seg span{display:block;font:700 10px "Sofia Sans Condensed";letter-spacing:.16em;color:#7a9a80;margin-top:4px}
+.A .schem{height:250px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.A .btn{border:0;border-radius:12px;padding:11px 18px;font:800 14px "Sofia Sans Condensed";letter-spacing:.12em;text-transform:uppercase}
+.A .btn.go{background:var(--red);color:#fff;box-shadow:0 3px 0 #8f1a13}
+.A .btn.no{background:var(--plate);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink),0 3px 0 #9aa1a8}
+.A .foot{display:flex;align-items:center;gap:12px;margin-top:16px}
+.A .foot p{margin-right:auto;display:flex;gap:10px;align-items:center;font-weight:500}
+.A .led{width:12px;height:12px;border-radius:50%;background:#2fe063;box-shadow:0 0 0 3px #1b1d20,0 0 10px #2fe063}
+.A .sig{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1.5px dashed #b7bcc2;font:500 14px "Fira Mono"}
+.A .sw{width:38px;height:20px;border-radius:99px;background:var(--ink);position:relative}
+.A .sw::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--yel);top:3px;right:3px}
+.A .sw.off{background:#b7bcc2}.A .sw.off::after{right:auto;left:3px;background:#fff}
+
+/* ====================== B · LINHA DE METRÔ ====================== */
+.B{--bg:#f7f7f4;--ink:#141414;--mute:#5e5e5a;--l1:#0057b8;--l2:#e4002b;--l3:#00965e;--l4:#ffb81c;--line:#dcdcd6;
+  background:var(--bg);color:var(--ink);font-family:Overpass,sans-serif}
+.B .top{display:flex;align-items:center;gap:24px;padding:16px 26px;background:var(--ink);color:#fff}
+.B .brand{display:flex;align-items:center;gap:12px}
+.B .brand b{font:900 22px/1 Overpass;letter-spacing:-.01em}
+.B .brand small{display:block;font:600 11px "Overpass Mono";color:#a9a9a4;margin-top:3px}
+.B .route{margin-left:auto;position:relative;display:flex;align-items:center}
+.B .route svg{display:block}
+.B .body{display:grid;grid-template-columns:330px 1fr;gap:0}
+.B .side{padding:26px;border-right:1px solid var(--line)}
+.B .platform{display:inline-flex;align-items:center;gap:10px;background:var(--l1);color:#fff;border-radius:99px;padding:6px 14px 6px 6px;font:800 13px Overpass}
+.B .platform i{width:24px;height:24px;border-radius:50%;background:#fff;color:var(--l1);display:grid;place-items:center;font-style:normal;font:900 13px Overpass}
+.B h3{font:900 44px/0.95 Overpass;letter-spacing:-.035em;margin-top:16px}
+.B .sub{color:var(--mute);margin-top:10px}
+.B .stops{list-style:none;margin-top:22px;position:relative}
+.B .stops::before{content:"";position:absolute;left:11px;top:10px;bottom:10px;width:6px;border-radius:3px;background:var(--l1)}
+.B .stops li{position:relative;display:flex;align-items:center;gap:14px;padding:7px 0;font:600 15px Overpass}
+.B .stops li::before{content:"";width:16px;height:16px;border-radius:50%;background:#fff;border:4px solid var(--l1);margin-left:2px;flex-shrink:0;position:relative;z-index:1}
+.B .stops li.x::before{border-color:var(--ink);width:20px;height:20px;margin-left:0}
+.B .stops em{margin-left:auto;font:400 13px "Overpass Mono";font-style:normal;color:var(--mute)}
+.B .main{padding:22px}
+.B .map{height:300px;border-radius:18px;background:#fff;border:1px solid var(--line)}
+.B .foot{display:flex;align-items:center;gap:12px;margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 8px 8px 20px}
+.B .foot p{margin-right:auto;font-weight:600}
+.B .btn{border:0;border-radius:99px;padding:11px 20px;font:800 14px Overpass}
+.B .btn.go{background:var(--ink);color:#fff}
+.B .btn.no{background:#ecece7}
+
+/* ====================== C · QUADRO DO PROFESSOR ====================== */
+.C{--board:#fbfcfb;--ink:#1d2430;--blue:#1f5fd1;--red:#d9342b;--green:#178a4c;--mute:#5b6472;--edge:#c9ced6;
+  background:#aab1ba;padding:18px;font-family:Lexend,sans-serif;color:var(--ink)}
+.C .board{background:var(--board);border-radius:18px;box-shadow:inset 0 0 0 10px #e3e6ea,inset 0 0 0 11px #c7ccd3,0 10px 0 -2px #8b939d;padding:24px 28px;position:relative;overflow:hidden}
+.C .board::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(1200px 300px at 30% 0%,rgba(255,255,255,.9),transparent 60%);mix-blend-mode:soft-light}
+.C .top{display:flex;align-items:center;gap:20px}
+.C .brand{display:flex;align-items:center;gap:10px}
+.C .brand b{font:700 22px Lexend;letter-spacing:-.02em}
+.C .hand{font-family:Kalam,cursive}
+.C .steps{margin-left:auto;display:flex;gap:34px;font:400 19px Kalam;color:var(--mute)}
+.C .steps .done{text-decoration:line-through;text-decoration-color:var(--green);text-decoration-thickness:2.5px;color:var(--ink)}
+.C .steps .on{color:var(--blue);position:relative}
+.C .steps .on svg{position:absolute;left:-14px;top:-6px}
+.C .grid{display:grid;grid-template-columns:1fr 1.5fr;gap:24px;margin-top:22px}
+.C h3{font:700 44px/1 Lexend;letter-spacing:-.04em}
+.C h3 u{text-decoration:none;background:linear-gradient(transparent 62%,rgba(31,95,209,.22) 62% 90%,transparent 90%)}
+.C .sub{color:var(--mute);margin-top:10px}
+.C .note{margin-top:18px;font:400 21px/1.3 Kalam;color:var(--red);display:flex;gap:10px;align-items:flex-start}
+.C .card{border-radius:16px;border:1.5px solid var(--edge);background:#fff;padding:14px}
+.C .sig{display:flex;align-items:center;gap:12px;padding:7px 0;font:500 14px "Fira Mono"}
+.C .cb{width:20px;height:20px;border-radius:6px;border:2px solid var(--ink);display:grid;place-items:center}
+.C .schem{height:270px}
+.C .foot{display:flex;align-items:center;gap:12px;margin-top:18px}
+.C .foot p{margin-right:auto;font:400 19px Kalam;color:var(--blue)}
+.C .btn{border:0;border-radius:14px;padding:11px 18px;font:600 14px Lexend}
+.C .btn.go{background:var(--blue);color:#fff;box-shadow:0 3px 0 #123f91}
+.C .btn.no{background:#eef0f3}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{display:flex;align-items:center;gap:8px;background:#fff;border-radius:99px;padding:4px 12px 4px 4px;font:600 12px system-ui}
+.chip i{width:20px;height:20px;border-radius:50%;display:block;border:1px solid rgba(0,0,0,.12)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="intro">
+  <h1>Três conceitos, três mundos diferentes</h1>
+  <p>Todos mostram a mesma tela (etapa 3, Caminho de Dados), cada um com logo, cores, tipografia e jeito de desenhar o circuito próprios. O diagrama dos três já segue o layout em camadas (entradas à esquerda, registradores à direita, sem cruzamentos).</p>
+</div>
+
+<!-- ============ A ============ -->
+<section class="dir">
+  <div class="dir__h"><b>A</b><h2>Maleta Didática</h2></div>
+  <p class="dir__d">Os painéis de treinamento de hardware dos laboratórios de engenharia: alumínio escovado, tudo serigrafado em preto, bornes coloridos (vermelho, preto, amarelo, azul), parafusos nos cantos e displays de 7 segmentos. Cada cartão é um módulo do kit, e as etapas são bornes que acendem. É o mais "hardware" dos três.</p>
+  <div class="frame A">
+    <div class="mod screws-b" style="padding:20px 30px">
+      <div class="top">
+        <div class="brand">
+          <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="49" height="49" rx="12" fill="#eceef0" stroke="#16181b" stroke-width="2.5"/>
+            <path d="M14 16h10a10 10 0 0 1 0 20H14z" fill="none" stroke="#16181b" stroke-width="3"/>
+            <path d="M6 21h8M6 31h8M34 26h6" stroke="#16181b" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="43" cy="26" r="5.5" fill="#d42a20"/><circle cx="43" cy="26" r="2" fill="#16181b"/>
+          </svg>
+          <div><b>Verilog<br>Classroom</b><small>KIT DE SÍNTESE E SIMULAÇÃO</small></div>
+        </div>
+        <div class="steps">
+          <span class="step" style="--c:#18904a"><span class="jack"></span>Upload</span>
+          <span class="step" style="--c:#18904a"><span class="jack"></span>Síntese</span>
+          <span class="step on" style="--c:#d42a20"><span class="jack"></span>Caminho</span>
+          <span class="step" style="--c:#9aa1a8"><span class="jack"></span>Simulação</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="mod screws-b" style="padding:30px 26px">
+        <span class="silk">Módulo 03</span>
+        <h3 style="margin-top:6px">Caminho<br>de dados</h3>
+        <p class="sub">O circuito que o Yosys montou, desenhado como no livro.</p>
+        <div class="readout">
+          <div class="seg"><b>048</b><span>CÉLULAS</span></div>
+          <div class="seg"><b>141</b><span>FIOS</span></div>
+          <div class="seg"><b>007</b><span>SINAIS</span></div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="sig"><span class="sw"></span>clk<span style="margin-left:auto;color:#4b5157">1 bit</span></div>
+          <div class="sig"><span class="sw"></span>a[15:0]<span style="margin-left:auto;color:#4b5157">16 bits</span></div>
+          <div class="sig"><span class="sw off"></span>mcand<span style="margin-left:auto;color:#4b5157">16 bits</span></div>
+        </div>
+      </div>
+      <div class="mod screws-b" style="padding:30px 22px 22px">
+        <span class="silk">Diagrama</span>
+        <div class="schem" style="margin-top:10px">
+          <svg viewBox="0 0 560 250" width="100%" height="100%">
+            <g font-family="Fira Mono" font-size="11" fill="#16181b">
+            <g stroke="#16181b" stroke-width="2" fill="none" stroke-linejoin="round">
+              <path d="M70 60H130V76H150M70 120H130V104H150M196 90H240V80H260M240 90V150H260M300 80H350V110H370M300 150H350V140H370M402 125H450M70 200H392V158M70 230H440V204"/>
+            </g>
+            <g fill="#fff" stroke="#16181b" stroke-width="2.2">
+              <path d="M150 66h24a24 24 0 0 1 0 48h-24z"/>
+              <path d="M262 66q10 14 0 28q20 0 32-14q-12-14-32-14z"/><path d="M262 136q10 14 0 28q20 0 32-14q-12-14-32-14z"/>
+              <path d="M370 96l32 12v36l-32 12z"/>
+              <rect x="450" y="100" width="62" height="118" rx="8"/>
+            </g>
+            <g><circle cx="58" cy="60" r="8" fill="#d42a20"/><circle cx="58" cy="120" r="8" fill="#d42a20"/><circle cx="58" cy="200" r="8" fill="#f2c200"/><circle cx="58" cy="230" r="8" fill="#1767c7"/><circle cx="528" cy="125" r="8" fill="#1b1d20"/>
+            <text x="16" y="64">a</text><text x="16" y="124">b</text><text x="6" y="204">start</text><text x="14" y="234">clk</text><text x="462" y="120">D</text><text x="494" y="120">Q</text></g>
+            <path d="M512 125H520" stroke="#16181b" stroke-width="2"/><circle cx="240" cy="90" r="3.5"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="mod" style="margin-top:16px;padding:14px 18px 14px 30px">
+      <div class="foot" style="margin:0"><p><span class="led"></span>Circuito montado. Próximo: rodar o testbench.</p><button class="btn no">Voltar</button><button class="btn go">Simular</button></div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#d9dcdf"></i>alumínio</span><span class="chip"><i style="background:#16181b"></i>serigrafia</span><span class="chip"><i style="background:#d42a20"></i>borne vermelho</span><span class="chip"><i style="background:#f2c200"></i>borne amarelo</span><span class="chip"><i style="background:#1767c7"></i>borne azul</span><span class="chip">Sofia Sans Condensed + Fira Mono</span></div>
+</section>
+
+<!-- ============ B ============ -->
+<section class="dir">
+  <div class="dir__h"><b>B</b><h2>Linha de Metrô</h2></div>
+  <p class="dir__d">O fluxo do sistema vira uma linha de transporte: cada etapa é uma estação, e o progresso é o trem andando na linha. A sinalização é de campus e metrô (pictogramas, placas de plataforma, cores por linha). O diagrama usa a mesma lógica dos mapas de metrô: só ângulos de 90° e 45°, linhas que nunca se sobrepõem e estações de baldeação. É o mais "arquitetura e cidade universitária".</p>
+  <div class="frame B">
+    <div class="top">
+      <div class="brand">
+        <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+          <path d="M6 8L23 36L40 8" fill="none" stroke="#0057b8" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M6 30H40" stroke="#e4002b" stroke-width="7" stroke-linecap="round"/>
+          <rect x="12" y="24" width="22" height="12" rx="6" fill="#fff" stroke="#141414" stroke-width="3"/>
+        </svg>
+        <div><b>Verilog Classroom</b><small>linha síntese → simulação</small></div>
+      </div>
+      <div class="route">
+        <svg width="520" height="48" viewBox="0 0 520 48" aria-hidden="true">
+          <path d="M20 22H500" stroke="#3a3a37" stroke-width="8" stroke-linecap="round"/>
+          <path d="M20 22H340" stroke="#0057b8" stroke-width="8" stroke-linecap="round"/>
+          <g font-family="Overpass" font-weight="800" font-size="12" fill="#fff">
+            <circle cx="20" cy="22" r="9" fill="#fff" stroke="#0057b8" stroke-width="4"/><text x="34" y="12" fill="#c9c9c4">Upload</text>
+            <circle cx="180" cy="22" r="9" fill="#fff" stroke="#0057b8" stroke-width="4"/><text x="194" y="12" fill="#c9c9c4">Síntese</text>
+            <rect x="326" y="9" width="28" height="26" rx="13" fill="#fff" stroke="#141414" stroke-width="4"/><text x="300" y="42" fill="#fff">Caminho de dados</text>
+            <circle cx="500" cy="22" r="9" fill="#141414" stroke="#6b6b67" stroke-width="4"/><text x="446" y="12" fill="#8b8b86">Simulação</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="body">
+      <div class="side">
+        <span class="platform"><i>3</i>Estação Caminho de Dados</span>
+        <h3>O circuito,<br>em linhas.</h3>
+        <p class="sub">Cada sinal é uma linha com cor própria. Clique numa estação (porta) para ver as conexões.</p>
+        <ul class="stops">
+          <li>clk<em>1 bit</em></li><li>start<em>1 bit</em></li><li class="x">a[15:0]<em>16 bits</em></li><li>produto<em>32 bits</em></li>
+        </ul>
+      </div>
+      <div class="main">
+        <div class="map">
+          <svg viewBox="0 0 700 300" width="100%" height="100%">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="7">
+              <path d="M40 70H180L220 110H330L370 150H520" stroke="#0057b8"/>
+              <path d="M40 150H180L220 110" stroke="#e4002b"/>
+              <path d="M40 230H300L340 190H460L500 150" stroke="#00965e"/>
+              <path d="M370 150V250H660" stroke="#ffb81c"/>
+              <path d="M520 150H660" stroke="#0057b8"/>
+            </g>
+            <g fill="#fff" stroke="#141414" stroke-width="3.5">
+              <rect x="200" y="96" width="40" height="28" rx="14"/><rect x="350" y="136" width="40" height="28" rx="14"/><rect x="500" y="136" width="40" height="28" rx="14"/>
+              <circle cx="40" cy="70" r="9"/><circle cx="40" cy="150" r="9"/><circle cx="40" cy="230" r="9"/><circle cx="660" cy="150" r="9"/><circle cx="660" cy="250" r="9"/>
+            </g>
+            <g font-family="Overpass" font-weight="800" font-size="13" fill="#141414">
+              <text x="58" y="62">a</text><text x="58" y="142">b</text><text x="58" y="222">clk</text><text x="196" y="88">$and</text><text x="346" y="128">$add</text><text x="498" y="128">$adff</text><text x="604" y="142">produto</text><text x="616" y="276">done</text>
+            </g>
+          </svg>
+        </div>
+        <div class="foot"><p>Próxima estação: Simulação</p><button class="btn no">Voltar</button><button class="btn go">Seguir viagem →</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#141414"></i>placa</span><span class="chip"><i style="background:#0057b8"></i>linha azul</span><span class="chip"><i style="background:#e4002b"></i>linha vermelha</span><span class="chip"><i style="background:#00965e"></i>linha verde</span><span class="chip"><i style="background:#ffb81c"></i>linha amarela</span><span class="chip">Overpass (tipo de sinalização) + Overpass Mono</span></div>
+</section>
+
+<!-- ============ C ============ -->
+<section class="dir">
+  <div class="dir__h"><b>C</b><h2>Quadro do Professor</h2></div>
+  <p class="dir__d">A aula de eletrônica digital: quadro branco com moldura de alumínio, marcadores azul, vermelho e verde, etapas riscadas quando concluídas e anotações à mão do professor explicando o próximo passo. A interface continua limpa (Lexend, fonte criada para leitura); a mão aparece só nas anotações. É o mais "ensino" e humano dos três.</p>
+  <div class="frame C">
+    <div class="board">
+      <div class="top">
+        <div class="brand">
+          <svg width="50" height="42" viewBox="0 0 50 42" aria-hidden="true">
+            <path d="M8 6.5c7-.6 12 .2 16 1 9 2 13 7 13 13.6S33 33 24 34.4c-5 .8-10 .7-16 .6.6-9 .3-19 0-28.5z" fill="none" stroke="#1f5fd1" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M1.5 14.5h7M1.5 27h7M37 21h10" stroke="#1d2430" stroke-width="3" stroke-linecap="round"/>
+            <path d="M14 21.5l4 4 8-9" fill="none" stroke="#d9342b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <b>verilog classroom</b>
+        </div>
+        <div class="steps">
+          <span class="done">upload</span><span class="done">síntese</span>
+          <span class="on"><svg width="170" height="40" viewBox="0 0 190 40" preserveAspectRatio="none" aria-hidden="true"><path d="M8 20c2-12 60-16 110-14 40 2 66 6 64 16-2 11-70 13-120 11C30 31 6 30 8 20z" fill="none" stroke="#1f5fd1" stroke-width="2.2" stroke-linecap="round"/></svg>caminho de dados</span>
+          <span>simulação</span>
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <h3>Caminho de <u>dados</u></h3>
+          <p class="sub">O circuito que o Yosys montou, com os símbolos que você viu em aula.</p>
+          <p class="note"><svg width="34" height="30" viewBox="0 0 34 30"><path d="M3 6c8 2 18 8 24 18M27 24l-1-9M27 24l-9-2" fill="none" stroke="#d9342b" stroke-width="2.4" stroke-linecap="round"/></svg>clique numa porta para ver de onde vem cada fio</p>
+          <div class="card" style="margin-top:18px">
+            <div class="sig"><span class="cb"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6.5l2.6 2.6L10 3" fill="none" stroke="#178a4c" stroke-width="2.4" stroke-linecap="round"/></svg></span>clk<span style="margin-left:auto;color:#5b6472">1 bit</span></div>
+            <div class="sig"><span class="cb"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6.5l2.6 2.6L10 3" fill="none" stroke="#178a4c" stroke-width="2.4" stroke-linecap="round"/></svg></span>a[15:0]<span style="margin-left:auto;color:#5b6472">16 bits</span></div>
+            <div class="sig"><span class="cb"></span>mcand<span style="margin-left:auto;color:#5b6472">16 bits</span></div>
+          </div>
+        </div>
+        <div class="card schem">
+          <svg viewBox="0 0 560 250" width="100%" height="100%">
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <g stroke="#1d2430" stroke-width="2.2">
+                <path d="M40 60H130V76H150M40 120H130V104H150M198 90H240V80H262M240 90V150H262M296 80H350V110H370M296 150H350V140H370M402 125H450M40 200H392V158"/>
+              </g>
+              <path d="M40 230H440V204" stroke="#1f5fd1" stroke-width="2.6"/>
+              <g stroke="#1d2430" stroke-width="2.4">
+                <path d="M150 66.5c8-.6 14-.4 22 .5 15 2 23 10 22 24-1 13-10 22-24 23-7 .5-13 .4-20 .2.6-16 .4-32 0-47.7z"/>
+                <path d="M262 66q10 14 0 28q20 0 32-14q-12-14-32-14z"/><path d="M262 136q10 14 0 28q20 0 32-14q-12-14-32-14z"/>
+                <path d="M370 96l32 12v36l-32 12z"/>
+                <path d="M450 100.5c20-.5 40 0 62 .4.5 38 .3 78 0 117-20 .4-42 .3-62 0-.4-39-.4-78 0-117.4z"/>
+              </g>
+            </g>
+            <g font-family="Kalam" font-size="17" fill="#d9342b"><text x="300" y="218">registrador!</text></g>
+            <g font-family="Fira Mono" font-size="11" fill="#1d2430"><text x="14" y="64">a</text><text x="14" y="124">b</text><text x="0" y="204">start</text><text x="10" y="234">clk</text><text x="462" y="120">D</text><text x="494" y="120">Q</text></g>
+            <circle cx="240" cy="90" r="3.5" fill="#1d2430"/>
+          </svg>
+        </div>
+      </div>
+      <div class="foot"><p>próximo: rodar o testbench e ver os valores nos fios →</p><button class="btn no">Voltar</button><button class="btn go">Simular</button></div>
+    </div>
+  </div>
+  <div class="chips"><span class="chip"><i style="background:#fbfcfb"></i>quadro</span><span class="chip"><i style="background:#1f5fd1"></i>marcador azul</span><span class="chip"><i style="background:#d9342b"></i>marcador vermelho</span><span class="chip"><i style="background:#178a4c"></i>marcador verde</span><span class="chip">Lexend + Kalam (só anotações) + Fira Mono</span></div>
+</section>
+</div>
+</body>
+</html>

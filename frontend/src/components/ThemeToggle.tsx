@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { IconMoon, IconSun } from './icons'
 
 type Theme = 'dark' | 'light'
 const STORAGE_KEY = 'verilog-classroom:theme'
 
+/** Tema claro é o padrão (laboratório de dia, projetor em sala). */
 function systemTheme(): Theme {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark'
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  return 'light'
 }
 
 function readStoredTheme(): Theme | null {
@@ -17,7 +18,7 @@ function readStoredTheme(): Theme | null {
   }
 }
 
-/** Alterna entre o tema escuro (padrão do protótipo) e o claro. */
+/** Alterna entre a bancada de dia (claro, padrão) e a bancada à noite (escuro). */
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(() => readStoredTheme() ?? systemTheme())
 
@@ -38,12 +39,13 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="btn bi theme-toggle"
+      className="btn bi bs theme-toggle"
       onClick={toggle}
+      aria-pressed={theme === 'dark'}
       aria-label={next === 'light' ? 'Ativar tema claro' : 'Ativar tema escuro'}
       title={next === 'light' ? 'Tema claro' : 'Tema escuro'}
     >
-      <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+      {theme === 'dark' ? <IconSun /> : <IconMoon />}
     </button>
   )
 }

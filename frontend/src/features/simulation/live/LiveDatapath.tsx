@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { DatapathDiagram, layoutGraph, parseNetlist, type DiagramSelection, type NetlistGraph } from '../../datapath'
+import { DatapathDiagram, parseNetlist, useDiagramLayout, type DiagramSelection, type NetlistGraph } from '../../datapath'
 import { useSessionState } from '../../../state/hooks'
 import type { LiveDiagramContext } from '../liveDiagram'
 import { valuesAt } from '../simlog'
@@ -29,7 +29,7 @@ export function LiveDatapath({ context }: { context: LiveDiagramContext }) {
   const top = synthesis.result?.top_module ?? topModule
 
   const graph = useMemo(() => parseNetlist(netlist, { top }), [netlist, top])
-  const layout = useMemo(() => (graph ? layoutGraph(graph) : null), [graph])
+  const layout = useDiagramLayout(graph)
   const [selection, setSelection] = useState<DiagramSelection | null>(null)
 
   const { simLog, time, signals, visibleIds, toggleSignal } = context

@@ -1,3 +1,5 @@
+import { describeNode } from '../netlist/symbols'
+import { IconClose } from '../../../components/icons'
 import type { ReactNode } from 'react'
 import { directionLabel, widthLabel } from '../netlist/model'
 import { edgesOfNet, edgesOfNode, type GraphEdge, type GraphNode, type NetlistGraph } from '../netlist/parse'
@@ -65,8 +67,10 @@ export function PropertiesPanel({ graph, selection, netValues, edgeValues, onSel
     const { incoming, outgoing } = edgesOfNode(graph, node.id)
     const portNet = node.kind === 'input' || node.kind === 'output' || node.kind === 'inout' ? graph.netById.get(`net:${node.name}`) : undefined
     const value = portNet ? netValues.get(portNet.id) : undefined
+    const explain = describeNode(node)
     body = (
       <>
+        {explain && <p className="pp-explain">{explain}</p>}
         <dl className="pp-dl">
           <Row label="Referência">
             <span className="nx-mono">
@@ -175,7 +179,7 @@ export function PropertiesPanel({ graph, selection, netValues, edgeValues, onSel
           {title}
         </h3>
         <button type="button" className="bi" aria-label="Fechar propriedades" onClick={onClose}>
-          ×
+          <IconClose size={16} />
         </button>
       </div>
       {body}

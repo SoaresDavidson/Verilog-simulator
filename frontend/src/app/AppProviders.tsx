@@ -1,3 +1,4 @@
+import { MotionConfig } from 'motion/react'
 import type { ReactNode } from 'react'
 import { ApiProvider } from '../api/ApiProvider'
 import { ToastProvider } from '../components/toast'
@@ -22,7 +23,10 @@ export function AppProviders({ children, initialState, fetch, baseUrl, statusPol
     <SessionProvider initialState={initialState}>
       <ApiProvider fetch={fetch} baseUrl={baseUrl}>
         <ToastProvider>
-          <HealthProvider pollMs={statusPollMs}>{children}</HealthProvider>
+          <HealthProvider pollMs={statusPollMs}>
+            {/* Quem pede menos movimento no sistema recebe só opacidade e cor. */}
+            <MotionConfig reducedMotion="user">{children}</MotionConfig>
+          </HealthProvider>
         </ToastProvider>
       </ApiProvider>
     </SessionProvider>

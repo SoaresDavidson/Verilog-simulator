@@ -5,21 +5,31 @@ body {
   font-family: var(--fb);
   background: var(--bg);
   color: var(--fg);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.5;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--ov); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+/* Superfícies do navegador também levam a identidade. */
+::selection { background: var(--jack-yellow); color: var(--on-gate); }
+html { accent-color: var(--accent); caret-color: var(--jack-red); scrollbar-color: var(--ov-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ov-strong); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--outline); }
+::-webkit-scrollbar-corner { background: transparent; }
 
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; font-size: inherit; }
-input, select { font-family: inherit; font-size: inherit; }
-a { color: var(--accent); }
+input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+code, pre, kbd, samp { font-family: var(--fd); }
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; border-radius: var(--r-sm); }
 
 .sr-only {
   position: absolute !important;
@@ -30,12 +40,143 @@ a { color: var(--accent); }
 }
 
 .skip-link {
-  position: absolute; left: 8px; top: -40px; z-index: 200;
-  padding: 6px 12px; border-radius: var(--r);
-  background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none;
+  position: absolute; left: 0; top: 8px; transform: translateY(-300%); z-index: 200;
+  padding: 8px 14px; border-radius: var(--r-pill);
+  background: var(--copper); color: var(--on-copper); font-weight: 700; text-decoration: none;
+  transition: transform var(--t) var(--ease-out);
 }
-.skip-link:focus { top: 8px; }
+.skip-link:focus { transform: none; }
+
+/* ------------------------------------------------------------------ */
+/* Controles nativos redesenhados: a semântica fica, o visual é nosso. */
+/* ------------------------------------------------------------------ */
+
+/* Caixa de seleção = chave alavanca do kit: trilho preto, alavanca amarela. */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  flex-shrink: 0; width: 36px; height: 20px; margin: 0; position: relative;
+  border-radius: 99px; background: var(--surface-highest); cursor: pointer; vertical-align: middle;
+  box-shadow: inset 0 0 0 1.5px var(--ov-strong);
+  transition: background var(--t) var(--ease-out);
+}
+input[type="checkbox"]::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 0 0 1.5px var(--silk), 0 1px 1px rgba(0, 0, 0, 0.3);
+  transition: transform var(--t) var(--ease-spring), background var(--t) var(--ease-out);
+}
+input[type="checkbox"]:checked { background: var(--w1); box-shadow: none; }
+input[type="checkbox"]:checked::after { transform: translateX(16px); background: #fff; }
+input[type="checkbox"]:indeterminate::after { transform: translateX(8px); background: var(--outline); }
+input[type="checkbox"]:hover:not(:disabled)::after { box-shadow: 0 0 0 1.5px var(--silk), 0 0 0 4px var(--accent-lt); }
+input[type="checkbox"]:disabled { opacity: 0.45; cursor: not-allowed; }
+input[type="checkbox"]:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+
+/* Rádio = borne: anel serigrafado, miolo vermelho quando escolhido. */
+input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  flex-shrink: 0; width: 22px; height: 22px; margin: 0; border-radius: 50%; cursor: pointer;
+  background: radial-gradient(circle, var(--jack-black) 0 3.5px, var(--surface-highest) 4px);
+  box-shadow: inset 0 0 0 1.5px var(--silk), inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+  transition: background var(--t) var(--ease-out);
+}
+input[type="radio"]:checked { background: radial-gradient(circle, var(--jack-black) 0 3.5px, var(--jack-red) 4px); }
+input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Campo de texto/busca */
+input[type="search"], input[type="text"], input[type="number"], textarea {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface); color: var(--fg);
+  border: 1.5px solid var(--ov-strong); border-radius: var(--r);
+  padding: 8px 12px; min-height: 38px; font-size: 14px;
+  transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
+}
+input[type="search"]::placeholder, input[type="text"]::placeholder { color: var(--faint); }
+input[type="search"]:hover, input[type="text"]:hover { border-color: var(--ov-strong); }
+input[type="search"]:focus-visible, input[type="text"]:focus-visible, input[type="number"]:focus-visible, textarea:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--jack-yellow);
+}
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none; width: 16px; height: 16px; cursor: pointer; border-radius: 50%;
+  background: var(--ov-strong) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 5l6 6M11 5l-6 6' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+
+/* Lista de opções: botão arredondado com chevron desenhado. Onde o navegador
+   permite (`appearance: base-select`), o menu aberto também é redesenhado. */
+select {
+  appearance: none; -webkit-appearance: none;
+  background-color: var(--surface); color: var(--fg);
+  border: 1.5px solid var(--ov-strong); border-radius: var(--r);
+  padding: 7px 36px 7px 12px; min-height: 38px; font-size: 14px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5L8 10l3.5-3.5' fill='none' stroke='%238e87b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
+  transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
+}
+select:hover { border-color: var(--ov-strong); }
+select:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--jack-yellow); }
+@supports (appearance: base-select) {
+  select, ::picker(select) { appearance: base-select; }
+  select { background-image: none; padding-right: 12px; display: inline-flex; align-items: center; gap: 8px; }
+  select::picker-icon {
+    content: ""; width: 14px; height: 14px; margin-left: auto;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6.5L8 10l3.5-3.5' fill='none' stroke='%238e87b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate var(--t) var(--ease-out);
+  }
+  select:open::picker-icon { rotate: 180deg; }
+  ::picker(select) {
+    border: 1.5px solid var(--silk); border-radius: var(--r-md); background: var(--surface);
+    box-shadow: var(--shadow-lg); padding: 6px; margin-block: 6px;
+    opacity: 0; translate: 0 -6px;
+    transition: opacity var(--t) var(--ease-out), translate var(--t) var(--ease-out), overlay var(--t) allow-discrete, display var(--t) allow-discrete;
+  }
+  select:open::picker(select) { opacity: 1; translate: 0 0; }
+  @starting-style { select:open::picker(select) { opacity: 0; translate: 0 -6px; } }
+  option {
+    padding: 8px 12px; border-radius: var(--r-sm); font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; white-space: pre;
+  }
+  option:hover, option:focus-visible { background: var(--accent-lt); outline: none; }
+  option:checked { background: var(--jack-black); color: #fff; font-weight: 700; }
+  option::checkmark { content: ""; }
+}
+
+/* Controle deslizante: trilha de cobre, cursor como um pino. */
+input[type="range"] {
+  appearance: none; -webkit-appearance: none; background: transparent; height: 24px; cursor: pointer; margin: 0;
+  --fill: 0%;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 99px;
+  background: linear-gradient(90deg, var(--jack-black) var(--fill), var(--surface-highest) var(--fill)); box-shadow: inset 0 0 0 1px var(--ov);
+}
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 99px; background: var(--surface-highest); }
+input[type="range"]::-moz-range-progress { height: 6px; border-radius: 99px; background: var(--jack-black); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, var(--jack-black) 0 2px, transparent 2.5px), var(--gate);
+  border: 1.5px solid var(--silk); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  transition: transform var(--t-fast) var(--ease-out);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--gate); border: 1.5px solid var(--silk);
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
+input[type="range"]:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--jack-yellow); }
+input[type="range"]:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Divulgação (details/summary): sem triângulo do navegador. */
+summary { list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+summary::marker { content: ""; }
+
+/* Tabelas e números */
+table { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Listas roláveis contêm seus textos ocultos (sr-only) — sem isso eles escapam
+   do recorte e esticam a rolagem da página. */
+ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position: relative; }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { isAbortError, toUserMessage } from '../../api/errors'
+import { IconClose } from '../icons'
 import { ToastContext, type ToastApi, type ToastItem, type ToastKind } from './context'
 
 const DEFAULT_DURATION: Record<ToastKind, number> = { success: 3500, info: 3500, error: 6000 }
@@ -15,7 +16,7 @@ function Toast({ item, onDismiss }: { item: ToastItem; onDismiss: (id: number) =
     <div className={`toast toast--${item.kind}`}>
       <span className="toast__msg">{item.message}</span>
       <button type="button" className="toast__close" aria-label="Fechar notificação" onClick={() => onDismiss(item.id)}>
-        ×
+        <IconClose size={16} />
       </button>
     </div>
   )

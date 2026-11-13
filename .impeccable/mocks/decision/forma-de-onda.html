@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forma de onda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef0f3; --paper:#ffffff; --sunk:#e2e5ea; --line:#d3d7de; --ink:#0b0c0e; --mute:#5a606b; --faint:#8a909b;
+  --cobalt:#1f2de6; --cobalt-lt:#e6e8fd; --cobalt-dk:#151fa8;
+  --s0:#1f2de6; --s1:#0f8a4a; --sx:#c2410c; --sz:#7c8592;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 Onest,system-ui,sans-serif;padding:40px 16px 80px}
+.wrap{max-width:1180px;margin:0 auto}
+h1{font-weight:600;font-size:30px;letter-spacing:-.02em}
+.lede{color:var(--mute);max-width:70ch;margin:6px 0 28px}
+.sec{margin-bottom:44px}
+.sec>h2{font-size:13px;font-weight:600;color:var(--mute);margin-bottom:12px;font-family:"JetBrains Mono",monospace}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px}
+
+/* ---------- marca ---------- */
+.marks{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px}
+.marks .card{display:grid;place-items:center;min-height:220px;padding:24px}
+.marks .neg{background:var(--cobalt);border-color:var(--cobalt)}
+.lockup{display:flex;align-items:center;gap:14px}
+.word{display:flex;flex-direction:column;line-height:1}
+.word b{font-weight:700;font-size:30px;letter-spacing:-.03em}
+.word span{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--mute);margin-top:6px;letter-spacing:.02em}
+.sizes{display:flex;align-items:flex-end;gap:22px}
+
+/* ---------- app ---------- */
+.app{overflow:hidden}
+.top{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;padding:14px 22px;border-bottom:1px solid var(--line)}
+.top .word b{font-size:19px}
+.top .word span{font-size:10.5px;margin-top:3px}
+.timing{display:flex;flex-direction:column;align-items:center;gap:4px}
+.timing svg{display:block}
+.timing .lbls{display:grid;grid-template-columns:repeat(4,128px);font-size:13px;font-weight:500;color:var(--faint);text-align:center}
+.timing .lbls .done{color:var(--ink)}
+.timing .lbls .on{color:var(--cobalt);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--mute)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--s1)}
+
+.body{display:grid;grid-template-columns:300px 1fr;gap:18px;padding:22px}
+.head{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.head h3{font-size:40px;font-weight:600;letter-spacing:-.035em;line-height:1}
+.head p{color:var(--mute);margin-top:8px;max-width:56ch}
+.figs{display:flex;gap:28px}
+.figs div{display:flex;flex-direction:column}
+.figs b{font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.figs span{font-size:12.5px;color:var(--mute);margin-top:4px}
+.figs .ac b{color:var(--cobalt)}
+
+.panel{border:1px solid var(--line);border-radius:14px;padding:16px}
+.panel h4{font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.panel h4 em{font-style:normal;font:500 12px "JetBrains Mono",monospace;color:var(--mute)}
+.sig{display:grid;grid-template-columns:20px 1fr auto 60px;align-items:center;gap:10px;padding:8px 6px;border-radius:9px;font:500 13px "JetBrains Mono",monospace}
+.sig+.sig{border-top:1px solid var(--sunk)}
+.cb{width:18px;height:18px;border-radius:6px;background:var(--cobalt);display:grid;place-items:center}
+.cb.off{background:none;border:1.5px solid var(--line)}
+.sig .w{color:var(--faint);font-size:12px}
+.sig .d{font:600 11px Onest;padding:2px 8px;border-radius:99px;text-align:center;background:var(--sunk);color:var(--mute)}
+.sig .d.in{background:var(--cobalt-lt);color:var(--cobalt-dk)}
+.sig .d.out{background:#e3f3ea;color:#0b6b3a}
+.mini{width:60px;height:14px}
+
+.schem{position:relative;background:var(--paper);background-image:linear-gradient(var(--sunk) 1px,transparent 1px),linear-gradient(90deg,var(--sunk) 1px,transparent 1px);background-size:24px 24px}
+.schem svg{display:block;width:100%;height:auto}
+.wire{fill:none;stroke:#2b3140;stroke-width:1.6;stroke-linejoin:round}
+.wire.hi{stroke:var(--s1);stroke-width:2.2}
+.wire.lo{stroke:var(--s0);stroke-width:2.2}
+.bus{fill:none;stroke:#2b3140;stroke-width:3.4}
+.gate{fill:var(--paper);stroke:var(--ink);stroke-width:1.8}
+.sel .gate{stroke:var(--cobalt);stroke-width:2.4;fill:var(--cobalt-lt)}
+.j{fill:var(--ink)}
+.lbl{font:500 10.5px "JetBrains Mono",monospace;fill:var(--mute)}
+.lbl.k{fill:var(--ink);font-weight:700}
+.port{fill:var(--paper);stroke:var(--ink);stroke-width:1.6}
+.val{font:700 10px "JetBrains Mono",monospace}
+.tag{position:absolute;left:12px;top:12px;display:flex;gap:6px}
+.tag span{font:500 12px "JetBrains Mono",monospace;background:var(--paper);border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--mute)}
+
+.bar{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 18px;border-radius:99px;background:var(--ink);color:#fff}
+.bar{flex-wrap:nowrap}.bar .btn{flex-shrink:0}.bar p{margin-right:auto;min-width:0;font-size:14px;display:flex;align-items:center;gap:10px}
+.btn{border:0;font:600 14px Onest;padding:10px 18px;border-radius:99px;display:inline-flex;gap:8px;align-items:center}
+.btn.pri{background:var(--cobalt);color:#fff}
+.btn.sec{background:#23262d;color:#fff}
+
+.notes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.notes .card{padding:16px}
+.notes b{display:block;margin-bottom:4px}
+.notes p{color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Forma de onda</h1>
+<p class="lede">Um sinal de clock com três pulsos sob uma viga vira um pórtico de universidade. Esse é o desenho que organiza tudo: a marca, as etapas, os carregamentos e os divisores. Tinta azul de caneta (cobalto) sobre papel frio de caderno, e o diagrama com os símbolos de porta lógica do livro-texto.</p>
+
+<section class="sec">
+<h2>// marca</h2>
+<div class="marks">
+  <div class="card">
+    <div class="lockup">
+      <svg width="74" height="62" viewBox="0 0 48 40" aria-hidden="true">
+        <rect x="2" y="3" width="44" height="4.5" rx="2.25" fill="#1f2de6"/>
+        <path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#0b0c0e" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="word"><b>verilog classroom</b><span>síntese · caminho de dados · simulação</span></div>
+    </div>
+  </div>
+  <div class="card neg">
+    <svg width="96" height="80" viewBox="0 0 48 40" aria-hidden="true">
+      <rect x="2" y="3" width="44" height="4.5" rx="2.25" fill="#fff"/>
+      <path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#fff" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="card">
+    <div class="sizes">
+      <svg width="64" height="54" viewBox="0 0 48 40"><rect x="2" y="3" width="44" height="4.5" rx="2.25" fill="#1f2de6"/><path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#0b0c0e" stroke-width="3.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <svg width="32" height="27" viewBox="0 0 48 40"><rect x="2" y="3" width="44" height="5" rx="2.5" fill="#1f2de6"/><path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#0b0c0e" stroke-width="4.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <svg width="16" height="14" viewBox="0 0 48 40"><rect x="2" y="3" width="44" height="6" rx="3" fill="#1f2de6"/><path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#0b0c0e" stroke-width="5.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="sec">
+<h2>// tela 2, seleção e síntese</h2>
+<div class="card app">
+  <div class="top">
+    <div class="lockup" style="gap:10px">
+      <svg width="40" height="34" viewBox="0 0 48 40" aria-hidden="true"><rect x="2" y="3" width="44" height="4.5" rx="2.25" fill="#1f2de6"/><path d="M2 34.5H7.5V12H15V34.5H20.5V12H28V34.5H33.5V12H41V34.5H46" fill="none" stroke="#0b0c0e" stroke-width="3.8" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <div class="word"><b>verilog classroom</b><span>projeto-mult · mult_array</span></div>
+    </div>
+    <div class="timing">
+      <!-- etapas como diagrama de tempo: concluída = nível alto -->
+      <svg width="512" height="30" viewBox="0 0 512 30" aria-hidden="true">
+        <path d="M0 26H20V6H108V26H148V6H236V26" fill="none" stroke="#0b0c0e" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M236 26H276V6H364V26" fill="none" stroke="#1f2de6" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M364 26H512" fill="none" stroke="#c4c9d2" stroke-width="2.4" stroke-dasharray="4 5"/>
+        <circle cx="320" cy="6" r="4.5" fill="#1f2de6"/>
+      </svg>
+      <div class="lbls"><span class="done">Upload</span><span class="done">Síntese</span><span class="on">Caminho de dados</span><span>Simulação</span></div>
+    </div>
+    <span class="pill"><span class="dot"></span>Serviços disponíveis</span>
+  </div>
+
+  <div class="body">
+    <div class="head">
+      <div><h3>Caminho de dados</h3><p>O circuito que o Yosys montou, com os símbolos do livro-texto. Clique numa porta para ver as ligações.</p></div>
+      <div class="figs"><div><b>48</b><span>células</span></div><div><b>141</b><span>fios</span></div><div class="ac"><b>7</b><span>sinais escolhidos</span></div></div>
+    </div>
+
+    <div class="panel">
+      <h4>Sinais <em>7 de 41</em></h4>
+      <div class="sig"><span class="cb"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span>clk<span class="d in">entrada</span><svg class="mini" viewBox="0 0 60 14"><path d="M0 12h5V2h7v10h7V2h7v10h7V2h7v10h7V2h6" fill="none" stroke="#1f2de6" stroke-width="1.6"/></svg></div>
+      <div class="sig"><span class="cb"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span>start<span class="d in">entrada</span><svg class="mini" viewBox="0 0 60 14"><path d="M0 12h18V2h8v10h34" fill="none" stroke="#1f2de6" stroke-width="1.6"/></svg></div>
+      <div class="sig"><span class="cb"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span>a[15:0]<span class="d in">entrada</span><svg class="mini" viewBox="0 0 60 14"><path d="M0 2h14l3 5-3 5H0M17 7l3-5h40M20 12h40" fill="none" stroke="#1f2de6" stroke-width="1.4"/></svg></div>
+      <div class="sig"><span class="cb"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2.5 6.5l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></span>produto<span class="d out">saída</span><svg class="mini" viewBox="0 0 60 14"><path d="M0 2h30l3 5-3 5H0M33 7l3-5h24M36 12h24" fill="none" stroke="#0f8a4a" stroke-width="1.4"/></svg></div>
+      <div class="sig"><span class="cb off"></span>mcand<span class="d">interno</span><span class="w">[15:0]</span></div>
+    </div>
+
+    <div class="panel schem" style="padding:0;overflow:hidden">
+      <div class="tag"><span>layout em camadas · 4 colunas</span><span>0 cruzamentos</span></div>
+      <svg viewBox="0 0 760 330" aria-hidden="true">
+        <!-- colunas (camadas) -->
+        <!-- portas de entrada -->
+        <g><rect class="port" x="20" y="60" width="64" height="24" rx="12"/><text class="lbl k" x="52" y="76" text-anchor="middle">a</text></g>
+        <g><rect class="port" x="20" y="120" width="64" height="24" rx="12"/><text class="lbl k" x="52" y="136" text-anchor="middle">b</text></g>
+        <g><rect class="port" x="20" y="200" width="64" height="24" rx="12"/><text class="lbl k" x="52" y="216" text-anchor="middle">start</text></g>
+        <g><rect class="port" x="20" y="262" width="64" height="24" rx="12"/><text class="lbl k" x="52" y="278" text-anchor="middle">clk</text></g>
+        <!-- fios camada 0 -> 1 -->
+        <path class="bus" d="M84 72H150V84H190"/>
+        <path class="bus" d="M84 132H150V112H190"/>
+        <path class="wire hi" d="M84 212H330V196H360"/>
+        <path class="wire lo" d="M84 274H560V250H580"/>
+        <text class="lbl" x="100" y="66">16</text><text class="lbl" x="100" y="126">16</text>
+        <!-- AND (multiplicação parcial) -->
+        <g><path class="gate" d="M190 74h30a24 24 0 0 1 0 48h-30z"/><text class="lbl" x="200" y="140">$and</text></g>
+        <!-- XOR -->
+        <path class="bus" d="M244 98H280V92H300"/>
+        <path class="wire" d="M244 98H270V150H300"/>
+        <g class="sel"><path class="gate" d="M302 78q12 14 0 28q22 0 34-14q-12-14-34-14z"/><path d="M296 78q12 14 0 28" fill="none" stroke="#1f2de6" stroke-width="2.4"/><text class="lbl k" x="300" y="122" fill="#1f2de6">$add</text></g>
+        <g><path class="gate" d="M302 136q12 14 0 28q22 0 34-14q-12-14-34-14z"/><text class="lbl" x="300" y="180">$add</text></g>
+        <!-- MUX -->
+        <path class="bus" d="M336 92H400V110H430"/>
+        <path class="bus" d="M336 150H400V140H430"/>
+        <path class="wire hi" d="M360 196H452V164"/>
+        <g><path class="gate" d="M430 96l44 14v52l-44 14z"/><text class="lbl" x="482" y="176">$mux</text></g>
+        <!-- DFF -->
+        <path class="bus" d="M474 136H580"/>
+        <g><rect class="gate" x="580" y="112" width="70" height="152" rx="8"/><path d="M580 242l9 8-9 8" fill="none" stroke="#0b0c0e" stroke-width="1.6"/><text class="lbl k" x="598" y="134">D</text><text class="lbl k" x="628" y="134">Q</text><text class="lbl" x="588" y="282">$adff</text></g>
+        <!-- saída -->
+        <path class="bus" d="M650 136H690"/>
+        <g><rect class="port" x="690" y="124" width="56" height="24" rx="12"/><text class="lbl k" x="718" y="140" text-anchor="middle">produto</text></g>
+        <circle class="j" cx="270" cy="98" r="3.2"/>
+        <text class="val" x="96" y="207" fill="#0f8a4a">1</text><text class="val" x="96" y="269" fill="#1f2de6">0</text>
+      </svg>
+    </div>
+
+    <div class="bar"><p><svg width="18" height="18" viewBox="0 0 20 20"><path d="M2 15h4V5h6v10h6" fill="none" stroke="#7d86ff" stroke-width="2" stroke-linejoin="round"/></svg>Circuito montado. Próximo: rodar o testbench e ver os valores nos fios.</p><button class="btn sec">Voltar</button><button class="btn pri">Simular →</button></div>
+  </div>
+</div>
+</section>
+
+<section class="sec">
+<h2>// como o diagrama deixa de ficar poluído</h2>
+<div class="notes">
+  <div class="card"><b>Camadas (Sugiyama)</b><p>Cada bloco vai para a coluna do seu atraso lógico: entradas à esquerda, registradores e saídas à direita. Os ciclos de realimentação são quebrados antes.</p></div>
+  <div class="card"><b>Menos cruzamentos</b><p>A ordem dentro de cada coluna é ajustada por baricentro, respeitando a ordem dos pinos de cada porta (algoritmo do ELK, o mesmo usado pelo netlistsvg).</p></div>
+  <div class="card"><b>Menos ruído</b><p>Fios ortogonais com espaço reservado entre camadas. Constantes viram rótulo no pino, em vez de caixa. Barramentos ficam grossos e com a largura escrita. Os nomes aparecem conforme o zoom.</p></div>
+</div>
+</section>
+</div>
+</body>
+</html>

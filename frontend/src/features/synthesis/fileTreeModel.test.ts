@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProjectFile } from '../../state/session'
-import { buildFileTree, compareNames, hdlExtension, summarizeTree, type DirNode } from './fileTree'
+import { buildFileTree, compareNames, hdlExtension, summarizeTree, type DirNode } from './fileTreeModel'
 
 const f = (path: string, size = 10): ProjectFile => ({ path, size, kind: 'other' })
 

@@ -1,0 +1,60 @@
+/* Editor de código da etapa 2 */
+.ed__window { border-radius: var(--r-lg); background: var(--pcb); overflow: hidden; box-shadow: var(--shadow); }
+
+/* Abas de arquivo: a aba ativa recebe um fundo que desliza (Motion layoutId). */
+.ed__tabs { display: flex; gap: 4px; padding: 8px 8px 0; overflow-x: auto; background: color-mix(in srgb, var(--pcb) 70%, #000); scrollbar-width: none; }
+.ed__tab {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px 10px; border-radius: 12px 12px 0 0;
+  font: 600 13.5px var(--fd); color: var(--pcb-faint); white-space: nowrap; transition: color var(--t-fast) var(--ease-out);
+}
+.ed__tab:hover { color: #fff; }
+.ed__tab[aria-selected="true"] { color: #fff; }
+.ed__tab:focus-visible { outline: 2px solid var(--gate); outline-offset: -2px; }
+.ed__tab-on { position: absolute; inset: 0; border-radius: inherit; background: var(--pcb); box-shadow: inset 0 3px 0 var(--gate); }
+.ed__tab-name, .ed__tab-kind, .ed__tab-dot { position: relative; }
+.ed__tab-kind { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: var(--pcb-3); color: var(--pcb-mute); }
+.ed__tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gate); animation: ed-dot 420ms var(--ease-out); }
+@keyframes ed-dot { from { scale: 0; } }
+
+/* Área de edição */
+.ce {
+  --ce-lh: 24px; --ce-pad: 14px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); max-height: min(56vh, 520px); overflow: auto;
+  font: 400 14px/var(--ce-lh) var(--fd); color: #fff; tab-size: 2; scrollbar-color: var(--pcb-edge) transparent;
+}
+.ce__gutter {
+  position: sticky; left: 0; z-index: 2; display: flex; flex-direction: column; align-items: flex-end; padding: var(--ce-pad) 12px var(--ce-pad) 16px;
+  background: var(--pcb); color: var(--pcb-edge); user-select: none; min-width: 48px; font-size: 12.5px;
+}
+.ce__gutter span { height: var(--ce-lh); transition: color var(--t) var(--ease-out); }
+.ce__gutter .is-current { color: var(--gate); font-weight: 700; }
+.ce__body { position: relative; min-width: max-content; padding: var(--ce-pad) 0; }
+.ce__line {
+  position: absolute; left: 0; right: 0; top: var(--ce-pad); height: var(--ce-lh); background: color-mix(in srgb, #fff 7%, transparent);
+  box-shadow: inset 3px 0 0 var(--gate); opacity: 0; transition: transform 160ms var(--ease-out), opacity var(--t) var(--ease-out);
+}
+.ce.is-focused .ce__line { opacity: 1; }
+.ce__hl { position: relative; margin: 0; padding: 0 24px 0 12px; white-space: pre; pointer-events: none; font: inherit; color: #e8e6f2; }
+.ce textarea.ce__ta {
+  position: absolute; inset: var(--ce-pad) 0; width: 100%; height: calc(100% - 2 * var(--ce-pad)); min-height: 0; margin: 0; padding: 0 24px 0 12px;
+  border: 0; border-radius: 0; background: transparent; color: transparent; caret-color: var(--gate); resize: none; overflow: hidden;
+  white-space: pre; font: inherit; line-height: var(--ce-lh); tab-size: 2; outline: none; box-shadow: none;
+}
+.ce textarea.ce__ta::selection { background: color-mix(in srgb, var(--gate) 38%, transparent); color: transparent; }
+
+/* Sintaxe: palavras da linguagem no destaque da paleta, números em azul claro */
+.tk-keyword { color: var(--p-gate); font-weight: 600; }
+.tk-number { color: #9cc2ff; }
+.tk-op { color: #c9f0a6; }
+.tk-string { color: #ffd9a0; }
+.tk-system, .tk-directive { color: #7fd8ff; }
+.tk-comment { color: var(--pcb-faint); font-style: italic; }
+.tk-ident { color: #fff; }
+
+/* Rodapé: o Bit acompanha o estado e as ações ficam à direita */
+.ed__bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.ed__bit { width: 54px; height: 56px; flex-shrink: 0; margin: -8px 0; }
+.ed__status { font: 600 13px var(--fd); color: var(--fg); margin-right: auto; }
+.ed__keys { font-size: 12.5px; color: var(--faint); }
+.ed .state-error { margin-top: 12px; }
+@media (max-width: 860px) { .ed__keys { display: none; } }

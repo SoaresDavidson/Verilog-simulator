@@ -1,6 +1,8 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useStepNavigation } from '../../app/useStepNavigation'
-import { Screen } from '../../components/Screen'
+import { Explainer, MiniArt } from '../../components/Explainer'
+import { IconArrowLeft, IconArrowRight, IconFit, IconLayers } from '../../components/icons'
+import { ActionBar, Screen, type ScreenFigure } from '../../components/Screen'
 import { useSessionState } from '../../state/hooks'
 import { NetlistExplorer } from './explorer/NetlistExplorer'
 import { buildNetlistModel } from './netlist/model'
@@ -93,6 +95,7 @@ export function DatapathScreen() {
                 className={`dp-tab${tab === t.id ? ' dp-tab--on' : ''}`}
                 onClick={() => setTab(t.id)}
               >
+                {t.id === 'diagram' ? <IconFit size={16} /> : <IconLayers size={16} />}
                 {t.label}
               </button>
             ))}
@@ -133,17 +136,50 @@ export function DatapathScreen() {
     )
   }
 
+  const figures: ScreenFigure[] | undefined = graph
+    ? [
+        { value: model.modules.length, label: model.modules.length === 1 ? 'módulo' : 'módulos' },
+        { value: graph.nodes.filter((n) => n.kind === 'cell' || n.kind === 'instance').length, label: 'blocos no diagrama' },
+        { value: graph.edges.length, label: 'ligações', accent: true },
+      ]
+    : undefined
+
   return (
-    <Screen title="Caminho de Dados" description="Diagrama e estrutura gerados a partir do netlist da síntese.">
-      {content}
-      <div className="scr__actions">
-        <button type="button" className="btn bs bsm" onClick={() => nav.goTo(2)}>
+    <Screen
+      title="Caminho de Dados"
+      description="O circuito que o Yosys montou, desenhado. Arraste para mover, use a roda para aproximar e clique em um bloco para ver as ligações."
+      figures={figures}
+    >
+      <div className={`dp-layout${netlist !== null && model.modules.length > 0 ? ' dp-layout--legend' : ''}`}>
+        <div className="dp-layout__main">{content}</div>
+        {netlist !== null && model.modules.length > 0 && (
+          <Explainer
+            id="caminho"
+            className="explainer--side"
+            title="Como ler o diagrama"
+            items={[
+              { art: <MiniArt kind="and" />, title: 'AND', text: '1 só quando todas as entradas são 1.' },
+              { art: <MiniArt kind="or" />, title: 'OR', text: '1 quando pelo menos uma entrada é 1.' },
+              { art: <MiniArt kind="xor" />, title: 'XOR', text: '1 quando as entradas são diferentes.' },
+              { art: <MiniArt kind="not" />, title: 'NOT', text: 'Inverte: 0 vira 1, 1 vira 0. A bolinha indica a inversão.' },
+              { art: <MiniArt kind="mux" />, title: 'MUX', text: 'Escolhe uma das entradas conforme o seletor S.' },
+              { art: <MiniArt kind="dff" />, title: 'Flip-flop', text: 'Guarda o valor na borda do clock (o triângulo). É a memória.' },
+              { art: <MiniArt kind="arith" />, title: 'Aritmética', text: 'Blocos com +, −, ×, = e < fazem contas e comparações.' },
+              { art: <MiniArt kind="flag" />, title: 'Etiquetas', text: 'Clock, reset e constantes aparecem como etiqueta no pino, sem fio longo.' },
+            ]}
+          />
+        )}
+      </div>
+      <ActionBar tone="ok" hint="Circuito montado. Próximo: rodar o testbench e ver os valores nos fios.">
+        <button type="button" className="btn bs" onClick={() => nav.goTo(2)}>
+          <IconArrowLeft size={16} />
           Voltar
         </button>
-        <button type="button" className="btn bp bsm" onClick={() => nav.goTo(4)}>
-          Simular →
+        <button type="button" className="btn bp" onClick={() => nav.goTo(4)}>
+          Simular
+          <IconArrowRight size={16} />
         </button>
-      </div>
+      </ActionBar>
     </Screen>
   )
 }

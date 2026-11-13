@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { GlyphOtherFile, GlyphSourceFile, GlyphTestbenchFile, IconInfo } from '../../components/icons'
 import { formatBytes } from '../../lib/format'
 import type { ProjectFile, ProjectFileKind } from '../../state/session'
 
@@ -8,7 +9,7 @@ const KIND_LABEL: Record<ProjectFileKind, string> = {
   other: 'outro',
 }
 
-const KIND_ICON: Record<ProjectFileKind, string> = { source: '■', testbench: '□', other: '·' }
+const KIND_ICON = { source: GlyphSourceFile, testbench: GlyphTestbenchFile, other: GlyphOtherFile }
 
 export interface FilePreviewProps {
   title: string
@@ -30,7 +31,7 @@ export function FilePreview({ title, subtitle, files, note }: FilePreviewProps) 
         <h2 id={headingId} className="file-preview__title">
           {title}
         </h2>
-        <span className="muted file-preview__meta">
+        <span className="count file-preview__meta">
           {subtitle ? `${subtitle} · ` : ''}
           {files.length} {files.length === 1 ? 'arquivo' : 'arquivos'} · {sources} fonte{sources === 1 ? '' : 's'}
           {testbenches > 0 ? ` · ${testbenches} testbench${testbenches === 1 ? '' : 'es'}` : ''}
@@ -41,22 +42,26 @@ export function FilePreview({ title, subtitle, files, note }: FilePreviewProps) 
           const slash = file.path.lastIndexOf('/')
           const dir = slash >= 0 ? file.path.slice(0, slash + 1) : ''
           const name = file.path.slice(slash + 1)
+          const Glyph = KIND_ICON[file.kind]
           return (
             <li key={file.path} className={`f f--${file.kind}`}>
-              <span className="muted" aria-hidden="true">
-                {KIND_ICON[file.kind]}
-              </span>
+              <Glyph size={22} />
               <span className="nm" title={file.path}>
                 {dir && <span className="muted">{dir}</span>}
                 {name}
               </span>
-              <span className="sr-only">({KIND_LABEL[file.kind]})</span>
+              <span className={`tag tag--${file.kind}`}>{KIND_LABEL[file.kind]}</span>
               <span className="sz">{formatBytes(file.size)}</span>
             </li>
           )
         })}
       </ul>
-      {note && <p className="file-preview__note muted">{note}</p>}
+      {note && (
+        <p className="file-preview__note muted">
+          <IconInfo size={16} />
+          {note}
+        </p>
+      )}
     </section>
   )
 }

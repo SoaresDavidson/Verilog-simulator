@@ -1,4 +1,7 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
+import { BrandMark } from '../components/art'
+import { PaletteSwitch } from '../components/PaletteSwitch'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { DatapathScreen } from '../features/datapath/DatapathScreen'
 import { LiveDatapath } from '../features/simulation/live/LiveDatapath'
@@ -55,7 +58,14 @@ export interface AppShellProps {
 }
 
 export function AppShell({ headerActions }: AppShellProps) {
-  const { session } = useSessionState()
+  const state = useSessionState()
+  const { session } = state
+  // Colunas da marca que energizam: sessão, síntese, caminho de dados, simulação.
+  const progress =
+    (session ? 1 : 0) +
+    (state.synthesis.status === 'success' ? 1 : 0) +
+    (state.step >= 4 ? 1 : 0) +
+    (state.simulation.status === 'success' ? 1 : 0)
   const nav = useStepNavigation()
   const mainRef = useRef<HTMLElement>(null)
   const firstRender = useRef(true)
@@ -68,32 +78,64 @@ export function AppShell({ headerActions }: AppShellProps) {
       firstRender.current = false
       return
     }
-    mainRef.current?.querySelector<HTMLElement>('h1')?.focus()
+    const root = mainRef.current ?? document.getElementById('main')
+    root?.querySelector<HTMLElement>('h1')?.focus()
   }, [nav.step])
+
+  // A etapa 1 é a página de entrada (navegação fixa, seções de uma tela e rodapé);
+  // as etapas 2 a 4 são a bancada de trabalho, com rolagem interna.
+  const landing = nav.step === 1
+  useEffect(() => {
+    document.documentElement.dataset.layout = landing ? 'landing' : 'app'
+  }, [landing])
+
+  const header = (
+    <header className={landing ? 'nav app-header' : 'app-header'}>
+      <div className={landing ? 'wrap app-header__bar' : 'app-header__bar'}>
+        <a className="skip-link" href="#main">
+          Pular para o conteúdo
+        </a>
+        <div className="brand logo">
+          <span className="brand__plaque">
+            <BrandMark size={46} lit={progress} />
+          </span>
+          <span className="brand__name">
+            Verilog <b>Classroom</b>
+          </span>
+        </div>
+        <Stepper nav={nav} />
+        <div className="header-actions">
+          {session && (
+            <div className="sbadge" title="Sessão ativa">
+              <span className="sbadge__dot" aria-hidden="true" />
+              <span className="sr-only">Sessão ativa: </span>
+              <span className="sbadge__txt">{session.projectId}</span>
+            </div>
+          )}
+          {headerActions}
+          <PaletteSwitch />
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+  )
+
+  if (landing) {
+    return (
+      <>
+        {header}
+        <UploadScreen />
+      </>
+    )
+  }
 
   return (
     <div id="app">
-      <a className="skip-link" href="#main">
-        Pular para o conteúdo
-      </a>
-      <header className="app-header">
-        <div className="logo">
-          <span aria-hidden="true">▶</span> Verilog Classroom
-        </div>
-        {session && (
-          <div className="sbadge" title="Sessão ativa">
-            <span className="sr-only">Sessão ativa: </span>
-            {session.projectId}
-          </div>
-        )}
-        <Stepper nav={nav} />
-        <div className="header-actions">
-          {headerActions}
-          <ThemeToggle />
-        </div>
-      </header>
+      {header}
       <main id="main" ref={mainRef} tabIndex={-1}>
-        {SCREENS[nav.step]()}
+        <motion.div key={nav.step} className="scr-wrap" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 170, damping: 22 }}>
+          {SCREENS[nav.step]()}
+        </motion.div>
       </main>
     </div>
   )
