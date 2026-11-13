@@ -13,7 +13,7 @@ html[data-layout="landing"], html[data-layout="landing"] body, html[data-layout=
 
 header.nav.app-header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 0; height: var(--nav); }
 header.nav .app-header__bar { height: 100%; min-height: 0; }
-@media (max-width: 1180px) { header.nav .stepper { display: none; } }
+@media (max-width: 1300px) { header.nav .stepper { display: none; } }
 
 main.landing { display: block; overflow: visible; }
 .landing > .section { position: relative; padding: 96px 0; }

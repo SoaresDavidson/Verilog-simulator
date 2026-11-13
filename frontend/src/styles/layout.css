@@ -19,7 +19,8 @@ ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position
   --hover: rgba(255, 255, 255, 0.08); --silk: var(--pcb-faint); --danger: #ff8a9a; --danger-bg: rgba(255, 138, 154, 0.12);
   --s1: #3fd98a; --sx: #ffb35c;
 }
-.app-header__bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px 24px; min-height: var(--hh); }
+/* A trilha nunca encolhe abaixo do próprio conteúdo; quem cede espaço são as ações (o crachá da sessão). */
+.app-header__bar { display: grid; grid-template-columns: auto minmax(max-content, 1fr) minmax(0, auto); align-items: center; gap: 10px 24px; min-height: var(--hh); }
 .app-header :focus-visible { outline-color: var(--gate); }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand__plaque { display: grid; place-items: center; flex-shrink: 0; rotate: -4deg; transition: rotate var(--t) var(--ease-spring), scale var(--t) var(--ease-spring); }
@@ -55,14 +56,17 @@ ul, ol, pre, [class*="__list"], .syn-tree, .sim-sigs, .sim-wf__canvas { position
 .palette__dot { width: 10px; height: 10px; border-radius: 50%; }
 @media (max-width: 760px) { .palette { display: none; } }
 
-.header-actions { display: flex; align-items: center; gap: 8px; justify-self: end; }
+.header-actions { display: flex; align-items: center; gap: 8px; justify-self: end; min-width: 0; max-width: 100%; }
+.header-actions > * { flex-shrink: 0; }
+.header-actions > .sbadge { flex: 0 1 auto; }
 .sbadge {
   display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 240px;
   font: 600 12px var(--fd); color: var(--muted); padding: 7px 12px; border-radius: var(--r-sm); background: var(--surface);
 }
 .sbadge__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--w1); flex-shrink: 0; }
 .sbadge__txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-@media (max-width: 1640px) { .sbadge { display: none !important; } }
+@media (max-width: 1770px) { .sbadge { display: none !important; } }
+header.nav .sbadge { display: none !important; }
 
 /* ------------------------------------------------------------------ */
 /* Trilha de etapas: o fio entre duas etapas conduz quando a seguinte   */
@@ -168,12 +172,22 @@ main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: r
 .splitw { grid-template-columns: 320px minmax(0, 1fr); }
 .sp { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 
-/* Entre telas médias e grandes, só a etapa atual mostra o nome. */
-@media (max-width: 1600px) {
+/* O cabeçalho cede espaço em degraus, medidos com a barra cheia (sessão ativa):
+   some o crachá da sessão, depois os nomes das etapas que não são a atual,
+   depois o texto do botão de encerrar, e por fim a trilha desce para a segunda linha.
+   Na página de entrada a barra tem no máximo 1360px, então já começa compacta. */
+header.nav .step:not(.active) .step__label, header.nav .end-session__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+header.nav .step:not(.active) { padding: 6px; position: relative; }
+header.nav .end-session > .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; }
+@media (max-width: 1660px) {
   .step:not(.active) .step__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .step:not(.active) { padding: 6px; position: relative; }
 }
-@media (max-width: 1180px) {
+@media (max-width: 1430px) {
+  .end-session__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .end-session > .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; }
+}
+@media (max-width: 1300px) {
   .app-header__bar { grid-template-columns: auto auto; padding-top: 10px; }
   .stepper { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; padding-bottom: 12px; overflow-x: auto; }
   .stepper__list { justify-content: center; }
@@ -193,8 +207,6 @@ main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: r
   header.nav .app-header__bar { padding-top: 0; }
   .brand { overflow: hidden; }
   .brand__name { font-size: 17px; }
-  .end-session__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-  .end-session > .btn { width: 40px; height: 40px; min-height: 40px; padding: 0; }
   .scr { padding: 0 12px; gap: 12px; }
   .plate { padding: 20px 2px 4px; }
   .figure { padding: 8px 12px; }
