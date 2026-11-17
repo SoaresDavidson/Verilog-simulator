@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # UID/GID do usuário que executa o código do aluno. Precisa coincidir com
 # EXECUTION_UID/EXECUTION_GID do backend, que entrega cada run a esse dono
